@@ -1,1 +1,4 @@
-using Test, NeXLMatrixCorrection
+using Test
+using NeXLMatrixCorrection
+
+include("xpp.jl")

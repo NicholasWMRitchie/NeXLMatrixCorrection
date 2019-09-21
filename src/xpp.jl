@@ -1,4 +1,3 @@
-using NeXL
 using PeriodicTable
 # Implements Pouchou and Pichoir's XPP model from the description in the book
 # Electron Probe Quantification edited by Kurt Heinrich and Dale E. Newbury

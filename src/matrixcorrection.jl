@@ -1,7 +1,6 @@
 # Generic methods for matrix correctio
 
 using DataFrames
-using NeXL
 using PeriodicTable
 
 """

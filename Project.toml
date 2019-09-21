@@ -1,6 +1,14 @@
 name = "NeXLMatrixCorrection"
 uuid = "3ab34fdf-2fe8-473b-9b20-30f5809db337"
 version = "0.0.1"
+
+[deps]
+BoteSalvatICX = "fe54227b-96c7-489b-9963-dd1ce2905f30"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+FFAST = "10506e09-08cd-5f0b-aee5-631de1bcc925"
+NeXLCore = "93a0284f-3680-435e-8d39-dd6e52a1dbc8"
+PeriodicTable = "7b2266bf-644c-5ea3-82d8-af4bbd25a884"
+
 [compat]
 julia = "1"
 
@@ -9,4 +17,3 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
-
