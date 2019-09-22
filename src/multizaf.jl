@@ -61,24 +61,24 @@ function Z(unk::MultiZAF, std::MultiZAF)
     return z / n
 end
 
-function A(unk::MultiZAF, std::MultiZAF)
+function A(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
     a, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk,std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            a += weight(cxr) * A(zafU, zafS, cxr)
+            a += weight(cxr) * A(zafU, zafS, cxr, θtoa)
             n += weight(cxr)
         end
     end
     return a / n
 end
 
-function F(unk::MultiZAF, std::MultiZAF)
+function F(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
     f, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk,std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            f += weight(cxr) * F(zafU, zafS, cxr)
+            f += weight(cxr) * F(zafU, zafS, cxr, θtoa)
             n += weight(cxr)
         end
     end
@@ -98,25 +98,25 @@ function generation(unk::MultiZAF, std::MultiZAF)
     return g / n
 end
 
-function gZAFc(unk::MultiZAF, std::MultiZAF)
+function gZAFc(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
     a, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk,std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         icxU,icxS =  ionizationCrossSection(sh, 1000.0*NeXLCore.beamEnergy(zafU)), ionizationCrossSection(sh, 1000.0*NeXLCore.beamEnergy(zafS))
         for cxr in cxrs2
-            a += weight(cxr) * (icxU/icxS) * ZAFc(zafU, zafS, cxr)
+            a += weight(cxr) * (icxU/icxS) * ZAFc(zafU, zafS, cxr, θtoa)
             n += weight(cxr)
         end
     end
     return a / n
 end
 
-function coating(unk::MultiZAF, std::MultiZAF)
+function coating(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
     c, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk,std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            c += weight(cxr) * coating(zafU, zafS, cxr)
+            c += weight(cxr) * coating(zafU, zafS, cxr, θtoa)
             n += weight(cxr)
         end
     end
@@ -124,20 +124,20 @@ function coating(unk::MultiZAF, std::MultiZAF)
 end
 
 """
-    summarize(unk::MultiZAF, std::MultiZAF)::DataFrame
+    summarize(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)::DataFrame
 
 Summarize a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
-function NeXLCore.summarize(unk::MultiZAF, std::MultiZAF)::DataFrame
+function NeXLCore.summarize(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)::DataFrame
     tot = gZAFc(unk, std)
     return DataFrame(
         Unknown = [ name(material(unk)) ], E₀ᵤ = [ beamEnergy(unk) ],
         Standard = [ name(material(std)) ], E₀ₛ = [ beamEnergy(std) ],
         Xrays = [ name(union(characteristic(unk),characteristic(std))) ],
         Generation = [ generation(unk, std) ],
-        Z = [ Z(unk, std) ], A = [ A(unk, std) ],
-        F = [ F(unk, std) ], coating = [ coating(unk, std) ],
+        Z = [ Z(unk, std) ], A = [ A(unk, std, θtoa) ],
+        F = [ F(unk, std, θtoa) ], coating = [ coating(unk, std, θtoa) ],
         gZAFc = [ tot ],
         k = [ tot * material(unk)[elm] / material(std)[elm] ] )
 end
@@ -147,7 +147,7 @@ end
 
 Tabulate each term in the MultiZAF matrix correction in a DataFrame.
 """
-function detail(unk::MultiZAF, std::MultiZAF)::DataFrame
+function detail(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)::DataFrame
     stds, stdE0, unks  = Vector{String}(), Vector{Float64}(), Vector{String}()
     unkE0, xray, g = Vector{Float64}(), Vector{CharXRay}(), Vector{Float64}()
     z, a, f = Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
@@ -165,10 +165,10 @@ function detail(unk::MultiZAF, std::MultiZAF)::DataFrame
             push!(wgt, weight(cxr))
             push!(g, generation(zafU, zafS, cxr))
             push!(z, Z(zafU, zafS))
-            push!(a, A(zafU, zafS, cxr))
-            push!(f, F(zafU, zafS, cxr))
+            push!(a, A(zafU, zafS, cxr, θtoa))
+            push!(f, F(zafU, zafS, cxr, θtoa))
             push!(c, coating(zafU, zafS, cxr))
-            tot = ZAFc(zafU, zafS, cxr)
+            tot = ZAFc(zafU, zafS, cxr, θtoa)
             push!(zaf, tot)
             push!(k, tot * matU[elm] / matS[elm])
         end
@@ -186,14 +186,14 @@ end
 Summarize a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
-detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}}) =
-    mapreduce((unk,std) -> detail(unk, std), append!, mzs)
+detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}}, θtoa::AbstractFloat) =
+    mapreduce((unk,std) -> detail(unk, std, θtoa), append!, mzs)
 
 """
-    summarize(mzs::Dict{MultiZAF, MultiZAF}})::DataFrame
+    summarize(mzs::Dict{MultiZAF, MultiZAF}}, θtoa::AbstractFloat)::DataFrame
 
 Summarize a matrix correction relative to a specified Dict of unknowns and
 standards in a DataFrame.
 """
-NeXLCore.summarize(mzs::Dict{MultiZAF, MultiZAF}) =
-    mapreduce((unk,std) -> summarize(unk, std),append!, mzs)
+NeXLCore.summarize(mzs::Dict{MultiZAF, MultiZAF}, θtoa::AbstractFloat) =
+    mapreduce((unk,std) -> summarize(unk, std, θtoa),append!, mzs)

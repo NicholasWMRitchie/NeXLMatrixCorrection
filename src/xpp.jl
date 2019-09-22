@@ -231,8 +231,7 @@ struct XPPCorrection <: MatrixCorrection
     # Configuration data
     shell::AtomicShell
     material::Material
-    E0 # Beam energy (keV)
-    θ # Take-off angle (radians)
+    E0 # Beam energy (eV)
     # Computed items
     ϕ0 # ϕ(ρz) at the surface
     A # Amplitude  factor
@@ -247,7 +246,6 @@ function internals(xpps::AbstractArray{XPPCorrection})
         Shell=[ xpp.shell for xpp in xpps ],
         Material = [ name(xpp.material) for xpp in xpps ],
         BeamEnergy = [ xpp.E0 for xpp in xpps ],
-        TOA = [ rad2deg(xpp.θ) for xpp in xpps ],
         Phi0 = [ xpp.ϕ0 for xpp in xpps ],
         A = [ xpp.A for xpp in xpps ],
         a = [ xpp.a for xpp in xpps ],
@@ -259,17 +257,17 @@ end
 
 
 Base.show(io::IO, xpp::XPPCorrection) =
-    print(io,"XPP[",xpp.shell," in ",name(xpp.material)," at ",xpp.E0," keV, ",rad2deg(xpp.θ),"° TOA]")
+    print(io,"XPP[",xpp.shell," in ",name(xpp.material)," at ",0.001*xpp.E0," keV]")
 
 """
-    XPP(mat::Material, ashell::AtomicShell, E0)
+    XPP(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
 Construct an XPPCorrection object for the specified material, atomicshell,
-beam energy (in keV) and take-off angle (in radians).
+beam energy (in eV) and take-off angle (in radians).
 """
-function XPP(mat::Material, ashell::AtomicShell, E0, θtoa)
-    @assert( (θtoa > 0.0) && (θtoa <= π/2.0), "Take off angle must be in radians in range (0, π/2]")
-    Mv, Jv, Zbarbv, eLv = M(mat), J(mat), Zbarb(mat), 0.001*energy(ashell)
-    U0v, V0v, ηbarv = E0/eLv, E0/Jv, ηbar(Zbarbv)
+function XPP(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
+    # Calculations expect E0 in keV
+    e0, Mv, Jv, Zbarbv, eLv = 0.001*E0, M(mat), J(mat), Zbarb(mat), 0.001*energy(ashell)
+    U0v, V0v, ηbarv = e0/eLv, e0/Jv, ηbar(Zbarbv)
     @assert( U0v > 1.0, "The beam energy must be larger than the shell edge energy.")
     @assert( V0v > 1.0, "The beam energy must be larger than the mean energy loss.")
     Dv, Pjv, mv, Wbarv = D(Jv), P(Jv), m(ashell), Wbar(ηbarv)
@@ -282,25 +280,24 @@ function XPP(mat::Material, ashell::AtomicShell, E0, θtoa)
     ϵv = ϵ(Pv, bv, ϕ0v, Fv, Rbarv)
     av, Bv = a(bv, ϵv), B(bv, Fv, Pv, ϕ0v, ϵv)
     Av = A(Bv, bv, ϕ0v, Fv, ϵv)
-    return XPPCorrection(ashell, mat, E0, θtoa, ϕ0v, Av, av, Bv, bv, Fv)
+    return XPPCorrection(ashell, mat, E0, ϕ0v, Av, av, Bv, bv, Fv)
 end
 
 """
-    xpp(mat::Material, ashell::AtomicShell, E0, θdeg)
+    xpp(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
 Construct an XPPCorrection object for the specified material, atomicshell,
-beam energy (in keV) and take-off angle (in degrees).
+and beam energy (in eV).
 """
-xpp(mat::Material, ashell::AtomicShell, E0, θtoa)::XPPCorrection =
-    XPP(mat, ashell, E0, deg2rad(θtoa))
+xpp(mat::Material, ashell::AtomicShell, E0::AbstractFloat)::XPPCorrection =
+    XPP(mat, ashell, E0)
 
-Fχ(xpp::XPPCorrection, xray::CharXRay) =
-    Fχ(χ(material(xpp), xray, takeOffAngle(xpp)), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+Fχ(xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
+    Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 F(xpp::XPPCorrection) = xpp.F
 atomicshell(mc::XPPCorrection) = mc.shell
-takeOffAngle(mc::XPPCorrection) = mc.θ
 material(mc::XPPCorrection) = mc.material
-beamEnergy(mc::XPPCorrection) = mc.E0
+beamEnergy(mc::XPPCorrection) = mc.E0 # in eV
 
 """
     ϕ(ρz, xpp::XPP)
@@ -313,22 +310,26 @@ Computes the ϕ(ρz) curve according to the XPP algorithm.
     ϕabs(ρz, xpp::XPP, xray::CharXRay, θtoa)
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(ρz, xpp::XPPCorrection, xray::CharXRay) =
-    ϕ(ρz, xpp)*exp(-χ(material(xpp), xray, takeOffAngle(xpp))*ρz)
+ϕabs(ρz, xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
+    ϕ(ρz, xpp)*exp(-χ(material(xpp), xray, θtoa)*ρz)
 
 """"
     xppZAF(mat::Material, ashell::AtomicShell, e0, θtoa, coating=NullCoating())
+
 Constructs an ZAFCorrection object using XPPCorrection for the specified parameters.
 """
-xppZAF(mat::Material, ashell::AtomicShell, e0, θtoa, coating=NullCoating()) =
-    ZAFCorrection(xpp(mat,ashell,e0,θtoa), NullFluorescence(mat, ashell, e0, θtoa), coating)
+xppZAF(mat::Material, ashell::AtomicShell, e0::AbstractFloat, coating=NullCoating()) =
+    ZAFCorrection(xpp(mat,ashell,e0), NullFluorescence(mat, ashell, e0), coating)
+
+#xppZAF(unk::Material, std::Material, ashell::AtomicShell, e0::BeamEnergy; unkCoating=NullCoating(), stdCoating=NullCoating())
+#    return ( xppZAF(unk,ashell,e0,unkCoating), xppZAF(std,ashell,e0,stdCoating) )
 
 """
-    buildMultiXPP(mat::Material, cxrs, e0, θtoa, coating=NeXLCore.NullCoating())
+    buildMultiXPP(mat::Material, cxrs, e0, coating=NeXLCore.NullCoating())
 Constructs a MultiZAF around the XPPCorrection algorithm.
 """
-function buildMultiXPP(mat::Material, cxrs, e0, θtoa, coating=NeXLCore.NullCoating())
-    zaf(sh) = xppZAF(mat, sh, e0, θtoa, coating)
+function buildMultiXPP(mat::Material, cxrs, e0::AbstractFloat, coating=NeXLCore.NullCoating())
+    zaf(sh) = xppZAF(mat, sh, e0, coating)
     zafs = Dict( ( sh, zaf(sh) ) for sh in union(inner.(cxrs)) )
     return MultiZAF(cxrs, zafs)
 end
