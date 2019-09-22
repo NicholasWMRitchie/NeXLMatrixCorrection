@@ -17,7 +17,6 @@ export ZAFc # Combined correction factor
 export transmission # Coating transmission
 export carbonCoating # Build a carbon coating
 export Fχ # Absorbed intensity function
-export atomicShell #
 export takeOffAngle #
 
 include("multizaf.jl")

@@ -30,19 +30,19 @@ A set of all shells supported by this MultiZAF
 shells(mz::MultiZAF) =
     keys(zafs)
 
-element(mz::MultiZAF) =
+NeXLCore.element(mz::MultiZAF) =
     element(xray[1])
 
-characteristic(mz::MultiZAF) =
+NeXLCore.characteristic(mz::MultiZAF) =
     mz.xrays
 
-material(mz::MultiZAF) =
+NeXLCore.material(mz::MultiZAF) =
     material(first(values(mz.zafs)))
 
 beamEnergy(mz::MultiZAF) =
     beamEnergy(first(values(mz.zafs)))
 
-name(mz::MultiZAF) =
+NeXLCore.name(mz::MultiZAF) =
     repr(brightest(mz.xrays))*"+"*string(length(mz.xrays)-1)*" others"
 
 commonXrays(mz1::MultiZAF, mz2::MultiZAF) =
@@ -89,7 +89,7 @@ function generation(unk::MultiZAF, std::MultiZAF)
     g, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk,std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        icxU, icxS =  ionizationCrossSection(sh, 1000.0*NeXL.beamEnergy(zafU)), ionizationCrossSection(sh, 1000.0*NeXL.beamEnergy(zafS))
+        icxU, icxS =  ionizationCrossSection(sh, 1000.0*NeXLCore.beamEnergy(zafU)), ionizationCrossSection(sh, 1000.0*NeXLCore.beamEnergy(zafS))
         for cxr in cxrs2
             g += weight(cxr) * (icxU/icxS)
             n += weight(cxr)
@@ -102,7 +102,7 @@ function gZAFc(unk::MultiZAF, std::MultiZAF)
     a, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk,std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        icxU,icxS =  ionizationCrossSection(sh, 1000.0*NeXL.beamEnergy(zafU)), ionizationCrossSection(sh, 1000.0*NeXL.beamEnergy(zafS))
+        icxU,icxS =  ionizationCrossSection(sh, 1000.0*NeXLCore.beamEnergy(zafU)), ionizationCrossSection(sh, 1000.0*NeXLCore.beamEnergy(zafS))
         for cxr in cxrs2
             a += weight(cxr) * (icxU/icxS) * ZAFc(zafU, zafS, cxr)
             n += weight(cxr)
@@ -125,10 +125,11 @@ end
 
 """
     summarize(unk::MultiZAF, std::MultiZAF)::DataFrame
+
 Summarize a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
-function summarize(unk::MultiZAF, std::MultiZAF)::DataFrame
+function NeXLCore.summarize(unk::MultiZAF, std::MultiZAF)::DataFrame
     tot = gZAFc(unk, std)
     return DataFrame(
         Unknown = [ name(material(unk)) ], E₀ᵤ = [ beamEnergy(unk) ],
@@ -143,6 +144,7 @@ end
 
 """
     detail(unk::MultiZAF, std::MultiZAF)::DataFrame
+
 Tabulate each term in the MultiZAF matrix correction in a DataFrame.
 """
 function detail(unk::MultiZAF, std::MultiZAF)::DataFrame
@@ -188,9 +190,10 @@ detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}}) =
     mapreduce((unk,std) -> detail(unk, std), append!, mzs)
 
 """
-    summarize(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrame
-Summarize a matrix correction relative to the specified unknown and standard in
-a DataFrame.
+    summarize(mzs::Dict{MultiZAF, MultiZAF}})::DataFrame
+
+Summarize a matrix correction relative to a specified Dict of unknowns and
+standards in a DataFrame.
 """
-summarize(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}}) =
+NeXLCore.summarize(mzs::Dict{MultiZAF, MultiZAF}) =
     mapreduce((unk,std) -> summarize(unk, std),append!, mzs)

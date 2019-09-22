@@ -5,9 +5,10 @@ using PeriodicTable
 
 """
 MatrixCorrection structs should implement
-    F(mc::MatrixCorrection) and
+
+    F(mc::MatrixCorrection)
     Fχ(mc::MatrixCorrection, xray::CharXRay)
-    atomicShell(mc::MatrixCorrection)
+    atomicshell(mc::MatrixCorrection)
     takeOffAngle(mc::MatrixCorrection)
     material(mc::MatrixCorrection)
     beamEnergy(mc::MatrixCorrection)
@@ -34,9 +35,9 @@ Base.show(io::IO, nc::NullCorrection) =
 
 F(mc::NullCorrection) = 1.0
 Fχ(mc::NullCorrection, xray::CharXRay) = 1.0
-atomicShell(mc::NullCorrection) = mc.shell
+NeXLCore.atomicshell(mc::NullCorrection) = mc.shell
 takeOffAngle(mc::NullCorrection) = mc.θtoa
-NeXL.material(mc::NullCorrection) = mc.material
+NeXLCore.material(mc::NullCorrection) = mc.material
 beamEnergy(mc::NullCorrection) = mc.E0
 
 """
@@ -151,6 +152,7 @@ struct ZAFCorrection
     za::MatrixCorrection
     f::FluorescenceCorrection
     coating::CoatingCorrection
+    
     ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
         new(za, f, coating)
 end
@@ -165,7 +167,7 @@ F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay) =
     F(unk.f, cxr) / F(std.f, cxr)
 ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay) =
     Z(unk, std)*A(unk, std, cxr)*F(unk, std, cxr)*coating(unk, std, cxr)
-material(zaf::ZAFCorrection) = NeXL.material(zaf.za)
+NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
 beamEnergy(zaf::ZAFCorrection) = beamEnergy(zaf.za)
 takeOffAngle(zaf::ZAFCorrection) = takeOffAngle(zaf.za)
 
@@ -180,17 +182,18 @@ zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection 
     ZAFCorrection(za, f, coating)
 
 """
-    summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)
+    NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
+
 Summarize a matrix correction relative to the specified unknown and standard
 for the iterable of Transition, trans.
 """
-function summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
-    @assert(isequal(atomicShell(unk.za), atomicShell(std.za)), "The atomic shell for the standard and unknown don't match.")
-    cxrs = characteristic(element(atomicShell(unk.za)), trans, 1.0e-9, 999.9*min(beamEnergy(unk.za),beamEnergy(std.za)))
+function NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
+    @assert(isequal(atomicshell(unk.za), atomicshell(std.za)), "The atomic shell for the standard and unknown don't match.")
+    cxrs = characteristic(element(atomicshell(unk.za)), trans, 1.0e-9, 0.999*1000.0*min(beamEnergy(unk.za),beamEnergy(std.za)))
     stds, stdE0, unks, unkE0, xray = Vector{String}(), Vector{Float64}(), Vector{String}(), Vector{Float64}(), Vector{CharXRay}()
     z, a, f, c, zaf, k = Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
     for cxr in cxrs
-        if isequal(inner(cxr), atomicShell(std.za))
+        if isequal(inner(cxr), atomicshell(std.za))
             elm = element(cxr)
             push!(unks, name(material(unk.za)))
             push!(unkE0, beamEnergy(unk.za))
@@ -209,18 +212,18 @@ function summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
     return DataFrame(Unknown=unks, E0unk=unkE0, Standard=stds, E0std=stdE0, Xray=xray, Z=z, A=a, F=f, c=c, ZAF=zaf, k=k)
 end
 
-summarize(unk::ZAFCorrection, std::ZAFCorrection)::DataFrame =
+NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection)::DataFrame =
     summarize(unk,std,alltransitions)
 
-function summarize(zafs::Dict{ZAFCorrection, ZAFCorrection})::DataFrame
+function NeXLCore.summarize(zafs::Dict{ZAFCorrection, ZAFCorrection})::DataFrame
     df = DataFrame()
     for (unk, std) in zafs
-        append!(df, summarize(unk, std, alltransitions))
+        append!(df, summarize(unk, std))
     end
     return df
 end
 
-function summarize(unk::Material, stds::Dict{Element, Material}, e0, θtoa)
+function NeXLCore.summarize(unk::Material, stds::Dict{Element, Material}, e0, θtoa)
     df = DataFrame()
     for (elm, std) in stds
         for ashell in atomicshells(elm, 1000.0*e0)

@@ -1,4 +1,5 @@
 using PeriodicTable
+using DataFrames
 # Implements Pouchou and Pichoir's XPP model from the description in the book
 # Electron Probe Quantification edited by Kurt Heinrich and Dale E. Newbury
 
@@ -199,7 +200,7 @@ end
     a(b, ϵ)
 XPP ϕ(ρz) model parameter a
 """
-NeXL.a(b, ϵ) = #C1
+NeXLCore.a(b, ϵ) = #C1
     b*(1.0+ϵ)
 
 """
@@ -227,17 +228,35 @@ Represents the essential intermediary values for an XPP matrix correction of
 characteristic X-rays from a particular atomic shell in a particular material.
 """
 struct XPPCorrection <: MatrixCorrection
+    # Configuration data
     shell::AtomicShell
     material::Material
     E0 # Beam energy (keV)
+    θ # Take-off angle (radians)
+    # Computed items
     ϕ0 # ϕ(ρz) at the surface
     A # Amplitude  factor
     a # Width factor
     B # Amplitude  factor
     b # Width factor
     F # Integral under the ϕ(ρz) curve
-    θ # Take-off angle (radiams)
 end
+
+function internals(xpps::AbstractArray{XPPCorrection})
+    return DataFrame(
+        Shell=[ xpp.shell for xpp in xpps ],
+        Material = [ name(xpp.material) for xpp in xpps ],
+        BeamEnergy = [ xpp.E0 for xpp in xpps ],
+        TOA = [ rad2deg(xpp.θ) for xpp in xpps ],
+        Phi0 = [ xpp.ϕ0 for xpp in xpps ],
+        A = [ xpp.A for xpp in xpps ],
+        a = [ xpp.a for xpp in xpps ],
+        B = [ xpp.B for xpp in xpps ],
+        b = [ xpp.b for xpp in xpps ],
+        F = [ xpp.F for xpp in xpps ]
+    )
+end
+
 
 Base.show(io::IO, xpp::XPPCorrection) =
     print(io,"XPP[",xpp.shell," in ",name(xpp.material)," at ",xpp.E0," keV, ",rad2deg(xpp.θ),"° TOA]")
@@ -249,7 +268,7 @@ beam energy (in keV) and take-off angle (in radians).
 """
 function XPP(mat::Material, ashell::AtomicShell, E0, θtoa)
     @assert( (θtoa > 0.0) && (θtoa <= π/2.0), "Take off angle must be in radians in range (0, π/2]")
-    Mv, Jv, Zbarbv, eLv = M(mat), J(mat), Zbarb(mat), NeXL.eV2keV(energy(ashell))
+    Mv, Jv, Zbarbv, eLv = M(mat), J(mat), Zbarb(mat), 0.001*energy(ashell)
     U0v, V0v, ηbarv = E0/eLv, E0/Jv, ηbar(Zbarbv)
     @assert( U0v > 1.0, "The beam energy must be larger than the shell edge energy.")
     @assert( V0v > 1.0, "The beam energy must be larger than the mean energy loss.")
@@ -263,7 +282,7 @@ function XPP(mat::Material, ashell::AtomicShell, E0, θtoa)
     ϵv = ϵ(Pv, bv, ϕ0v, Fv, Rbarv)
     av, Bv = a(bv, ϵv), B(bv, Fv, Pv, ϕ0v, ϵv)
     Av = A(Bv, bv, ϕ0v, Fv, ϵv)
-    return XPPCorrection(ashell, mat, E0, ϕ0v, Av, av, Bv, bv, Fv, θtoa)
+    return XPPCorrection(ashell, mat, E0, θtoa, ϕ0v, Av, av, Bv, bv, Fv)
 end
 
 """
@@ -278,7 +297,7 @@ Fχ(xpp::XPPCorrection, xray::CharXRay) =
     Fχ(χ(material(xpp), xray, takeOffAngle(xpp)), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 F(xpp::XPPCorrection) = xpp.F
-atomicShell(mc::XPPCorrection) = mc.shell
+atomicshell(mc::XPPCorrection) = mc.shell
 takeOffAngle(mc::XPPCorrection) = mc.θ
 material(mc::XPPCorrection) = mc.material
 beamEnergy(mc::XPPCorrection) = mc.E0
@@ -305,10 +324,10 @@ xppZAF(mat::Material, ashell::AtomicShell, e0, θtoa, coating=NullCoating()) =
     ZAFCorrection(xpp(mat,ashell,e0,θtoa), NullFluorescence(mat, ashell, e0, θtoa), coating)
 
 """
-    buildMultiXPP(mat::Material, cxrs, e0, θtoa, coating=NeXL.NullCoating())
+    buildMultiXPP(mat::Material, cxrs, e0, θtoa, coating=NeXLCore.NullCoating())
 Constructs a MultiZAF around the XPPCorrection algorithm.
 """
-function buildMultiXPP(mat::Material, cxrs, e0, θtoa, coating=NeXL.NullCoating())
+function buildMultiXPP(mat::Material, cxrs, e0, θtoa, coating=NeXLCore.NullCoating())
     zaf(sh) = xppZAF(mat, sh, e0, θtoa, coating)
     zafs = Dict( ( sh, zaf(sh) ) for sh in union(inner.(cxrs)) )
     return MultiZAF(cxrs, zafs)
