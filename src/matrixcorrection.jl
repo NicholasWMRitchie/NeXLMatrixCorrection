@@ -25,12 +25,11 @@ struct NullCorrection <: MatrixCorrection
     shell::AtomicShell
     E0::AbstractFloat
 
-    NullCorrection(mat::Material, ashell::AtomicShell, e0) =
-        new(mat, shell, e0)
+    NullCorrection(mat::Material, ashell::AtomicShell, e0) = new(mat, shell, e0)
 end
 
 Base.show(io::IO, nc::NullCorrection) =
-    print(io,"Unity["+nc.material,", ",shell,", ",0.001*e0," keV]")
+    print(io, "Unity[" + nc.material, ", ", shell, ", ", 0.001 * e0, " keV]")
 
 F(mc::NullCorrection) = 1.0
 Fχ(mc::NullCorrection, xray::CharXRay, θtoa::AbstractFloat) = 1.0
@@ -49,9 +48,20 @@ Angle adjusted mass absorption coefficient.
     ZA(unk::XPP, std::XPP, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
 The atomic number and absorption correction factors.
 """
-function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat)
-    @assert(isequal(unk.shell,inner(xray)),"Unknown and X-ray don't match in XPP")
-    @assert(isequal(std.shell,inner(xray)),"Standard and X-ray don't match in XPP")
+function ZA(
+    unk::MatrixCorrection,
+    std::MatrixCorrection,
+    xray::CharXRay,
+    θtoa::AbstractFloat,
+)
+    @assert(
+        isequal(unk.shell, inner(xray)),
+        "Unknown and X-ray don't match in XPP",
+    )
+    @assert(
+        isequal(std.shell, inner(xray)),
+        "Standard and X-ray don't match in XPP",
+    )
     return Fχ(unk, xray, θtoa) / Fχ(std, xray, θtoa)
 end
 
@@ -60,7 +70,10 @@ end
 The atomic number correction factor.
 """
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
-    @assert(isequal(unk.shell,std.shell),"Unknown and standard matrix corrections don't apply to the same shell.")
+    @assert(
+        isequal(unk.shell, std.shell),
+        "Unknown and standard matrix corrections don't apply to the same shell.",
+    )
     return F(unk) / F(std)
 end
 
@@ -68,9 +81,20 @@ end
     A(unk::XPP, std::XPP, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
 The absorption correction factors.
 """
-function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat)
-    @assert(isequal(unk.shell,inner(xray)),"Unknown and X-ray don't match in XPP")
-    @assert(isequal(std.shell,inner(xray)),"Standard and X-ray don't match in XPP")
+function A(
+    unk::MatrixCorrection,
+    std::MatrixCorrection,
+    xray::CharXRay,
+    θtoa::AbstractFloat,
+)
+    @assert(
+        isequal(unk.shell, inner(xray)),
+        "Unknown and X-ray don't match in XPP",
+    )
+    @assert(
+        isequal(std.shell, inner(xray)),
+        "Standard and X-ray don't match in XPP",
+    )
     return ZA(unk, std, xray, θtoa) / Z(unk, std)
 end
 
@@ -82,20 +106,18 @@ Implements
 abstract type FluorescenceCorrection end
 
 """
-    NullCorrection
+    NullFluorescence
+
 Implements Castaing's First Approximation
 """
 struct NullFluorescence <: FluorescenceCorrection
-    material::Material
-    shell::AtomicShell
-    E0::AbstractFloat
 
-    NullFluorescence(mat::Material, ashell::AtomicShell, e0) =
-        new(mat, ashell, e0)
+    NullFluorescence(mat::Material, ashell::AtomicShell, e0::AbstractFloat) =
+        new()
 end
 
 Base.show(io::IO, nc::NullFluorescence) =
-    print(io,"Null[",name(nc.material),", ",nc.shell,", ",nc.E0," keV]")
+    print(io, "Null[Fluor]")
 
 F(nc::NullFluorescence, cxr::CharXRay, θtoa::AbstractFloat) = 1.0
 
@@ -120,7 +142,7 @@ end
 
 Constructs a carbon coating of the specified thickness (in nanometers).
 """
-carbonCoating(nm) = Coating(pure(n"C"), nm*1.0e-7)
+carbonCoating(nm) = Coating(pure(n"C"), nm * 1.0e-7)
 
 """
     transmission(zaf::Coating, xray::CharXRay, toa)
@@ -128,7 +150,7 @@ Calculate the transmission fraction for the specified X-ray through the coating
 in the direction of the detector.
 """
 transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) =
-    exp(-χ(cc.coating, xray, θtoa)*cc.thickness)
+    exp(-χ(cc.coating, xray, θtoa) * cc.thickness)
 
 Base.show(io::IO, coating::Coating) =
     print(io, 1.0e7 * coating.thickness, " nm of ", name(coating.coating))
@@ -145,8 +167,7 @@ Calculate the transmission fraction for the specified X-ray through no coating (
 """
 transmission(nc::NullCoating, xray::CharXRay, θtoa::AbstractFloat) = 1.0
 
-Base.show(io::IO, nc::NullCoating) =
-    print(io, "no coating")
+Base.show(io::IO, nc::NullCoating) = print(io, "no coating")
 
 """
     ZAFCorrection
@@ -157,32 +178,52 @@ struct ZAFCorrection
     f::FluorescenceCorrection
     coating::CoatingCorrection
 
-    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
-        new(za, f, coating)
+    ZAFCorrection(
+        za::MatrixCorrection,
+        f::FluorescenceCorrection,
+        coating::CoatingCorrection = NullCoating(),
+    ) = new(za, f, coating)
 end
 
 Z(unk::ZAFCorrection, std::ZAFCorrection) = Z(unk.za, std.za)
+
 A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
     A(unk.za, std.za, cxr, θtoa)
-coating(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
-    transmission(unk.coating,cxr,θtoa)/
-       transmission(std.coating,cxr,θtoa)
+
+coating(
+    unk::ZAFCorrection,
+    std::ZAFCorrection,
+    cxr::CharXRay,
+    θtoa::AbstractFloat,
+) = transmission(unk.coating, cxr, θtoa) / transmission(std.coating, cxr, θtoa)
+
 F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
     F(unk.f, cxr, θtoa) / F(std.f, cxr, θtoa)
-ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
-    Z(unk, std)*A(unk, std, cxr, θtoa)*F(unk, std, cxr, θtoa)*coating(unk, std, cxr, θtoa)
+
+ZAFc(
+    unk::ZAFCorrection,
+    std::ZAFCorrection,
+    cxr::CharXRay,
+    θtoa::AbstractFloat,
+) =
+    Z(unk, std) * A(unk, std, cxr, θtoa) * F(unk, std, cxr, θtoa) *
+    coating(unk, std, cxr, θtoa)
+
 NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
 beamEnergy(zaf::ZAFCorrection) = beamEnergy(zaf.za)
 
 Base.show(io::IO, cc::ZAFCorrection) =
-    print(io, "ZAF[",cc.za,", ",cc.f,", ",cc.coating, "]")
+    print(io, "ZAF[", cc.za, ", ", cc.f, ", ", cc.coating, "]")
 
 """
     zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating())
 Construct a ZAFCorrection object
 """
-zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
-    ZAFCorrection(za, f, coating)
+zaf(
+    za::MatrixCorrection,
+    f::FluorescenceCorrection,
+    coating::CoatingCorrection = NullCoating(),
+) = ZAFCorrection(za, f, coating)
 
 """
     NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
@@ -190,11 +231,34 @@ zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection 
 Summarize a matrix correction relative to the specified unknown and standard
 for the iterable of Transition, trans.
 """
-function NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, trans, θtoa::AbstractFloat)::DataFrame
-    @assert(isequal(atomicshell(unk.za), atomicshell(std.za)), "The atomic shell for the standard and unknown don't match.")
-    cxrs = characteristic(element(atomicshell(unk.za)), trans, 1.0e-9, 0.999*min(beamEnergy(unk.za),beamEnergy(std.za)))
-    stds, stdE0, unks, unkE0, xray = Vector{String}(), Vector{Float64}(), Vector{String}(), Vector{Float64}(), Vector{CharXRay}()
-    z, a, f, c, zaf, k, toa = Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
+function NeXLCore.summarize(
+    unk::ZAFCorrection,
+    std::ZAFCorrection,
+    trans,
+    θtoa::AbstractFloat,
+)::DataFrame
+    @assert(
+        isequal(atomicshell(unk.za), atomicshell(std.za)),
+        "The atomic shell for the standard and unknown don't match.",
+    )
+    cxrs = characteristic(
+        element(atomicshell(unk.za)),
+        trans,
+        1.0e-9,
+        0.999 * min(beamEnergy(unk.za), beamEnergy(std.za)),
+    )
+    stds, stdE0, unks, unkE0, xray = Vector{String}(),
+        Vector{Float64}(),
+        Vector{String}(),
+        Vector{Float64}(),
+        Vector{CharXRay}()
+    z, a, f, c, zaf, k, toa = Vector{Float64}(),
+        Vector{Float64}(),
+        Vector{Float64}(),
+        Vector{Float64}(),
+        Vector{Float64}(),
+        Vector{Float64}(),
+        Vector{Float64}()
     for cxr in cxrs
         if isequal(inner(cxr), atomicshell(std.za))
             elm = element(cxr)
@@ -213,26 +277,35 @@ function NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, trans, θtoa
             push!(k, tot * material(unk.za)[elm] / material(std.za)[elm])
         end
     end
-    return DataFrame(Unknown=unks, E0unk=unkE0, Standard=stds, E0std=stdE0, TOA=toa, Xray=xray, Z=z, A=a, F=f, c=c, ZAF=zaf, k=k)
+    return DataFrame(
+        Unknown = unks,
+        E0unk = unkE0,
+        Standard = stds,
+        E0std = stdE0,
+        TOA = toa,
+        Xray = xray,
+        Z = z,
+        A = a,
+        F = f,
+        c = c,
+        ZAF = zaf,
+        k = k,
+    )
 end
 
-NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, θtoa::AbstractFloat)::DataFrame =
-    summarize(unk, std, alltransitions, θtoa)
+NeXLCore.summarize(
+    unk::ZAFCorrection,
+    std::ZAFCorrection,
+    θtoa::AbstractFloat,
+)::DataFrame = summarize(unk, std, alltransitions, θtoa)
 
-function NeXLCore.summarize(zafs::Dict{ZAFCorrection, ZAFCorrection}, θtoa::AbstractFloat)::DataFrame
+function NeXLCore.summarize(
+    zafs::Dict{ZAFCorrection,ZAFCorrection},
+    θtoa::AbstractFloat,
+)::DataFrame
     df = DataFrame()
     for (unk, std) in zafs
         append!(df, summarize(unk, std, θtoa))
-    end
-    return df
-end
-
-function NeXLCore.summarize(unk::Material, stds::Dict{Element, Material}, e0::AbstractFloat, θtoa::AbstractFloat)
-    df = DataFrame()
-    for (elm, std) in stds
-        for ashell in atomicshells(elm, e0)
-            append!(df,summarize(xppZAF(unk, std, ashell, e0)..., alltransitions, θtoa))
-        end
     end
     return df
 end
