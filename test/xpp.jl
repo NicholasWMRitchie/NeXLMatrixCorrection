@@ -7,7 +7,8 @@ using Test
     toa = deg2rad(40.0)
     k240 = NeXLCore.material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
 
-    xpp = NeXLMatrixCorrection.XPP(k240,n"O K",20.0e3)
+    cxr = n"O K-L3"
+    xpp = NeXLMatrixCorrection.XPP(k240,inner(cxr),20.0e3)
     @test isapprox(xpp.A, 393.01, atol=0.01)
     @test isapprox(xpp.a, 6754, atol=1.0)
     @test isapprox(xpp.B, -378725, atol=1.0)
@@ -15,15 +16,15 @@ using Test
     @test isapprox(xpp.ϕ0, 1.63011, atol = 0.0001)
     @test isapprox(xpp.F, 0.0016754, atol=0.000001)
 
-    cxr = n"O K-L3"
     xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)),inner(cxr),20.0e3)
     ZA = Fχ(xpp,cxr,toa)/Fχ(xppO,cxr,toa)
     Z = F(xpp)/F(xppO)
     @test isapprox(Z, 1.1759, atol = 0.0001)
     @test isapprox(ZA/Z, 0.2951, atol = 0.0001)
 
-    xpp = NeXLMatrixCorrection.XPP(k240,n"Zr L3",20.0e3)
 
+    cxr = n"Zr L3-M5"
+    xpp = NeXLMatrixCorrection.XPP(k240,inner(cxr),20.0e3)
     @test isapprox(xpp.A, 129.53, atol=0.01)
     @test isapprox(xpp.a, 6668, atol=1.0)
     @test isapprox(xpp.B, -177201, atol=1.0)
@@ -31,14 +32,14 @@ using Test
     @test isapprox(xpp.ϕ0, 1.60571, atol = 0.0001)
     @test isapprox(xpp.F, 0.0012887, atol = 0.00001)
 
-    cxr = n"Zr L3-M5"
     xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)),inner(cxr),20.0e3)
     ZA = Fχ(xpp,cxr,toa)/Fχ(xppO,cxr,toa)
     Z = F(xpp)/F(xppO)
     @test isapprox(Z, 0.8502, atol = 0.0001)
     @test isapprox(ZA/Z, 0.7463, atol = 0.0001)
 
-    xpp = NeXLMatrixCorrection.XPP(k240,n"Mg K",20.0e3)
+    cxr = n"Mg K-L3"
+    xpp = NeXLMatrixCorrection.XPP(k240,inner(cxr),20.0e3)
     @test isapprox(xpp.A, 215.96, atol=0.01)
     @test isapprox(xpp.a, 6681, atol=1.0)
     @test isapprox(xpp.B, -252614, atol=1.0)
@@ -46,7 +47,6 @@ using Test
     @test isapprox(xpp.ϕ0, 1.620603, atol = 0.0001)
     @test isapprox(xpp.F, 0.001468275, atol = 0.00001)
 
-    cxr = n"Mg K-L3"
     xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)),inner(cxr),20.0e3)
     ZA = Fχ(xpp,cxr,toa)/Fχ(xppO,cxr,toa)
     Z = F(xpp)/F(xppO)
