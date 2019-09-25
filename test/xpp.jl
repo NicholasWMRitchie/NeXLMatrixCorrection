@@ -22,7 +22,6 @@ using Test
     @test isapprox(Z, 1.1759, atol = 0.0001)
     @test isapprox(ZA/Z, 0.2951, atol = 0.0001)
 
-
     cxr = n"Zr L3-M5"
     xpp = NeXLMatrixCorrection.XPP(k240,inner(cxr),20.0e3)
     @test isapprox(xpp.A, 129.53, atol=0.01)
@@ -54,6 +53,9 @@ using Test
     @test isapprox(ZA/Z, 0.3889, atol = 0.0001)
 end
 
+albite = atomicfraction("Albite", Dict(n"Na"=>1, n"Al"=>1, n"Si"=>3, n"O"=>8) )
+
+k240 = NeXLCore.material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
 
 sio2 = atomicfraction("Quartz",Dict(n"Si"=>1,n"O"=>2))
 mgo = atomicfraction("MgO",Dict(n"Mg"=>1,n"O"=>1))

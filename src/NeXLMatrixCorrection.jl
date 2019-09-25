@@ -31,4 +31,7 @@ export xppZAF # Build a full ZAF correction based on XPP
 export XPPCorrection # XPPCorrection structure
 export buildMultiXPP # Build a MultiZAF around the XPP algorithm
 
+include("secondary.jl")
+export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
+
 end
