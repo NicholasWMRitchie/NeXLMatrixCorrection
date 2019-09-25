@@ -52,7 +52,7 @@ function ZA(
     unk::MatrixCorrection,
     std::MatrixCorrection,
     xray::CharXRay,
-    θtoa::AbstractFloat,
+    θtoa::AbstractFloat
 )
     @assert(
         isequal(unk.shell, inner(xray)),
@@ -189,6 +189,9 @@ Z(unk::ZAFCorrection, std::ZAFCorrection) = Z(unk.za, std.za)
 
 A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
     A(unk.za, std.za, cxr, θtoa)
+
+ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
+    ZA(unk.za, std.za, cxr, θtoa)
 
 coating(
     unk::ZAFCorrection,

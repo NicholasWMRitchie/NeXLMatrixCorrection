@@ -77,10 +77,10 @@ Base.show(io::IO, ri::ReedInternal) =
    print(io,repr(ri.primary))
 
 function Finternal(ri::ReedInternal, secondary::CharXRay, toa::Float64, comp::Material)
-   @assert(ri.kk > 0.0)
+   @assert(ri.kk >= 0.0, "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)")
    u = mac(comp, secondary) / (sin(toa) * ri.muB)
    # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
-   return weight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
+   return normWeight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
 end
 
 struct ReedFluorescence <: FluorescenceCorrection
@@ -101,6 +101,8 @@ Compute the enhancement of the secondary characteristic X-ray due to the
 primaries specified in reed.
 """
 F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64) =
+   isempty(reed.exciters) ? 1.0 :
+   1.0 +
    mapreduce(ex -> Finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
 
 """

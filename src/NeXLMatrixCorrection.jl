@@ -7,6 +7,7 @@ export summarize # Summarize ZAF corrections
 export Z # Atomic number correction
 export A # Absorption correction
 export F # Fluorescence correction
+export ZA # Combined ZA (ϕ(ρz)) correction
 export coating # Coating correction
 export zaf # Build a ZAFCorrection
 export ZAFCorrection

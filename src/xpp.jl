@@ -343,7 +343,8 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """"
     xppZAF(mat::Material, ashell::AtomicShell, e0, θtoa, coating=NullCoating())
 
-Constructs an ZAFCorrection object using XPPCorrection for the specified parameters.
+Constructs an ZAFCorrection object using the XPP correction model with
+the Reed fluorescence model for the specified parameters.
 """
 xppZAF(
     mat::Material,
@@ -353,7 +354,7 @@ xppZAF(
 ) =
     ZAFCorrection(
         xpp(mat, ashell, e0),
-        NullFluorescence(mat, ashell, e0),
+        reedFluorescence(mat, ashell, e0),
         coating,
     )
 
