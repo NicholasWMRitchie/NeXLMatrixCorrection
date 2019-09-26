@@ -133,3 +133,57 @@ end
     @test isapprox(F(zafU_M...,n"U M5-N7",toa), 0.9999,atol=0.001)
 
 end
+
+
+@testset "K240 multiZAF" begin
+
+    k240 = NeXLCore.material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+
+    sio2 = atomicfraction("Quartz",Dict(n"Si"=>1,n"O"=>2))
+    mgo = atomicfraction("MgO",Dict(n"Mg"=>1,n"O"=>1))
+    baf2 = atomicfraction("Barium Fluoride",Dict(n"Ba"=>1,n"F"=>2))
+    ti, zn, zr = pure(n"Ti"), pure(n"Zn"), pure(n"Zr")
+
+    e0, θ = 17.0e3, deg2rad(40.0)
+
+    cxrSi = characteristic(n"Si", ktransitions, 0.001, e0)
+    zafSi = xppZAF(k240, sio2, cxrSi, e0)
+    cxrMg = characteristic(n"Mg", ktransitions, 0.001, e0)
+    zafMg = xppZAF(k240, mgo, cxrMg, e0)
+    cxrBa = characteristic(n"Ba", ltransitions, 0.001, e0)
+    zafBa = xppZAF(k240, baf2, cxrMg, e0)
+    cxrTi = characteristic(n"Ti", ktransitions, 0.001, e0)
+    zafTi = xppZAF(k240, ti, cxrTi, e0)
+    cxrZn = characteristic(n"Zn", kalpha, 0.001, e0)
+    zafZn = xppZAF(k240, zn, cxrZn, e0)
+    cxrZr = characteristic(n"Zr", ltransitions, 0.001, e0)
+    zafZr = xppZAF(k240, zr, cxrZr, e0)
+    cxrO = characteristic(n"O", ktransitions, 0.001, e0)
+    zafO = xppZAF(k240, sio2, cxrO, e0)
+
+    @test isapprox(Z(zafSi...), 1.1345,atol=0.001)
+    @test isapprox(Z(zafMg...), 1.1280,atol=0.001)
+    @test isapprox(Z(zafBa...), 0.8252,atol=0.001)
+    @test isapprox(Z(zafTi...), 0.9446,atol=0.001)
+    @test isapprox(Z(zafZn...), 0.8973,atol=0.001)
+    @test isapprox(Z(zafZr...), 0.8442,atol=0.001)
+    @test isapprox(Z(zafO...), 1.1316,atol=0.001)
+
+    @test isapprox(A(zafSi...,θ), 0.7657,atol=0.001)
+    @test isapprox(A(zafMg...,θ), 0.5996,atol=0.001)
+    @test isapprox(A(zafBa...,θ), 1.0139,atol=0.001)
+    @test isapprox(A(zafTi...,θ), 0.9615,atol=0.001)
+    @test isapprox(A(zafZn...,θ), 0.9841,atol=0.001)
+    @test isapprox(A(zafZr...,θ), 0.8041,atol=0.001)
+    @test isapprox(A(zafO...,θ), 0.7750,atol=0.001)
+
+    @test isapprox(F(zafSi...,θ), 1.0030,atol=0.001)
+    @test isapprox(F(zafMg...,θ), 1.0041,atol=0.001)
+    @test isapprox(F(zafBa...,θ), 0.9999,atol=0.001)
+    @test isapprox(F(zafTi...,θ), 1.0072,atol=0.002)
+    @test isapprox(F(zafZn...,θ), 1.000,atol=0.001)
+    @test isapprox(F(zafZr...,θ), 1.0015,atol=0.001)
+    @test isapprox(F(zafO...,θ), 0.9996,atol=0.001)
+
+#    print(NeXLCore.summarize(Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
+end

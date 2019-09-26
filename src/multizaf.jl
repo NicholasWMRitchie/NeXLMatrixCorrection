@@ -37,7 +37,7 @@ end
     shells(mz::MultiZAF)
 A set of all shells supported by this MultiZAF
 """
-shells(mz::MultiZAF) = keys(zafs)
+NeXLCore.atomicshells(mz::MultiZAF) = keys(zafs)
 
 NeXLCore.element(mz::MultiZAF) = element(xray[1])
 
@@ -50,18 +50,15 @@ beamEnergy(mz::MultiZAF) = beamEnergy(first(values(mz.zafs)))
 NeXLCore.name(mz::MultiZAF) =
     repr(brightest(mz.xrays)) * "+" * string(length(mz.xrays) - 1) * " others"
 
-commonXrays(mz1::MultiZAF, mz2::MultiZAF) =
+commonXrays(unk::MultiZAF, std::MultiZAF) =
     union(characteristic(unk), characteristic(std))
 
 function Z(unk::MultiZAF, std::MultiZAF)
     z, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
-        zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        zz = Z(zafU, zafS)
-        for cxr in cxrs2
-            z += weight(cxr) * zz
-            n += weight(cxr)
-        end
+        norm = sum(weight.(cxrs2))
+        n += norm
+        z += Z(unk.zafs[sh], std.zafs[sh])*norm
     end
     return z / n
 end
@@ -71,8 +68,9 @@ function A(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            a += weight(cxr) * A(zafU, zafS, cxr, θtoa)
-            n += weight(cxr)
+            w = weight(cxr)
+            a += w * A(zafU, zafS, cxr, θtoa)
+            n += w
         end
     end
     return a / n
@@ -83,8 +81,9 @@ function F(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            f += weight(cxr) * F(zafU, zafS, cxr, θtoa)
-            n += weight(cxr)
+            w = weight(cxr)
+            f += w * F(zafU, zafS, cxr, θtoa)
+            n += w
         end
     end
     return f / n
@@ -94,34 +93,15 @@ function generation(unk::MultiZAF, std::MultiZAF)
     g, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        icxU, icxS = ionizationCrossSection(
-                sh,
-                beamEnergy(zafU),
-            ),
-            ionizationCrossSection(sh, beamEnergy(zafS))
+        icxU = ionizationCrossSection(sh, beamEnergy(zafU))
+        icxS = ionizationCrossSection(sh, beamEnergy(zafS))
         for cxr in cxrs2
-            g += weight(cxr) * (icxU / icxS)
-            n += weight(cxr)
+            w = weight(cxr)
+            g += w * (icxU / icxS)
+            n += w
         end
     end
     return g / n
-end
-
-function gZAFc(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
-    a, n = 0.0, 0.0
-    for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
-        zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        icxU, icxS = ionizationCrossSection(
-                sh,
-                beamEnergy(zafU),
-            ),
-            ionizationCrossSection(sh, beamEnergy(zafS))
-        for cxr in cxrs2
-            a += weight(cxr) * (icxU / icxS) * ZAFc(zafU, zafS, cxr, θtoa)
-            n += weight(cxr)
-        end
-    end
-    return a / n
 end
 
 function coating(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
@@ -134,6 +114,23 @@ function coating(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
         end
     end
     return c / n
+end
+
+function gZAFc(unk::MultiZAF, std::MultiZAF, θtoa::AbstractFloat)
+    a, n = 0.0, 0.0
+    for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
+        zafU, zafS = unk.zafs[sh], std.zafs[sh]
+        icxU = ionizationCrossSection(sh, beamEnergy(zafU))
+        icxS = ionizationCrossSection(sh, beamEnergy(zafS))
+        for cxr in cxrs2
+            w = weight(cxr)
+            a += w * (icxU / icxS) * Z(unk.zafs[sh], std.zafs[sh]) *
+                A(zafU, zafS, cxr, θtoa) *  F(zafU, zafS, cxr, θtoa) *
+                coating(zafU, zafS, cxr, θtoa)
+            n += w
+        end
+    end
+    return a / n
 end
 
 """

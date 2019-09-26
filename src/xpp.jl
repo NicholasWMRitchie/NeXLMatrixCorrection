@@ -323,8 +323,8 @@ Fχ(xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
     Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 F(xpp::XPPCorrection) = xpp.F
-atomicshell(mc::XPPCorrection) = mc.shell
-material(mc::XPPCorrection) = mc.material
+NeXLCore.atomicshell(mc::XPPCorrection) = mc.shell
+NeXLCore.material(mc::XPPCorrection) = mc.material
 beamEnergy(mc::XPPCorrection) = mc.E0 # in eV
 
 """
@@ -377,27 +377,41 @@ xppZAF(
     ashell::AtomicShell,
     e0::AbstractFloat;
     unkCoating = NullCoating(),
-    stdCoating = NullCoating(),
+    stdCoating = NullCoating()
 ) = (
     xppZAF(unk, ashell, e0, unkCoating),
     xppZAF(std, ashell, e0, stdCoating),
 )
 
 """
-    buildMultiXPP(mat::Material, cxrs, e0, coating=NeXLCore.NullCoating())
+    xppZAF(mat::Material, cxrs, e0, coating=NeXLCore.NullCoating())
+
 Constructs a MultiZAF around the XPPCorrection algorithm.
 """
-function buildMultiXPP(
+function xppZAF(
     mat::Material,
     cxrs,
     e0::AbstractFloat,
-    coating = NeXLCore.NullCoating(),
+    coating = NeXLCore.NullCoating()
 )
     zaf(sh) = xppZAF(mat, sh, e0, coating)
     zafs = Dict((sh, zaf(sh)) for sh in union(inner.(cxrs)))
     return MultiZAF(cxrs, zafs)
 end
 
+"""
+    xppZAF(unk::Material, std::Material, cxrs, e0; unkCoating = NeXLCore.NullCoating(), stdCoating = NeXLCore.NullCoating()
+
+Constructs a tuple of MultiZAF around the XPP and Reed correction algorithms for the unkown and standard.
+"""
+xppZAF(
+    unk::Material,
+    std::Material,
+    cxrs,
+    e0::AbstractFloat;
+    unkCoating = NullCoating(),
+    stdCoating = NullCoating(),
+) = (xppZAF(unk, cxrs, e0, unkCoating), xppZAF(std, cxrs, e0, stdCoating))
 
 function NeXLCore.summarize(
     unk::Material,
@@ -411,8 +425,7 @@ function NeXLCore.summarize(
             append!(
                 df,
                 summarize(
-                    xppZAF(unk, ashell, e0),
-                    xppZAF(std, ashell, e0),
+                    xppZAF(unk, std, ashell, e0)...,
                     alltransitions,
                     θtoa,
                 ),

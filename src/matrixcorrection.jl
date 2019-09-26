@@ -185,6 +185,8 @@ struct ZAFCorrection
     ) = new(za, f, coating)
 end
 
+NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
+
 Z(unk::ZAFCorrection, std::ZAFCorrection) = Z(unk.za, std.za)
 
 A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
@@ -212,7 +214,6 @@ ZAFc(
     Z(unk, std) * A(unk, std, cxr, θtoa) * F(unk, std, cxr, θtoa) *
     coating(unk, std, cxr, θtoa)
 
-NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
 beamEnergy(zaf::ZAFCorrection) = beamEnergy(zaf.za)
 
 Base.show(io::IO, cc::ZAFCorrection) =
