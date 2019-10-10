@@ -363,7 +363,8 @@ function NeXLCore.summarize(
     unk::Material,
     stds::Dict{Element,Material},
     e0::AbstractFloat,
-    θtoa::AbstractFloat,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat,
     mctype::Type{MatrixCorrection}=XPPCorrection,
     fctype::Type{FluorescenceCorrection}=ReedFluorescence
 )
@@ -375,7 +376,7 @@ function NeXLCore.summarize(
                 summarize(
                     ZAF(mctype, fctype, unk, std, ashell, e0)...,
                     alltransitions,
-                    θtoa,
+                    θunk, θstd
                 ),
             )
         end

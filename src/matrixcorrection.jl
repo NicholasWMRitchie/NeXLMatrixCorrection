@@ -45,14 +45,22 @@ Angle adjusted mass absorption coefficient.
     mac(mat, xray) * csc(θtoa)
 
 """
-    ZA(unk::XPP, std::XPP, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
+    ZA(
+      unk::MatrixCorrection,
+      std::MatrixCorrection,
+      xray::CharXRay,
+      θunk::AbstractFloat,
+      θstd::AbstractFloat
+    )
+
 The atomic number and absorption correction factors.
 """
 function ZA(
     unk::MatrixCorrection,
     std::MatrixCorrection,
     xray::CharXRay,
-    θtoa::AbstractFloat
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
 )
     @assert(
         isequal(unk.shell, inner(xray)),
@@ -62,7 +70,7 @@ function ZA(
         isequal(std.shell, inner(xray)),
         "Standard and X-ray don't match in XPP",
     )
-    return Fχ(unk, xray, θtoa) / Fχ(std, xray, θtoa)
+    return Fχ(unk, xray, θunk) / Fχ(std, xray, θstd)
 end
 
 """
@@ -85,7 +93,8 @@ function A(
     unk::MatrixCorrection,
     std::MatrixCorrection,
     xray::CharXRay,
-    θtoa::AbstractFloat,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
 )
     @assert(
         isequal(unk.shell, inner(xray)),
@@ -95,7 +104,7 @@ function A(
         isequal(std.shell, inner(xray)),
         "Standard and X-ray don't match in XPP",
     )
-    return ZA(unk, std, xray, θtoa) / Z(unk, std)
+    return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
 end
 
 """
@@ -191,30 +200,32 @@ NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
 
 Z(unk::ZAFCorrection, std::ZAFCorrection) = Z(unk.za, std.za)
 
-A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
-    A(unk.za, std.za, cxr, θtoa)
+A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
+    A(unk.za, std.za, cxr, θunk, θstd)
 
-ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
-    ZA(unk.za, std.za, cxr, θtoa)
+ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
+    ZA(unk.za, std.za, cxr, θunk, θstd)
 
 coating(
     unk::ZAFCorrection,
     std::ZAFCorrection,
     cxr::CharXRay,
-    θtoa::AbstractFloat,
-) = transmission(unk.coating, cxr, θtoa) / transmission(std.coating, cxr, θtoa)
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
+) = transmission(unk.coating, cxr, θunk) / transmission(std.coating, cxr, θstd)
 
-F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θtoa::AbstractFloat) =
-    F(unk.f, cxr, θtoa) / F(std.f, cxr, θtoa)
+F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
+    F(unk.f, cxr, θunk) / F(std.f, cxr, θstd)
 
 ZAFc(
     unk::ZAFCorrection,
     std::ZAFCorrection,
     cxr::CharXRay,
-    θtoa::AbstractFloat,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
 ) =
-    Z(unk, std) * A(unk, std, cxr, θtoa) * F(unk, std, cxr, θtoa) *
-    coating(unk, std, cxr, θtoa)
+    Z(unk, std) * A(unk, std, cxr, θunk, θstd) * F(unk, std, cxr, θunk, θstd) *
+    coating(unk, std, cxr, θunk, θstd)
 
 beamEnergy(zaf::ZAFCorrection) = beamEnergy(zaf.za)
 
@@ -241,7 +252,8 @@ function NeXLCore.summarize(
     unk::ZAFCorrection,
     std::ZAFCorrection,
     trans,
-    θtoa::AbstractFloat,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
 )::DataFrame
     @assert(
         isequal(atomicshell(unk.za), atomicshell(std.za)),
@@ -258,7 +270,8 @@ function NeXLCore.summarize(
         Vector{String}(),
         Vector{Float64}(),
         Vector{CharXRay}()
-    z, a, f, c, zaf, k, toa = Vector{Float64}(),
+    z, a, f, c, zaf, k, unkToa, stdToa = Vector{Float64}(),
+        Vector{Float64}(),
         Vector{Float64}(),
         Vector{Float64}(),
         Vector{Float64}(),
@@ -270,15 +283,16 @@ function NeXLCore.summarize(
             elm = element(cxr)
             push!(unks, name(material(unk.za)))
             push!(unkE0, beamEnergy(unk.za))
+            push!(unkToa, rad2deg(θunk))
             push!(stds, name(material(std.za)))
             push!(stdE0, beamEnergy(std.za))
-            push!(toa, rad2deg(θtoa))
+            push!(stdToa, rad2deg(θstd))
             push!(xray, cxr)
             push!(z, Z(unk, std))
-            push!(a, A(unk, std, cxr, θtoa))
-            push!(f, F(unk, std, cxr, θtoa))
-            push!(c, coating(unk, std, cxr, θtoa))
-            tot = ZAFc(unk, std, cxr, θtoa)
+            push!(a, A(unk, std, cxr, θunk, θstd))
+            push!(f, F(unk, std, cxr, θunk, θstd))
+            push!(c, coating(unk, std, cxr, θunk, θstd))
+            tot = ZAFc(unk, std, cxr, θunk, θstd)
             push!(zaf, tot)
             push!(k, tot * material(unk.za)[elm] / material(std.za)[elm])
         end
@@ -286,9 +300,10 @@ function NeXLCore.summarize(
     return DataFrame(
         Unknown = unks,
         E0unk = unkE0,
+        TOAunk = unkToa,
         Standard = stds,
         E0std = stdE0,
-        TOA = toa,
+        TOAstd = stdToa,
         Xray = xray,
         Z = z,
         A = a,
@@ -302,16 +317,18 @@ end
 NeXLCore.summarize(
     unk::ZAFCorrection,
     std::ZAFCorrection,
-    θtoa::AbstractFloat,
-)::DataFrame = summarize(unk, std, alltransitions, θtoa)
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
+)::DataFrame = summarize(unk, std, alltransitions, θunk, θstd)
 
 function NeXLCore.summarize(
     zafs::Dict{ZAFCorrection,ZAFCorrection},
-    θtoa::AbstractFloat,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat
 )::DataFrame
     df = DataFrame()
     for (unk, std) in zafs
-        append!(df, summarize(unk, std, θtoa))
+        append!(df, summarize(unk, std, θunk, θstd))
     end
     return df
 end
@@ -323,7 +340,6 @@ end
       mat::Material,
       ashell::AtomicShell,
       e0,
-      θtoa,
       coating=NullCoating()
     )
 
