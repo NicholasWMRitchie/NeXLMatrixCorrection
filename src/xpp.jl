@@ -340,84 +340,32 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 ϕabs(ρz, xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
     ϕ(ρz, xpp) * exp(-χ(material(xpp), xray, θtoa) * ρz)
 
-""""
-    xppZAF(mat::Material, ashell::AtomicShell, e0, θtoa, coating=NullCoating())
 
-Constructs an ZAFCorrection object using the XPP correction model with
-the Reed fluorescence model for the specified parameters.
 """
-xppZAF(
-    mat::Material,
-    ashell::AtomicShell,
-    e0::AbstractFloat,
-    coating = NullCoating(),
-) =
-    ZAFCorrection(
-        xpp(mat, ashell, e0),
-        reedFluorescence(mat, ashell, e0),
-        coating,
+    matrixCorrection(
+      ::Type{XPPCorrection},
+      mat::Material,
+      ashell::AtomicShell,
+      e0,
     )
 
+Constructs an XPPCorrection algorithm.
 """
-    xppZAF(
-       unk::Material,
-       std::Material,
-       ashell::AtomicShell,
-       e0::AbstractFloat;
-       unkCoating = NullCoating(),
-       stdCoating = NullCoating(),
-    )
-
-Creates a matched pair of ZAFCorrection objects using the XPPCorrection algorithm
-for the specified unknown and standard.
-"""
-xppZAF(
-    unk::Material,
-    std::Material,
-    ashell::AtomicShell,
-    e0::AbstractFloat;
-    unkCoating = NullCoating(),
-    stdCoating = NullCoating()
-) = (
-    xppZAF(unk, ashell, e0, unkCoating),
-    xppZAF(std, ashell, e0, stdCoating),
-)
-
-"""
-    xppZAF(mat::Material, cxrs, e0, coating=NeXLCore.NullCoating())
-
-Constructs a MultiZAF around the XPPCorrection algorithm.
-"""
-function xppZAF(
+matrixCorrection(
+    ::Type{XPPCorrection},
     mat::Material,
-    cxrs,
-    e0::AbstractFloat,
-    coating = NeXLCore.NullCoating()
-)
-    zaf(sh) = xppZAF(mat, sh, e0, coating)
-    zafs = Dict((sh, zaf(sh)) for sh in union(inner.(cxrs)))
-    return MultiZAF(cxrs, zafs)
-end
+    ashell::AtomicShell,
+    e0,
+) = xpp(mat, ashell, e0)
 
-"""
-    xppZAF(unk::Material, std::Material, cxrs, e0; unkCoating = NeXLCore.NullCoating(), stdCoating = NeXLCore.NullCoating()
-
-Constructs a tuple of MultiZAF around the XPP and Reed correction algorithms for the unkown and standard.
-"""
-xppZAF(
-    unk::Material,
-    std::Material,
-    cxrs,
-    e0::AbstractFloat;
-    unkCoating = NullCoating(),
-    stdCoating = NullCoating(),
-) = (xppZAF(unk, cxrs, e0, unkCoating), xppZAF(std, cxrs, e0, stdCoating))
 
 function NeXLCore.summarize(
     unk::Material,
     stds::Dict{Element,Material},
     e0::AbstractFloat,
     θtoa::AbstractFloat,
+    mctype::Type{MatrixCorrection}=XPPCorrection,
+    fctype::Type{FluorescenceCorrection}=ReedFluorescence
 )
     df = DataFrame()
     for (elm, std) in stds
@@ -425,7 +373,7 @@ function NeXLCore.summarize(
             append!(
                 df,
                 summarize(
-                    xppZAF(unk, std, ashell, e0)...,
+                    ZAF(mctype, fctype, unk, std, ashell, e0)...,
                     alltransitions,
                     θtoa,
                 ),

@@ -106,13 +106,14 @@ F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64) =
    mapreduce(ex -> Finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
 
 """
-    reedFluorescence(comp::Material, primary::Vector{CharXRay}, secondary::AtomicShell, e0::Float64)
+    fluorescence(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicShell, e0::Float64)
 
 Construct an instance of a ReedFluorescence correction structure to compute the
 secondary fluorescence due to a primary characteristic X-ray in the specified
 material and beam energy.
 """
-function reedFluorescence(
+function fluorescenceCorrection(
+   ::Type{ReedFluorescence},
    comp::Material,
    primarys::Vector{CharXRay},
    secondary::AtomicShell,
@@ -131,12 +132,13 @@ function reedFluorescence(
 end
 
 """
-    reedFluorescence(comp::Material, secondary::AtomicShell, e0::Float64)
+    fluorescence(fltype::Type{ReedFluorescence}, comp::Material, secondary::AtomicShell, e0::Float64)
 
-Construct an instance of a ReedFluorescence correction structure to compute the
+Construct an instance of a fltype correction structure to compute the
 secondary fluorescence in the specified material and beam energy.
 """
-function reedFluorescence(
+function fluorescenceCorrection(
+   fltype::Type{<:FluorescenceCorrection},
    comp::Material,
    secondary::AtomicShell,
    e0::Float64;
@@ -152,5 +154,5 @@ function reedFluorescence(
          push!(primaries, cxr)
       end
    end
-   return reedFluorescence(comp, primaries, secondary, e0)
+   return fluorescenceCorrection(fltype, comp, primaries, secondary, e0)
 end

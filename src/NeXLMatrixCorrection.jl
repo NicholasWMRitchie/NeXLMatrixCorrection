@@ -6,7 +6,7 @@ include("matrixcorrection.jl")
 export summarize # Summarize ZAF corrections
 export Z # Atomic number correction
 export A # Absorption correction
-export F # Fluorescence correction
+export F # Compute the flurorescence correction
 export ZA # Combined ZA (ϕ(ρz)) correction
 export coating # Coating correction
 export zaf # Build a ZAFCorrection
@@ -28,11 +28,12 @@ include("xpp.jl")
 export ϕ # ϕ(ρz) function
 export ϕabs # ϕ(ρz) function (absorbed)
 export xpp # Build an XPP correction
-export xppZAF # Build a full ZAF correction based on XPP
+export ZAF # Build a full ZAF correction based on XPP
 export XPPCorrection # XPPCorrection structure
 export buildMultiXPP # Build a MultiZAF around the XPP algorithm
 
-include("secondary.jl")
+include("reed.jl")
+export ReedFluorescence
 export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
 
 end

@@ -133,8 +133,10 @@ abstract type CoatingCorrection end
 Implements a simple single layer coating correction.
 """
 struct Coating <: CoatingCorrection
-    coating::Material
-    thickness
+    layer::Layer
+    Coating(mat::Material, thickness::AbstractFloat) =
+        new(Layer(mat, thickness))
+
 end
 
 """
@@ -150,10 +152,10 @@ Calculate the transmission fraction for the specified X-ray through the coating
 in the direction of the detector.
 """
 transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) =
-    exp(-χ(cc.coating, xray, θtoa) * cc.thickness)
+    transmission(layer, xray, θtoa)
 
 Base.show(io::IO, coating::Coating) =
-    print(io, 1.0e7 * coating.thickness, " nm of ", name(coating.coating))
+    Base.show(io, coating.layer)
 
 """
     NullCoating
@@ -313,3 +315,110 @@ function NeXLCore.summarize(
     end
     return df
 end
+
+"""
+    ZAF(
+      mctype::Type{<:MatrixCorrection},
+      fctype::Type{<:FluorescenceCorrection},
+      mat::Material,
+      ashell::AtomicShell,
+      e0,
+      θtoa,
+      coating=NullCoating()
+    )
+
+Constructs an ZAFCorrection object using the mctype correction model with
+the Reed fluorescence model for the specified parameters.
+"""
+ZAF(
+    mctype::Type{<:MatrixCorrection},
+    fctype::Type{<:FluorescenceCorrection},
+    mat::Material,
+    ashell::AtomicShell,
+    e0::AbstractFloat,
+    coating = NullCoating(),
+) =
+    ZAFCorrection(
+        matrixCorrection(mctype, mat, ashell, e0),
+        fluorescenceCorrection(fctype, mat, ashell, e0),
+        coating,
+    )
+
+
+"""
+    ZAF(
+       mctype::Type{<:MatrixCorrection},
+       fctype::Type{<:FluorescenceCorrection},
+       unk::Material,
+       std::Material,
+       ashell::AtomicShell,
+       e0::AbstractFloat;
+       unkCoating = NullCoating(),
+       stdCoating = NullCoating(),
+    )
+
+Creates a matched pair of ZAFCorrection objects using the XPPCorrection algorithm
+for the specified unknown and standard.
+"""
+ZAF(
+    mctype::Type{<:MatrixCorrection},
+    fctype::Type{<:FluorescenceCorrection},
+    unk::Material,
+    std::Material,
+    ashell::AtomicShell,
+    e0::AbstractFloat;
+    unkCoating = NullCoating(),
+    stdCoating = NullCoating()
+) = (
+    ZAF(mctype, fctype, unk, ashell, e0, unkCoating),
+    ZAF(mctype, fctype, std, ashell, e0, stdCoating),
+)
+
+"""
+    ZAF(
+      mctype::Type{<:MatrixCorrection},
+      fctype::Type{<:FluorescenceCorrection},
+      mat::Material,
+      cxrs,
+      e0,
+      coating=NeXLCore.NullCoating()
+    )
+
+Constructs a MultiZAF around the mctype and fctype algorithms.
+"""
+function ZAF(
+    mctype::Type{<:MatrixCorrection},
+    fctype::Type{<:FluorescenceCorrection},
+    mat::Material,
+    cxrs,
+    e0::AbstractFloat,
+    coating = NeXLCore.NullCoating()
+)
+    zaf(sh) = ZAF(mctype, fctype, mat, sh, e0, coating)
+    zafs = Dict((sh, zaf(sh)) for sh in union(inner.(cxrs)))
+    return MultiZAF(cxrs, zafs)
+end
+
+"""
+    ZAF(
+      mctype::Type{<:MatrixCorrection},
+      fctype::Type{<:FluorescenceCorrection},
+      unk::Material,
+      std::Material,
+      cxrs,
+      e0,
+      coating=NeXLCore.NullCoating()
+    )
+
+Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard.
+"""
+ZAF(
+    mctype::Type{<:MatrixCorrection},
+    fctype::Type{<:FluorescenceCorrection},
+    unk::Material,
+    std::Material,
+    cxrs,
+    e0::AbstractFloat;
+    unkCoating = NullCoating(),
+    stdCoating = NullCoating(),
+) = ( ZAF(mctype, fctype, unk, cxrs, e0, unkCoating),  ZAF(mctype, fctype, std, cxrs, e0, stdCoating))
