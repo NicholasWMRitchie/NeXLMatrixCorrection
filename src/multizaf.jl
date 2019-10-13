@@ -134,12 +134,12 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
 end
 
 """
-    summarize(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+    tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-Summarize a matrix correction relative to the specified unknown and standard in
+tabulate a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
-function NeXLCore.summarize(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+function NeXLCore.tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
     tot = gZAFc(unk, std)
     return DataFrame(
         Unknown = [name(material(unk))],
@@ -211,17 +211,17 @@ end
 """
     detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrame
 
-Summarize a matrix correction relative to the specified unknown and standard in
+tabulate a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
 detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
     mapreduce((unk, std) -> detail(unk, std, θunk, θstd), append!, mzs)
 
 """
-    summarize(mzs::Dict{MultiZAF, MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+    tabulate(mzs::Dict{MultiZAF, MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-Summarize a matrix correction relative to a specified Dict of unknowns and
+tabulate a matrix correction relative to a specified Dict of unknowns and
 standards in a DataFrame.
 """
-NeXLCore.summarize(mzs::Dict{MultiZAF,MultiZAF}, θunk::AbstractFloat, θstd::AbstractFloat) =
-    mapreduce((unk, std) -> summarize(unk, std, θunk, θstd), append!, mzs)
+NeXLCore.tabulate(mzs::Dict{MultiZAF,MultiZAF}, θunk::AbstractFloat, θstd::AbstractFloat) =
+    mapreduce((unk, std) -> tabulate(unk, std, θunk, θstd), append!, mzs)

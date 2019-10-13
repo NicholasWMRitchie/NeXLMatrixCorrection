@@ -3,7 +3,7 @@ module NeXLMatrixCorrection
 using NeXLCore
 
 include("matrixcorrection.jl")
-export summarize # Summarize ZAF corrections
+export tabulate # tabulate ZAF corrections
 export Z # Atomic number correction
 export A # Absorption correction
 export F # Compute the flurorescence correction

@@ -243,12 +243,12 @@ zaf(
 ) = ZAFCorrection(za, f, coating)
 
 """
-    NeXLCore.summarize(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
+    NeXLCore.tabulate(unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
 
-Summarize a matrix correction relative to the specified unknown and standard
+tabulate a matrix correction relative to the specified unknown and standard
 for the iterable of Transition, trans.
 """
-function NeXLCore.summarize(
+function NeXLCore.tabulate(
     unk::ZAFCorrection,
     std::ZAFCorrection,
     trans,
@@ -314,21 +314,21 @@ function NeXLCore.summarize(
     )
 end
 
-NeXLCore.summarize(
+NeXLCore.tabulate(
     unk::ZAFCorrection,
     std::ZAFCorrection,
     θunk::AbstractFloat,
     θstd::AbstractFloat
-)::DataFrame = summarize(unk, std, alltransitions, θunk, θstd)
+)::DataFrame = tabulate(unk, std, alltransitions, θunk, θstd)
 
-function NeXLCore.summarize(
+function NeXLCore.tabulate(
     zafs::Dict{ZAFCorrection,ZAFCorrection},
     θunk::AbstractFloat,
     θstd::AbstractFloat
 )::DataFrame
     df = DataFrame()
     for (unk, std) in zafs
-        append!(df, summarize(unk, std, θunk, θstd))
+        append!(df, tabulate(unk, std, θunk, θstd))
     end
     return df
 end
