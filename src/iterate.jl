@@ -9,7 +9,7 @@ Properties: (These Symbols are intentionally the same used in NeXLSpectrum)
 
     :BeamEnergy incident beam energy in eV
     :TakeOffAngle in radians
-    :Coating A NeXLCore.Layer object describing a conductive coating
+    :Coating A NeXLCore.Film object describing a conductive coating
 """
 struct KRatio
     lines::Vector{CharXRay} # Which CharXRays were measured?
@@ -82,7 +82,7 @@ function computeKs(iter::Iteration, est::Material):Dict{Element, AbstractFloat}
         e0 = kr.stdProps[:BeamEnergy]
         coating = get(kr.stdProps, :Coating, NeXLCore.NullCoating())
         unkZaf = ZAF(iter.mctype,iter.fctype,kr.lines,e0,coating)
-        
+
         k = (Cunk * unkZaf)/(Cstd * stdZaf)
 
         kr.stdZaf

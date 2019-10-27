@@ -1,29 +1,29 @@
 
 """
-   lenardCoefficient(e0::Float64, ashell::AtomicShell)
+   lenardCoefficient(e0::Float64, ashell::AtomicSubShell)
 
 Computes the Lenard coefficient according to the algorithm of Heinrich.
 "Heinrich K. F. J. (1967) EPASA 2, paper no. 7"
 """
-lenardCoefficient(e0::Float64, ashell::AtomicShell) =
+lenardCoefficient(e0::Float64, ashell::AtomicSubShell) =
    4.5e5 / ((0.001*e0)^1.65 - (0.001*energy(ashell))^1.65)
 
 """
-    ionizationDepthRatio(primary::AtomicShell, secondary::AtomicShell, e0::Float64)
+    ionizationDepthRatio(primary::AtomicSubShell, secondary::AtomicSubShell, e0::Float64)
 
 Ionization depth ratio from "Reed S.J.B. (1990) Microbeam Analysis, p.109"
 """
-function ionizationDepthRatio(primary::AtomicShell, secondary::AtomicShell, e0::Float64)
+function ionizationDepthRatio(primary::AtomicSubShell, secondary::AtomicSubShell, e0::Float64)
    uA, uB = e0 / energy(secondary), e0 / energy(primary)
    return ((((uB * log(uB)) - uB) + 1.0) / (((uA * log(uA)) - uA) + 1.0))
 end
 
 """
-    familyFactor(shellA::AtomicShell, shellB::AtomicShell)::Float64
+    familyFactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
 Accounts for the differences in ionization cross section between K , L and M shells
 """
-function familyFactor(shellA::AtomicShell, shellB::AtomicShell)::Float64
-   fA, fB = family(shellA), family(shellB)
+function familyFactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
+   fA, fB = shell(shellA), shell(shellB)
    if fA == fB
       res = 1.0 # fA==fB
    else
@@ -42,12 +42,12 @@ function familyFactor(shellA::AtomicShell, shellB::AtomicShell)::Float64
 end
 
 """
-    ionizationFraction(shell::AtomicShell)
+    ionizationFraction(shell::AtomicSubShell)
 
 The fraction of the ionizations to attribute to the specified shell.  Computed
 from the jump ratio.
 """
-function ionizationFraction(shell::AtomicShell)
+function ionizationFraction(shell::AtomicSubShell)
    r = jumpRatio(shell)
    return r >= 1.0 ? (r - 1.0) / r : 0.0
 end
@@ -58,7 +58,7 @@ struct ReedInternal
    lenard::Float64
    muB::Float64
 
-   function ReedInternal(comp::Material, primary::CharXRay, secondary::AtomicShell, e0::Float64)
+   function ReedInternal(comp::Material, primary::CharXRay, secondary::AtomicSubShell, e0::Float64)
       bElm, aElm = element(primary), element(secondary)
       @assert (aElm in keys(comp)) && (bElm in keys(comp))
       cB = comp[bElm]
@@ -85,7 +85,7 @@ end
 
 struct ReedFluorescence <: FluorescenceCorrection
    comp::Material
-   secondary::AtomicShell # Emitter
+   secondary::AtomicSubShell # Emitter
    e0::Float64 # Incident beam energy
    # Cached partial calculations
    exciters::Vector{ReedInternal}
@@ -106,7 +106,7 @@ F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64) =
    mapreduce(ex -> Finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
 
 """
-    fluorescence(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicShell, e0::Float64)
+    fluorescence(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicSubShell, e0::Float64)
 
 Construct an instance of a ReedFluorescence correction structure to compute the
 secondary fluorescence due to a primary characteristic X-ray in the specified
@@ -116,7 +116,7 @@ function fluorescenceCorrection(
    ::Type{ReedFluorescence},
    comp::Material,
    primarys::Vector{CharXRay},
-   secondary::AtomicShell,
+   secondary::AtomicSubShell,
    e0::Float64,
 )
    ris = Vector{ReedInternal}()
@@ -132,7 +132,7 @@ function fluorescenceCorrection(
 end
 
 """
-    fluorescence(fltype::Type{ReedFluorescence}, comp::Material, secondary::AtomicShell, e0::Float64)
+    fluorescence(fltype::Type{ReedFluorescence}, comp::Material, secondary::AtomicSubShell, e0::Float64)
 
 Construct an instance of a fltype correction structure to compute the
 secondary fluorescence in the specified material and beam energy.
@@ -140,7 +140,7 @@ secondary fluorescence in the specified material and beam energy.
 function fluorescenceCorrection(
    fltype::Type{<:FluorescenceCorrection},
    comp::Material,
-   secondary::AtomicShell,
+   secondary::AtomicSubShell,
    e0::Float64;
    eThresh = 5.0e3,
    wThresh = 0.01,

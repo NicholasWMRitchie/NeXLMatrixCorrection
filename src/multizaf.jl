@@ -4,7 +4,7 @@ using BoteSalvatICX
 
 struct MultiZAF
     xrays::Vector{CharXRay}
-    zafs::Dict{AtomicShell,ZAFCorrection}
+    zafs::Dict{AtomicSubShell,ZAFCorrection}
     function MultiZAF(xrays, zafs)
         elm = element(xrays[1])
         mat = material(first(values(zafs)))
@@ -37,7 +37,7 @@ end
     shells(mz::MultiZAF)
 A set of all shells supported by this MultiZAF
 """
-NeXLCore.atomicshells(mz::MultiZAF) = keys(zafs)
+NeXLCore.atomicsubshells(mz::MultiZAF) = keys(zafs)
 
 NeXLCore.element(mz::MultiZAF) = element(xray[1])
 

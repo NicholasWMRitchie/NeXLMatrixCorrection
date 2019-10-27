@@ -88,7 +88,7 @@ invS(U0, V0, M, D, P, T) = #C1
     S(mat, ashell, E)
 Computes S, the stopping power at the specified energy (in keV)
 """
-function S(mat::Material, ashell::AtomicShell, Ekev)
+function S(mat::Material, ashell::AtomicSubShell, Ekev)
     @assert(Ekev < 50.0)
     j = J(mat)
     return 1.0 /
@@ -110,14 +110,14 @@ QlA(U, El, m) = log(U) / ((U^m) * (El^2)) #C1
 
 
 """
-    m(ashell::AtomicShell)
+    m(ashell::AtomicSubShell)
 Returns the ionization cross-section exponent for QlA(U,El,m(ashell))
 """
-function m(ashell::AtomicShell) #C1
-    if isequal(family(ashell), 'K')
+function m(ashell::AtomicSubShell) #C1
+    if isequal(shell(ashell), 'K')
         return 0.86 + 0.12 * exp(-(ashell.z / 5.0)^2)
     else
-        return isequal(family(ashell), 'L') ? 0.82 : 0.78
+        return isequal(shell(ashell), 'L') ? 0.82 : 0.78
     end
 end
 
@@ -240,11 +240,11 @@ end
 """
    XPPCorrection
 Represents the essential intermediary values for an XPP matrix correction of
-characteristic X-rays from a particular atomic shell in a particular material.
+characteristic X-rays from a particular atomic sub-shell in a particular material.
 """
 struct XPPCorrection <: MatrixCorrection
     # Configuration data
-    shell::AtomicShell
+    subshell::AtomicSubShell
     material::Material
     E0 # Beam energy (eV)
     # Computed items
@@ -258,7 +258,7 @@ end
 
 function internals(xpps::AbstractArray{XPPCorrection})
     return DataFrame(
-        Shell = [xpp.shell for xpp in xpps],
+        SubShell = [xpp.subshell for xpp in xpps],
         Material = [name(xpp.material) for xpp in xpps],
         BeamEnergy = [xpp.E0 for xpp in xpps],
         Phi0 = [xpp.ϕ0 for xpp in xpps],
@@ -274,22 +274,22 @@ end
 Base.show(io::IO, xpp::XPPCorrection) =
     print(
         io,
-        "XPP[$(xpp.shell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]",
+        "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]",
     )
 
 """
-    XPP(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
-Construct an XPPCorrection object for the specified material, atomicshell,
+    XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
+Construct an XPPCorrection object for the specified material, atomicsubshell,
 beam energy (in eV).
 """
-function XPP(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
+function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
     # XPP calculations expect E0, eLv in keV
     e0, Mv, Jv, = 0.001 * E0, M(mat), J(mat)
     Zbarbv, eLv = Zbarb(mat), 0.001 * energy(ashell)
     U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(Zbarbv)
     @assert(
         U0v > 1.0,
-        "The beam energy must be larger than the shell edge energy.",
+        "The beam energy must be larger than the subshell edge energy.",
     )
     @assert(
         V0v > 1.0,
@@ -312,18 +312,18 @@ function XPP(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
 end
 
 """
-    xpp(mat::Material, ashell::AtomicShell, E0::AbstractFloat)
-Construct an XPPCorrection object for the specified material, atomicshell,
+    xpp(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
+Construct an XPPCorrection object for the specified material, atomicsubshell,
 and beam energy (in eV).
 """
-xpp(mat::Material, ashell::AtomicShell, E0::AbstractFloat)::XPPCorrection =
+xpp(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)::XPPCorrection =
     XPP(mat, ashell, E0)
 
 Fχ(xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
     Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 F(xpp::XPPCorrection) = xpp.F
-NeXLCore.atomicshell(mc::XPPCorrection) = mc.shell
+NeXLCore.atomicsubshell(mc::XPPCorrection) = mc.subshell
 NeXLCore.material(mc::XPPCorrection) = mc.material
 beamEnergy(mc::XPPCorrection) = mc.E0 # in eV
 
@@ -345,7 +345,7 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
     matrixCorrection(
       ::Type{XPPCorrection},
       mat::Material,
-      ashell::AtomicShell,
+      ashell::AtomicSubShell,
       e0,
     )
 
@@ -354,7 +354,7 @@ Constructs an XPPCorrection algorithm.
 matrixCorrection(
     ::Type{XPPCorrection},
     mat::Material,
-    ashell::AtomicShell,
+    ashell::AtomicSubShell,
     e0,
 ) = xpp(mat, ashell, e0)
 
@@ -370,7 +370,7 @@ function NeXLCore.tabulate(
 )
     df = DataFrame()
     for (elm, std) in stds
-        for ashell in atomicshells(elm, e0)
+        for ashell in atomicsubshells(elm, e0)
             append!(
                 df,
                 tabulate(

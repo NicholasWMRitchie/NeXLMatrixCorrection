@@ -8,7 +8,7 @@ MatrixCorrection structs should implement
 
     F(mc::MatrixCorrection)
     Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat)
-    atomicshell(mc::MatrixCorrection)
+    atomicsubshell(mc::MatrixCorrection)
     material(mc::MatrixCorrection)
     beamEnergy(mc::MatrixCorrection)
     ϕ(ρz)
@@ -22,18 +22,18 @@ Implements Castaing's First Approximation
 """
 struct NullCorrection <: MatrixCorrection
     material::Material
-    shell::AtomicShell
+    subshell::AtomicSubShell
     E0::AbstractFloat
 
-    NullCorrection(mat::Material, ashell::AtomicShell, e0) = new(mat, shell, e0)
+    NullCorrection(mat::Material, ashell::AtomicSubShell, e0) = new(mat, ashell, e0)
 end
 
 Base.show(io::IO, nc::NullCorrection) =
-    print(io, "Unity[" + nc.material, ", ", shell, ", ", 0.001 * e0, " keV]")
+    print(io, "Unity[" + nc.material, ", ", subshell, ", ", 0.001 * e0, " keV]")
 
 F(mc::NullCorrection) = 1.0
 Fχ(mc::NullCorrection, xray::CharXRay, θtoa::AbstractFloat) = 1.0
-NeXLCore.atomicshell(mc::NullCorrection) = mc.shell
+NeXLCore.atomicsubshell(mc::NullCorrection) = mc.subshell
 NeXLCore.material(mc::NullCorrection) = mc.material
 beamEnergy(mc::NullCorrection) = mc.E0 # in eV
 
@@ -63,11 +63,11 @@ function ZA(
     θstd::AbstractFloat
 )
     @assert(
-        isequal(unk.shell, inner(xray)),
+        isequal(unk.subshell, inner(xray)),
         "Unknown and X-ray don't match in XPP",
     )
     @assert(
-        isequal(std.shell, inner(xray)),
+        isequal(std.subshell, inner(xray)),
         "Standard and X-ray don't match in XPP",
     )
     return Fχ(unk, xray, θunk) / Fχ(std, xray, θstd)
@@ -79,8 +79,8 @@ The atomic number correction factor.
 """
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
     @assert(
-        isequal(unk.shell, std.shell),
-        "Unknown and standard matrix corrections don't apply to the same shell.",
+        isequal(unk.subshell, std.subshell),
+        "Unknown and standard matrix corrections don't apply to the same sub-shell.",
     )
     return F(unk) / F(std)
 end
@@ -97,11 +97,11 @@ function A(
     θstd::AbstractFloat
 )
     @assert(
-        isequal(unk.shell, inner(xray)),
+        isequal(unk.subshell, inner(xray)),
         "Unknown and X-ray don't match in XPP",
     )
     @assert(
-        isequal(std.shell, inner(xray)),
+        isequal(std.subshell, inner(xray)),
         "Standard and X-ray don't match in XPP",
     )
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
@@ -121,7 +121,7 @@ Implements Castaing's First Approximation
 """
 struct NullFluorescence <: FluorescenceCorrection
 
-    NullFluorescence(mat::Material, ashell::AtomicShell, e0::AbstractFloat) =
+    NullFluorescence(mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) =
         new()
 end
 
@@ -142,9 +142,9 @@ abstract type CoatingCorrection end
 Implements a simple single layer coating correction.
 """
 struct Coating <: CoatingCorrection
-    layer::Layer
+    layer::Film
     Coating(mat::Material, thickness::AbstractFloat) =
-        new(Layer(mat, thickness))
+        new(Film(mat, thickness))
 
 end
 
@@ -256,11 +256,11 @@ function NeXLCore.tabulate(
     θstd::AbstractFloat
 )::DataFrame
     @assert(
-        isequal(atomicshell(unk.za), atomicshell(std.za)),
-        "The atomic shell for the standard and unknown don't match.",
+        isequal(atomicsubshell(unk.za), atomicsubshell(std.za)),
+        "The atomic sub-shell for the standard and unknown don't match.",
     )
     cxrs = characteristic(
-        element(atomicshell(unk.za)),
+        element(atomicsubshell(unk.za)),
         trans,
         1.0e-9,
         0.999 * min(beamEnergy(unk.za), beamEnergy(std.za)),
@@ -279,7 +279,7 @@ function NeXLCore.tabulate(
         Vector{Float64}(),
         Vector{Float64}()
     for cxr in cxrs
-        if isequal(inner(cxr), atomicshell(std.za))
+        if isequal(inner(cxr), atomicsubshell(std.za))
             elm = element(cxr)
             push!(unks, name(material(unk.za)))
             push!(unkE0, beamEnergy(unk.za))
@@ -338,7 +338,7 @@ end
       mctype::Type{<:MatrixCorrection},
       fctype::Type{<:FluorescenceCorrection},
       mat::Material,
-      ashell::AtomicShell,
+      ashell::AtomicSubShell,
       e0,
       coating=NullCoating()
     )
@@ -350,7 +350,7 @@ ZAF(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     mat::Material,
-    ashell::AtomicShell,
+    ashell::AtomicSubShell,
     e0::AbstractFloat,
     coating = NullCoating(),
 ) =
@@ -367,7 +367,7 @@ ZAF(
        fctype::Type{<:FluorescenceCorrection},
        unk::Material,
        std::Material,
-       ashell::AtomicShell,
+       ashell::AtomicSubShell,
        e0::AbstractFloat;
        unkCoating = NullCoating(),
        stdCoating = NullCoating(),
@@ -381,7 +381,7 @@ ZAF(
     fctype::Type{<:FluorescenceCorrection},
     unk::Material,
     std::Material,
-    ashell::AtomicShell,
+    ashell::AtomicSubShell,
     e0::AbstractFloat;
     unkCoating = NullCoating(),
     stdCoating = NullCoating()

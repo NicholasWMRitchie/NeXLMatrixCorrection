@@ -1,6 +1,8 @@
+using Revise
 using NeXLCore
 using NeXLMatrixCorrection
 using Test
+
 
 @testset "K240" begin # Test XPP against DTSA-II using K240
 
@@ -148,8 +150,8 @@ end
     zafSi = ZAF(XPPCorrection, ReedFluorescence, k240, sio2, cxrSi, e0)
     cxrMg = characteristic(n"Mg", ktransitions, 0.001, e0)
     zafMg = ZAF(XPPCorrection, ReedFluorescence, k240, mgo, cxrMg, e0)
-    cxrBa = ZAF(XPPCorrection, ReedFluorescence, n"Ba", ltransitions, 0.001, e0)
-    zafBa = ZAF(XPPCorrection, ReedFluorescence, k240, baf2, cxrMg, e0)
+    cxrBa = characteristic(n"Ba", ltransitions, 0.001, e0)
+    zafBa = ZAF(XPPCorrection, ReedFluorescence, k240, baf2, cxrBa, e0)
     cxrTi = characteristic(n"Ti", ktransitions, 0.001, e0)
     zafTi = ZAF(XPPCorrection, ReedFluorescence, k240, ti, cxrTi, e0)
     cxrZn = characteristic(n"Zn", kalpha, 0.001, e0)
@@ -161,7 +163,7 @@ end
 
     @test isapprox(Z(zafSi...), 1.1345,atol=0.001)
     @test isapprox(Z(zafMg...), 1.1280,atol=0.001)
-    @test isapprox(Z(zafBa...), 0.8252,atol=0.001)
+    @test isapprox(Z(zafBa...), 0.8330,atol=0.001)
     @test isapprox(Z(zafTi...), 0.9446,atol=0.001)
     @test isapprox(Z(zafZn...), 0.8973,atol=0.001)
     @test isapprox(Z(zafZr...), 0.8442,atol=0.001)
@@ -169,10 +171,10 @@ end
 
     @test isapprox(A(zafSi...,θ,θ), 0.7657,atol=0.001)
     @test isapprox(A(zafMg...,θ,θ), 0.5996,atol=0.001)
-    @test isapprox(A(zafBa...,θ,θ), 1.0139,atol=0.001)
+    @test isapprox(A(zafBa...,θ,θ), 1.0172,atol=0.001)
     @test isapprox(A(zafTi...,θ,θ), 0.9615,atol=0.001)
     @test isapprox(A(zafZn...,θ,θ), 0.9841,atol=0.001)
-    @test isapprox(A(zafZr...,θ,θ), 0.8041,atol=0.001)
+    @test isapprox(A(zafZr...,θ,θ), 0.7596,atol=0.001)
     @test isapprox(A(zafO...,θ,θ), 0.7750,atol=0.001)
 
     @test isapprox(F(zafSi...,θ,θ), 1.0030,atol=0.001)
