@@ -22,7 +22,6 @@ export takeOffAngle #
 
 include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction.
-export ionizationCrossSection # Computes the *relative* ionization crosssection.
 
 include("xpp.jl")
 export ϕ # ϕ(ρz) function

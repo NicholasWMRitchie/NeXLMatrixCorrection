@@ -42,12 +42,12 @@ function familyFactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
 end
 
 """
-    ionizationFraction(shell::AtomicSubShell)
+    ionizationfraction(shell::AtomicSubShell)
 
 The fraction of the ionizations to attribute to the specified shell.  Computed
 from the jump ratio.
 """
-function ionizationFraction(shell::AtomicSubShell)
+function ionizationfraction(shell::AtomicSubShell)
    r = jumpRatio(shell)
    return r >= 1.0 ? (r - 1.0) / r : 0.0
 end
@@ -63,7 +63,7 @@ struct ReedInternal
       @assert (aElm in keys(comp)) && (bElm in keys(comp))
       cB = comp[bElm]
       muB_A, muB = mac(aElm, primary), mac(comp, primary)
-      ionizeF = ionizationFraction(secondary)
+      ionizeF = ionizationfraction(secondary)
       fluorB = meanFluorescenceYield(inner(primary))
       v = lenardCoefficient(e0, secondary) / muB # keV
       ss = ionizationDepthRatio(inner(primary), secondary, e0)

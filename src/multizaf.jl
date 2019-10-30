@@ -93,8 +93,8 @@ function generation(unk::MultiZAF, std::MultiZAF)
     g, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        icxU = ionizationCrossSection(sh, beamEnergy(zafU))
-        icxS = ionizationCrossSection(sh, beamEnergy(zafS))
+        icxU = ionizationcrosssection(sh, beamEnergy(zafU))
+        icxS = ionizationcrosssection(sh, beamEnergy(zafS))
         for cxr in cxrs2
             w = weight(cxr)
             g += w * (icxU / icxS)
@@ -120,8 +120,8 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
     a, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
-        icxU = ionizationCrossSection(sh, beamEnergy(zafU))
-        icxS = ionizationCrossSection(sh, beamEnergy(zafS))
+        icxU = ionizationcrosssection(sh, beamEnergy(zafU))
+        icxS = ionizationcrosssection(sh, beamEnergy(zafS))
         for cxr in cxrs2
             w = weight(cxr)
             a += w * (icxU / icxS) * Z(unk.zafs[sh], std.zafs[sh]) *
