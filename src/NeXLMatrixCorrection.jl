@@ -16,12 +16,13 @@ export CoatingCorrection
 export MatrixCorrection
 export ZAFc # Combined correction factor
 export transmission # Coating transmission
-export carbonCoating # Build a carbon coating
+export carboncoating # Build a carbon coating
 export Fχ # Absorbed intensity function
-export takeOffAngle #
+export matrixcorrection
 
 include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction.
+export detail # Output the details of the matrix correction
 
 include("xpp.jl")
 export ϕ # ϕ(ρz) function
@@ -29,7 +30,6 @@ export ϕabs # ϕ(ρz) function (absorbed)
 export xpp # Build an XPP correction
 export ZAF # Build a full ZAF correction based on XPP
 export XPPCorrection # XPPCorrection structure
-export buildMultiXPP # Build a MultiZAF around the XPP algorithm
 
 include("reed.jl")
 export ReedFluorescence

@@ -35,11 +35,12 @@ end
 
 """
     shells(mz::MultiZAF)
-A set of all shells supported by this MultiZAF
-"""
-NeXLCore.atomicsubshells(mz::MultiZAF) = keys(zafs)
 
-NeXLCore.element(mz::MultiZAF) = element(xray[1])
+A set of all sub-shells supported by this MultiZAF
+"""
+NeXLCore.atomicsubshells(mz::MultiZAF) = keys(mz.zafs)
+
+NeXLCore.element(mz::MultiZAF) = element(mz.xrays[1])
 
 NeXLCore.characteristic(mz::MultiZAF) = mz.xrays
 
@@ -140,7 +141,8 @@ tabulate a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
 function NeXLCore.tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
-    tot = gZAFc(unk, std)
+    tot = gZAFc(unk, std, θunk, θstd)
+    @assert isequal(element(unk), element(std))
     return DataFrame(
         Unknown = [name(material(unk))],
         E₀ᵤ = [beamEnergy(unk)],
@@ -153,7 +155,7 @@ function NeXLCore.tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, �
         F = [F(unk, std, θunk, θstd)],
         coating = [coating(unk, std, θunk, θstd)],
         gZAFc = [tot],
-        k = [tot * material(unk)[elm] / material(std)[elm]],
+        k = [tot * material(unk)[element(unk)] / material(std)[element(unk)]],
     )
 end
 
@@ -181,11 +183,11 @@ function detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstr
             push!(stdE0, beamEnergy(zafS))
             push!(xray, cxr)
             push!(wgt, weight(cxr))
-            push!(g, generation(zafU, zafS, cxr))
+            push!(g, generation(zafU, zafS, inner(cxr)))
             push!(z, Z(zafU, zafS))
             push!(a, A(zafU, zafS, cxr, θunk, θstd))
             push!(f, F(zafU, zafS, cxr, θunk, θstd))
-            push!(c, coating(zafU, zafS, cxr))
+            push!(c, coating(zafU, zafS, cxr, θunk, θstd))
             tot = ZAFc(zafU, zafS, cxr, θunk, θstd)
             push!(zaf, tot)
             push!(k, tot * matU[elm] / matS[elm])
@@ -197,14 +199,14 @@ function detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstr
         Standard = stds,
         E0std = 0.001*stdE0,
         Xray = xray,
-        Weight = w,
+        Weight = wgt,
         Generation = g,
         Z = z,
         A = a,
         F = f,
         c = c,
         ZAF = zaf,
-        k = k,
+        k = k
     )
 end
 
@@ -215,13 +217,13 @@ tabulate a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
 detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
-    mapreduce((unk, std) -> detail(unk, std, θunk, θstd), append!, mzs)
+    mapreduce(tmm -> detail(tmm[1], tmm[2], θunk, θstd), append!, mzs)
 
 """
-    tabulate(mzs::Dict{MultiZAF, MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+    tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
 tabulate a matrix correction relative to a specified Dict of unknowns and
 standards in a DataFrame.
 """
-NeXLCore.tabulate(mzs::Dict{MultiZAF,MultiZAF}, θunk::AbstractFloat, θstd::AbstractFloat) =
-    mapreduce((unk, std) -> tabulate(unk, std, θunk, θstd), append!, mzs)
+NeXLCore.tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
+    mapreduce(tmm -> tabulate(tmm[1], tmm[2], θunk, θstd), append!, mzs)

@@ -3,6 +3,8 @@ using DataFrames
 # Implements Pouchou and Pichoir's XPP model from the description in the book
 # Electron Probe Quantification edited by Kurt Heinrich and Dale E. Newbury
 
+struct XPP <: MatrixCorrection end
+
 """
     M(mat::Material)
 P&P's M from top line in page 35
@@ -342,7 +344,7 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 
 
 """
-    matrixCorrection(
+    matrixcorrection(
       ::Type{XPPCorrection},
       mat::Material,
       ashell::AtomicSubShell,
@@ -351,7 +353,7 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 
 Constructs an XPPCorrection algorithm.
 """
-matrixCorrection(
+matrixcorrection(
     ::Type{XPPCorrection},
     mat::Material,
     ashell::AtomicSubShell,

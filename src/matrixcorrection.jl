@@ -149,11 +149,11 @@ struct Coating <: CoatingCorrection
 end
 
 """
-    carbonCoating(nm)
+    carboncoating(nm)
 
 Constructs a carbon coating of the specified thickness (in nanometers).
 """
-carbonCoating(nm) = Coating(pure(n"C"), nm * 1.0e-7)
+carboncoating(nm) = Coating(pure(n"C"), nm * 1.0e-7)
 
 """
     transmission(zaf::Coating, xray::CharXRay, toa)
@@ -213,6 +213,9 @@ coating(
     θunk::AbstractFloat,
     θstd::AbstractFloat
 ) = transmission(unk.coating, cxr, θunk) / transmission(std.coating, cxr, θstd)
+
+generation(unk::ZAFCorrection, std::ZAFCorrection, ass::AtomicSubShell) =
+    ionizationcrosssection(ass, beamEnergy(unk))/ionizationcrosssection(ass, beamEnergy(std))
 
 F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     F(unk.f, cxr, θunk) / F(std.f, cxr, θstd)
@@ -355,7 +358,7 @@ ZAF(
     coating = NullCoating(),
 ) =
     ZAFCorrection(
-        matrixCorrection(mctype, mat, ashell, e0),
+        matrixcorrection(mctype, mat, ashell, e0),
         fluorescenceCorrection(fctype, mat, ashell, e0),
         coating,
     )
@@ -400,7 +403,7 @@ ZAF(
       coating=NeXLCore.NullCoating()
     )
 
-Constructs a MultiZAF around the mctype and fctype algorithms.
+Constructs a MultiZAF around the mctype and fctype algorithms for a collection of CharXRay <code>cxrs</code>.
 """
 function ZAF(
     mctype::Type{<:MatrixCorrection},
@@ -426,7 +429,8 @@ end
       coating=NeXLCore.NullCoating()
     )
 
-Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard.
+Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard for a
+collection of CharXRay <code>cxrs</code>.
 """
 ZAF(
     mctype::Type{<:MatrixCorrection},
