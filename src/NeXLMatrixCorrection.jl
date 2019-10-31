@@ -35,4 +35,9 @@ include("reed.jl")
 export ReedFluorescence
 export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
 
+include("iterate.jl")
+export KRatio # k-ratio data struct
+export UnmeasuredElementRule # Calculation elements by difference or stoichiometry or ???
+export Iteration
+
 end

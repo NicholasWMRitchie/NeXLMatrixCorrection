@@ -411,7 +411,7 @@ function ZAF(
     mat::Material,
     cxrs,
     e0::AbstractFloat,
-    coating = NeXLCore.NullCoating()
+    coating = NullCoating()
 )
     zaf(sh) = ZAF(mctype, fctype, mat, sh, e0, coating)
     zafs = Dict((sh, zaf(sh)) for sh in union(inner.(cxrs)))

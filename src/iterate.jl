@@ -3,7 +3,8 @@
 
 The k-ratio is the result of two intensity measurements - one on a standard
 with known composition and one on an unknown. Each measurement has properties
-like :BeamEnergy, :TakeOffAngle, :Coating that characterize the measurement.
+like :BeamEnergy (req), :TakeOffAngle (req), :Coating (opt) that characterize
+the measurement.
 
 Properties: (These Symbols are intentionally the same used in NeXLSpectrum)
 
@@ -12,103 +13,148 @@ Properties: (These Symbols are intentionally the same used in NeXLSpectrum)
     :Coating A NeXLCore.Film object describing a conductive coating
 """
 struct KRatio
+    element::Element
     lines::Vector{CharXRay} # Which CharXRays were measured?
     unkProps::Dict{Symbol,Any} # Beam energy, take-off angle, coating, ???
     stdProps::Dict{Symbol,Any} # Beam energy, take-off angle, coating, ???
     standard::Material
-    kratio::AbstractFloat
+    kratio::Float64
     function KRatio(
         lines::Vector{CharXRay},
-        unkProps::Dict{Symbol,Any},
-        stdProps::Dict{Symbol,Any},
+        unkProps::Dict{Symbol,<:Any},
+        stdProps::Dict{Symbol,<:Any},
         standard::Material,
-        kratio::AbstractFloat
-        )
-            elm = element(lines[0])
-            if length(lines)==0
-                error("Must specify at least one characteristic X-ray.")
-            if !all(l->element(l)==elm for l in lines)
-                error("The characteristic X-rays must all be from the same element.")
-            if standard[elm]==0.0
-                error("The standard must contain the element $(elm).")
-            if kratio<0.0
-                error("The k-ratio must be non-negative.")
-            return new(lines,unkProps,stdProps,standard,kratio)
+        kratio::Float64
+    )
+        if length(lines)<1
+            error("Must specify at least one characteristic X-ray.")
         end
+        elm = element(lines[1])
+        if !all(element(l)==elm for l in lines)
+            error("The characteristic X-rays must all be from the same element.")
+        end
+        if standard[elm]<=1.0e-4
+            error("The standard must contain the element $(elm).  $(standard[elm])")
+        end
+        return new(elm, lines, unkProps,stdProps, standard, kratio)
+    end
 end
+
+NeXLCore.element(kr::KRatio) = kr.element
+nonneg(kr::KRatio) = max(0.0, kr.kratio)
+
+Base.show(io::IO, kr::KRatio) =
+    print(io, "k[$(name(kr.lines))] = $(kr.kratio)")
+
 
 abstract type UnmeasuredElementRule end
 
+struct NullUnmeasuredRule <: UnmeasuredElementRule end
 """
-    compute(::Type{UnmeasuredElementRule}, inp::Dict{Element,AbstractFloat})::Dict{Element,AbstractFloat}
+    compute(::Type{UnmeasuredElementRule}, inp::Dict{Element,Float64})::Dict{Element,Float64}
 
 A null UnmeasuredElementRule.  Just returns the inputs.
 """
-compute(::Type{<:UnmeasuredElementRule}, inp::Dict{Element,AbstractFloat})::Dict{Element,AbstractFloat} =
+compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64} =
     inp
 
+abstract type UpdateRule end
+
+struct NaiveUpdateRule <: UpdateRule end
+
+"""
+    update(
+        ::NaiveUpdateRule,
+        prevcomp::Material,
+        measured::Vector{KRatio},
+        estkrs::Dict{Element, Float64}
+    )::Dict{Element,Float64}
+
+Determine the next estimate of the composition that brings the estkrs closer to measured.
+"""
+function update(::NaiveUpdateRule, prevcomp::Material, measured::Vector{KRatio}, estkrs::Dict{Element, Float64})::Dict{Element,Float64}
+    emf = Dict{Element, Float64}()
+    for mkr in measured
+        emf[mkr.element] = (nonneg(mkr) / estkrs[mkr.element])*prevcomp[mkr.element]
+    end
+    return emf
+end
+
+abstract type ConvergenceTest end
+
+struct RMSBelowTolerance <: ConvergenceTest
+    tolerance::Float64
+end
+
+converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, comp::Dict{Element,Float64})::Bool =
+    sum( (nonneg(kr)-comp[kr.element])^2 for kr in meas ) < rbt.tolerance^2
+
+struct AllBelowTolerance <: ConvergenceTest
+    tolerance::Float64
+end
+
+converged(abt::AllBelowTolerance, meas::Vector{KRatio}, comp::Dict{Element,Float64})::Bool =
+    all(abs(nonneg(kr)-comp[kr.element])<abt.tolerance for kr in meas)
+
+struct IsApproximate <: ConvergenceTest
+    atol::Float64
+    rtol::Float64
+end
+
+converged(ia::IsApproximate, meas::Vector{KRatio}, comp::Dict{Element,Float64}) =
+    all( (abs(1.0 - nonneg(kr)/comp[kr.element])<rtol) || (abs(nonneg(kr)-comp[kr.element]) < atol) for kr in meas)
+
 struct Iteration
-    name::String # Sample name
     mctype::Type{<:MatrixCorrection}
     fctype::Type{<:FluorescenceCorrection}
-    kratios::Vector{KRatio}
-    zaf::Dict{KRatio, MultiZAF}
-    unmeasuredElement::UnmeasuredElementRule
+    updater::UpdateRule
+    converged::ConvergenceTest
+    unmeasured::UnmeasuredElementRule
 end
 
-allElements(mat1::Material, mat2::Material) =
-    union(keys(mat1),keys(mat2))
+"""
+    firstEstimate(iter::Iteration)::Material
 
-delta(mat1::Material, mat2::Material)::Dict{Element,AbstractFloat} =
-    Dict((elm, mat1[elm] - mat2[elm]) for elm in allElements(mat1,mat2))
+Make a first estimate at the composition.
+"""
+function firstEstimate(iter::Iteration, name::String, measured::Vector{KRatio})::Material
+    mfs = Dict{Element,Float64}( (kr.element, nonneg(kr) * kr.standard[kr.element]) for kr in measured )
+    return material(name, compute(iter.unmeasured, mfs))
+end
 
-test1(mat1::Material, mat2::Material, tol::Float64)::Bool =
-    sqrt(mapreduce(elm->(mat1[elm]-mat2[elm])^2,+,allElements(mat1,mat2)))<tol
+"""
+    computeKs(iter::Iteration, est::Material)::Dict{Element, Float64}
 
-test2(mat1::Material, mat2::Material, tol::Float64)::Bool =
-    all(elm->mat1[elm]-mat2[elm]<tol for elm in allElements(mat1,mat2))
-
-function firstEstimate(iter::Iteration)::Material
-    mfs = Dict{Element,Float64}()
-    for kr in iter.kratios
-        elm = element(kr.lines[0])
-        mfs[elm] = kr.kratio * kr.standard[elm]
+Given an estimate of the composition compute the corresponding k-ratios.
+"""
+function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element, Float64}
+    estkrs = Dict{Element,Float64}()
+    for kr in measured
+        # Build ZAF for std
+        coating = get(kr.stdProps, :Coating, NullCoating())
+        stdZaf = ZAF(iter.mctype, iter.fctype, kr.standard, kr.lines, kr.stdProps[:BeamEnergy], coating)
+        # Build ZAF for unk
+        coating = get(kr.unkProps, :Coating, NullCoating())
+        unkZaf = ZAF(iter.mctype, iter.fctype, est, kr.lines, kr.unkProps[:BeamEnergy], coating)
+        # Compute the total correction and the resulting k-ratio
+        gzafc =  gZAFc(unkZaf, stdZaf, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
+        estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
     end
-    return material(iter.name, mfs)
+    return estkrs
 end
 
-function computeKs(iter::Iteration, est::Material):Dict{Element, AbstractFloat}
-    for kr in iter.kratios
-        e0 = kr.stdProps[:BeamEnergy]
-        coating = get(kr.stdProps, :Coating, NeXLCore.NullCoating())
-        unkZaf = ZAF(iter.mctype,iter.fctype,kr.lines,e0,coating)
+"""
+    iterate(iter::Iteration, name::String, measured::Vector{KRatio})
 
-        k = (Cunk * unkZaf)/(Cstd * stdZaf)
-
-        kr.stdZaf
-
-        ZAF(
-            mctype::Type{<:MatrixCorrection},
-            fctype::Type{<:FluorescenceCorrection},
-            mat::Material,
-            cxrs,
-            e0::AbstractFloat,
-            coating = NeXLCore.NullCoating()
-        )
-
+Iterate to find the composition that produces the measured k-ratios.
+"""
+function Base.iterate(iter::Iteration, name::String, measured::Vector{KRatio})::Material
+    estcomp = firstEstimate(iter, name, measured)
+    estkrs = computeKs(iter, estcomp, measured)
+    while !converged(iter.converged, measured, estkrs)
+        # println("$(estcomp) for $(estkrs)")
+        estcomp = material(name, compute(iter.unmeasured, update(iter.updater, estcomp, measured, estkrs)))
+        estkrs = computeKs(iter, estcomp, measured)
     end
-
-
-end
-
-
-
-
-
-function iterate(iter::Iteration, tolerance = 1.0e-5)::Material
-    first = firstEstimate(kratios)
-
-
-
-
+    return estcomp
 end
