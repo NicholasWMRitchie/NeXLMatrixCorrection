@@ -1,28 +1,28 @@
 
 """
-   lenardCoefficient(e0::Float64, ashell::AtomicSubShell)
+   lenardcoefficient(e0::Float64, ashell::AtomicSubShell)
 
 Computes the Lenard coefficient according to the algorithm of Heinrich.
 "Heinrich K. F. J. (1967) EPASA 2, paper no. 7"
 """
-lenardCoefficient(e0::Float64, ashell::AtomicSubShell) =
+lenardcoefficient(e0::Float64, ashell::AtomicSubShell) =
    4.5e5 / ((0.001*e0)^1.65 - (0.001*energy(ashell))^1.65)
 
 """
-    ionizationDepthRatio(primary::AtomicSubShell, secondary::AtomicSubShell, e0::Float64)
+    ionizationdepthratio(primary::AtomicSubShell, secondary::AtomicSubShell, e0::Float64)
 
 Ionization depth ratio from "Reed S.J.B. (1990) Microbeam Analysis, p.109"
 """
-function ionizationDepthRatio(primary::AtomicSubShell, secondary::AtomicSubShell, e0::Float64)
+function ionizationdepthratio(primary::AtomicSubShell, secondary::AtomicSubShell, e0::Float64)
    uA, uB = e0 / energy(secondary), e0 / energy(primary)
    return ((((uB * log(uB)) - uB) + 1.0) / (((uA * log(uA)) - uA) + 1.0))
 end
 
 """
-    familyFactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
+    familyfactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
 Accounts for the differences in ionization cross section between K , L and M shells
 """
-function familyFactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
+function familyfactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
    fA, fB = shell(shellA), shell(shellB)
    if fA == fB
       res = 1.0 # fA==fB
@@ -48,7 +48,7 @@ The fraction of the ionizations to attribute to the specified shell.  Computed
 from the jump ratio.
 """
 function ionizationfraction(shell::AtomicSubShell)
-   r = jumpRatio(shell)
+   r = jumpratio(shell)
    return r >= 1.0 ? (r - 1.0) / r : 0.0
 end
 
@@ -64,10 +64,10 @@ struct ReedInternal
       cB = comp[bElm]
       muB_A, muB = mac(aElm, primary), mac(comp, primary)
       ionizeF = ionizationfraction(secondary)
-      fluorB = meanFluorescenceYield(inner(primary))
-      v = lenardCoefficient(e0, secondary) / muB # keV
-      ss = ionizationDepthRatio(inner(primary), secondary, e0)
-      f = familyFactor(secondary, inner(primary));
+      fluorB = meanfluorescenceyield(inner(primary))
+      v = lenardcoefficient(e0, secondary) / muB # keV
+      ss = ionizationdepthratio(inner(primary), secondary, e0)
+      f = familyfactor(secondary, inner(primary));
       k = f * 0.5 * cB * (muB_A / muB) * ionizeF * fluorB * (a(aElm) / a(bElm)) * ss
       return new(primary, k, v, muB)
    end
@@ -75,13 +75,6 @@ end
 
 Base.show(io::IO, ri::ReedInternal) =
    print(io,repr(ri.primary))
-
-function Finternal(ri::ReedInternal, secondary::CharXRay, toa::Float64, comp::Material)
-   @assert(ri.kk >= 0.0, "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)")
-   u = mac(comp, secondary) / (sin(toa) * ri.muB)
-   # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
-   return normWeight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
-end
 
 struct ReedFluorescence <: FluorescenceCorrection
    comp::Material
@@ -100,11 +93,16 @@ Base.show(io::IO, reed::ReedFluorescence) =
 Compute the enhancement of the secondary characteristic X-ray due to the
 primaries specified in reed.
 """
-F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64) =
-   isempty(reed.exciters) ? 1.0 :
-   1.0 +
-   mapreduce(ex -> Finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
-
+function F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64)
+   function finternal(ri::ReedInternal, secondary::CharXRay, toa::Float64, comp::Material)
+      @assert(ri.kk >= 0.0, "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)")
+      u = mac(comp, secondary) / (sin(toa) * ri.muB)
+      # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
+      return normWeight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
+   end
+   return isempty(reed.exciters) ? 1.0 :
+      1.0 + mapreduce(ex -> finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
+end
 """
     fluorescence(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicSubShell, e0::Float64)
 
@@ -112,7 +110,7 @@ Construct an instance of a ReedFluorescence correction structure to compute the
 secondary fluorescence due to a primary characteristic X-ray in the specified
 material and beam energy.
 """
-function fluorescenceCorrection(
+function fluorescencecorrection(
    ::Type{ReedFluorescence},
    comp::Material,
    primarys::Vector{CharXRay},
@@ -137,22 +135,17 @@ end
 Construct an instance of a fltype correction structure to compute the
 secondary fluorescence in the specified material and beam energy.
 """
-function fluorescenceCorrection(
+function fluorescencecorrection(
    fltype::Type{<:FluorescenceCorrection},
    comp::Material,
    secondary::AtomicSubShell,
    e0::Float64;
-   eThresh = 5.0e3,
-   wThresh = 0.01,
+   eThresh = 2.5e3,
+   wThresh = 0.05,
 )
-   inERange(cxr::CharXRay, ee::Float64) =
-      (energy(cxr) > ee) && (energy(cxr) < ee + eThresh)
-   primaries = Vector{CharXRay}()
-   for elm in keys(comp)
-      candidates = characteristic(elm, alltransitions, wThresh / comp[elm], e0)
-      for cxr in filter(c -> inERange(c, energy(secondary)), candidates)
-         push!(primaries, cxr)
-      end
-   end
-   return fluorescenceCorrection(fltype, comp, primaries, secondary, e0)
+   test(cxr, ee, wt) =
+      (energy(cxr) > ee) && (energy(cxr) < ee + eThresh) && (NeXLCore.edgeenergy(cxr) < e0) && (weight(cxr) > wt)
+   char4elm(elm, wt)=characteristic(elm, alltransitions, cxr->test(cxr, energy(secondary), wt/comp[elm]))
+   primaries = mapreduce(elm->char4elm(elm, wThresh), append!, keys(comp))
+   return fluorescencecorrection(fltype, comp, primaries, secondary, e0)
 end

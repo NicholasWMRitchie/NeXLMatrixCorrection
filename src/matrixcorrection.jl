@@ -359,7 +359,7 @@ ZAF(
 ) =
     ZAFCorrection(
         matrixcorrection(mctype, mat, ashell, e0),
-        fluorescenceCorrection(fctype, mat, ashell, e0),
+        fluorescencecorrection(fctype, mat, ashell, e0),
         coating,
     )
 
@@ -413,8 +413,7 @@ function ZAF(
     e0::AbstractFloat,
     coating = NullCoating()
 )
-    zaf(sh) = ZAF(mctype, fctype, mat, sh, e0, coating)
-    zafs = Dict((sh, zaf(sh)) for sh in union(inner.(cxrs)))
+    zafs = Dict((sh, ZAF(mctype, fctype, mat, sh, e0, coating)) for sh in union(inner.(cxrs)))
     return MultiZAF(cxrs, zafs)
 end
 

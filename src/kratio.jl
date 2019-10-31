@@ -47,4 +47,3 @@ nonneg(kr::KRatio) = max(0.0, kr.kratio)
 
 Base.show(io::IO, kr::KRatio) =
     print(io, "k[$(name(kr.standard)), $(name(kr.lines))] = $(kr.kratio)")
-]

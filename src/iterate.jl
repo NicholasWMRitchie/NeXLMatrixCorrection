@@ -90,30 +90,6 @@ function firstEstimate(iter::Iteration, name::String, measured::Vector{KRatio}):
     return material(name, compute(iter.unmeasured, mfs))
 end
 
-"""
-    computeKs(iter::Iteration, est::Material)::Dict{Element, Float64}
-
-Given an estimate of the composition compute the corresponding k-ratios.
-"""
-function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element, Float64}
-    estkrs = Dict{Element,Float64}()
-    # Precompute ZAFs for std
-    nc, stdZafs = NullCoating(), Dict{KRatio, MultiZAF}()
-    for kr in measured
-        coating = get(kr.stdProps, :Coating, nc)
-        @timeit iter.timer "ZAF[std]" stdZafs[kr] = ZAF(iter, kr.standard, kr)
-    end
-    for kr in measured
-        # Build ZAF for unk
-        @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
-        # Compute the total correction and the resulting k-ratio
-        @timeit iter.timer "gZAFc" gzafc =  gZAFc(unkZaf, stdZafs[kr], kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
-        estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
-    end
-    return estkrs
-end
-
-
 struct IterationResult
     comp::Material
     kratios::Vector{KRatio}
@@ -145,6 +121,29 @@ update(it::Counter)::Bool =
 
 terminated(it::Counter) =
     it.count > it.terminate
+
+"""
+    computeKs(iter::Iteration, est::Material)::Dict{Element, Float64}
+
+Given an estimate of the composition compute the corresponding k-ratios.
+"""
+function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element, Float64}
+    estkrs = Dict{Element,Float64}()
+    # Precompute ZAFs for std
+    nc, stdZafs = NullCoating(), Dict{KRatio, MultiZAF}()
+    for kr in measured
+        coating = get(kr.stdProps, :Coating, nc)
+        @timeit iter.timer "ZAF[std]" stdZafs[kr] = ZAF(iter, kr.standard, kr)
+    end
+    for kr in measured
+        # Build ZAF for unk
+        @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
+        # Compute the total correction and the resulting k-ratio
+        @timeit iter.timer "gZAFc" gzafc =  gZAFc(unkZaf, stdZafs[kr], kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
+        estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
+    end
+    return estkrs
+end
 
 """
     iterateks(iter::Iteration, name::String, measured::Vector{KRatio})
