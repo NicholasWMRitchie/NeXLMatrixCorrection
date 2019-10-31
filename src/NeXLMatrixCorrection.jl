@@ -35,9 +35,18 @@ include("reed.jl")
 export ReedFluorescence
 export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
 
-include("iterate.jl")
+include("kratio.jl")
 export KRatio # k-ratio data struct
+
+include("iterate.jl")
 export UnmeasuredElementRule # Calculation elements by difference or stoichiometry or ???
-export Iteration
+export NullUnmeasuredRule # Don't do anything..
+export UpdateRule # A rule implementing update(...)
+export NaiveUpdateRule # Simple iteration
+export ConvergenceTest # Test for convergence using converged(...)
+export RMSBelowTolerance, AllBelowTolerance, IsApproximate # Difference implementations of ConvergenceTest
+export Iteration # Defines the iteration procedure
+export IterationResult # The output from iterateks(...)
+export iterateks # Perform the iteration
 
 end

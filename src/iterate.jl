@@ -1,51 +1,5 @@
-"""
-    KRatio
-
-The k-ratio is the result of two intensity measurements - one on a standard
-with known composition and one on an unknown. Each measurement has properties
-like :BeamEnergy (req), :TakeOffAngle (req), :Coating (opt) that characterize
-the measurement.
-
-Properties: (These Symbols are intentionally the same used in NeXLSpectrum)
-
-    :BeamEnergy incident beam energy in eV
-    :TakeOffAngle in radians
-    :Coating A NeXLCore.Film object describing a conductive coating
-"""
-struct KRatio
-    element::Element
-    lines::Vector{CharXRay} # Which CharXRays were measured?
-    unkProps::Dict{Symbol,Any} # Beam energy, take-off angle, coating, ???
-    stdProps::Dict{Symbol,Any} # Beam energy, take-off angle, coating, ???
-    standard::Material
-    kratio::Float64
-    function KRatio(
-        lines::Vector{CharXRay},
-        unkProps::Dict{Symbol,<:Any},
-        stdProps::Dict{Symbol,<:Any},
-        standard::Material,
-        kratio::Float64
-    )
-        if length(lines)<1
-            error("Must specify at least one characteristic X-ray.")
-        end
-        elm = element(lines[1])
-        if !all(element(l)==elm for l in lines)
-            error("The characteristic X-rays must all be from the same element.")
-        end
-        if standard[elm]<=1.0e-4
-            error("The standard must contain the element $(elm).  $(standard[elm])")
-        end
-        return new(elm, lines, unkProps,stdProps, standard, kratio)
-    end
-end
-
-NeXLCore.element(kr::KRatio) = kr.element
-nonneg(kr::KRatio) = max(0.0, kr.kratio)
-
-Base.show(io::IO, kr::KRatio) =
-    print(io, "k[$(name(kr.lines))] = $(kr.kratio)")
-
+using DataFrames
+using TimerOutputs
 
 abstract type UnmeasuredElementRule end
 
@@ -110,6 +64,20 @@ struct Iteration
     updater::UpdateRule
     converged::ConvergenceTest
     unmeasured::UnmeasuredElementRule
+    timer::TimerOutput
+
+    Iteration(
+        mct::Type{<:MatrixCorrection},
+        fct::Type{<:FluorescenceCorrection};
+        updater=NaiveUpdateRule(),
+        converged=RMSBelowTolerance(0.001),
+        unmeasured=NullUnmeasuredRule()) =
+        new(mct,fct,updater,converged,unmeasured,TimerOutput())
+end
+
+function ZAF(iter::Iteration, mat::Material, kr::KRatio)::MultiZAF
+    coating = get(kr.stdProps, :Coating, NullCoating())
+    return ZAF(iter.mctype, iter.fctype, mat, kr.lines, kr.stdProps[:BeamEnergy], coating)
 end
 
 """
@@ -129,32 +97,70 @@ Given an estimate of the composition compute the corresponding k-ratios.
 """
 function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element, Float64}
     estkrs = Dict{Element,Float64}()
+    # Precompute ZAFs for std
+    nc, stdZafs = NullCoating(), Dict{KRatio, MultiZAF}()
     for kr in measured
-        # Build ZAF for std
-        coating = get(kr.stdProps, :Coating, NullCoating())
-        stdZaf = ZAF(iter.mctype, iter.fctype, kr.standard, kr.lines, kr.stdProps[:BeamEnergy], coating)
+        coating = get(kr.stdProps, :Coating, nc)
+        @timeit iter.timer "ZAF[std]" stdZafs[kr] = ZAF(iter, kr.standard, kr)
+    end
+    for kr in measured
         # Build ZAF for unk
-        coating = get(kr.unkProps, :Coating, NullCoating())
-        unkZaf = ZAF(iter.mctype, iter.fctype, est, kr.lines, kr.unkProps[:BeamEnergy], coating)
+        @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
         # Compute the total correction and the resulting k-ratio
-        gzafc =  gZAFc(unkZaf, stdZaf, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
+        @timeit iter.timer "gZAFc" gzafc =  gZAFc(unkZaf, stdZafs[kr], kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
         estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
     end
     return estkrs
 end
 
+
+struct IterationResult
+    comp::Material
+    kratios::Vector{KRatio}
+    computed::Dict{Element, Float64}
+    converged::Bool
+    iterations::Int
+end
+
+function Base.show(io::IO, itres::IterationResult)
+    print(itres.converged ? "Converged in $(itres.iterations) to $(itres.comp)\n" : "Failed to converge after $(itres.iterations).")
+end
+
+NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame =
+    compare(itres.comp, known)
+
+NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
+    mapreduce(itres->compare(itres, known),append!,itress)
+
+NeXLCore.material(itres::IterationResult) = itres.comp
+
+mutable struct Counter
+    count::Int
+    terminate::Int
+    Counter(terminate::Int) = new(0,terminate)
+end
+
+update(it::Counter)::Bool =
+    (it.count+=1) <= it.terminate
+
+terminated(it::Counter) =
+    it.count > it.terminate
+
 """
-    iterate(iter::Iteration, name::String, measured::Vector{KRatio})
+    iterateks(iter::Iteration, name::String, measured::Vector{KRatio})
 
 Iterate to find the composition that produces the measured k-ratios.
 """
-function Base.iterate(iter::Iteration, name::String, measured::Vector{KRatio})::Material
-    estcomp = firstEstimate(iter, name, measured)
-    estkrs = computeKs(iter, estcomp, measured)
-    while !converged(iter.converged, measured, estkrs)
+function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
+    @timeit iter.timer "FirstComp" estcomp = firstEstimate(iter, name, measured)
+    @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured)
+    iters = Counter(100)
+    while !converged(iter.converged, measured, estkrs) && update(iters)
         # println("$(estcomp) for $(estkrs)")
-        estcomp = material(name, compute(iter.unmeasured, update(iter.updater, estcomp, measured, estkrs)))
-        estkrs = computeKs(iter, estcomp, measured)
+        @timeit iter.timer "NextEst" upd = update(iter.updater, estcomp, measured, estkrs)
+        @timeit iter.timer "Unmeasured" unmeas = compute(iter.unmeasured, upd)
+        @timeit iter.timer "Material" estcomp = material(name, unmeas)
+        @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured)
     end
-    return estcomp
+    return IterationResult(estcomp, measured, estkrs, !terminated(iters), iters.count)
 end
