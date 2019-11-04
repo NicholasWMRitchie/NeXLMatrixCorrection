@@ -347,7 +347,7 @@ end
     )
 
 Constructs an ZAFCorrection object using the mctype correction model with
-the Reed fluorescence model for the specified parameters.
+the fluorescence model for the specified parameters.
 """
 ZAF(
     mctype::Type{<:MatrixCorrection},
@@ -376,7 +376,7 @@ ZAF(
        stdCoating = NullCoating(),
     )
 
-Creates a matched pair of ZAFCorrection objects using the XPPCorrection algorithm
+Creates a matched pair of ZAFCorrection objects using the matrix correction algorithm
 for the specified unknown and standard.
 """
 ZAF(

@@ -135,6 +135,15 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
 end
 
 """
+    k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) =
+
+Compute the k-ratio for the specified measurement conditions.
+"""
+k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) =
+    gZAFc(unk, std, θunk, θstd) * material(unk)[element(unk)] / material(std)[element(unk)]
+
+
+"""
     tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
 tabulate a matrix correction relative to the specified unknown and standard in

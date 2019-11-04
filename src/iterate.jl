@@ -9,8 +9,7 @@ struct NullUnmeasuredRule <: UnmeasuredElementRule end
 
 A null UnmeasuredElementRule.  Just returns the inputs.
 """
-compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64} =
-    inp
+compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64} = inp
 
 abstract type UpdateRule end
 
@@ -26,12 +25,80 @@ struct NaiveUpdateRule <: UpdateRule end
 
 Determine the next estimate of the composition that brings the estkrs closer to measured.
 """
-function update(::NaiveUpdateRule, prevcomp::Material, measured::Vector{KRatio}, estkrs::Dict{Element, Float64})::Dict{Element,Float64}
-    emf = Dict{Element, Float64}()
+function update(::NaiveUpdateRule, prevcomp::Material, measured::Vector{KRatio}, estkrs::Dict{Element,Float64})::Dict{
+    Element,
+    Float64,
+}
+    emf = Dict{Element,Float64}()
     for mkr in measured
-        emf[mkr.element] = (nonneg(mkr) / estkrs[mkr.element])*prevcomp[mkr.element]
+        emf[mkr.element] = (nonneg(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
     end
     return emf
+end
+
+function reset(::NaiveUpdateRule) end
+
+struct PAPUpdateRule <: UpdateRule end
+
+function update(#
+    ::PAPUpdateRule,
+    prevcomp::Material,
+    measured::Vector{KRatio},
+    estkrs::Dict{Element,Float64},
+)::Dict{Element,Float64}
+    emf = Dict{Element,Float64}()
+    for mkr in measured
+        cs = mkr.standard[mkr.element]
+        k, km, c = estkrs[mkr.element] * cs, nonneg(mkr) * cs, prevcomp[mkr.element]
+        α = ((1.0 - k) / k) * (c / (1.0 - c))
+        if km / c < 1.0
+            cu = (α * km) / (α + (1.0 - α) * km)
+        else
+            cu = (α - sqrt(α^2 + 4.0 * km * (1 - α))) / (2.0 * (α - 1.0))
+        end
+        emf[mkr.element] = cu * cs
+    end
+    return emf
+end
+
+function reset(::PAPUpdateRule) end
+
+
+struct WegsteinUpdateRule <: UpdateRule
+    prevc::Vector{Material}
+    prevk::Vector{Dict{Element,Float64}}
+    factor::Float64
+    WegsteinUpdateRule(f::Float64) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(),f)
+end
+
+function update( #
+    weg::WegsteinUpdateRule,
+    prevcomp::Material,
+    measured::Vector{KRatio},
+    estkrs::Dict{Element,Float64}
+)::Dict{Element,Float64}
+    emf = Dict{Element,Float64}()
+    if length(weg.prevc) < 1
+        for mkr in measured
+            emf[mkr.element] = (nonneg(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
+        end
+    else
+        cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
+        for mkr in measured
+            elm, km = mkr.element, nonneg(mkr)
+            fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
+            dfdk = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
+            emf[elm] = cn[elm] + (km * fcn - cn[elm])/(1.0 - weg.factor*km*dfdk)
+        end
+    end
+    push!(weg.prevc, prevcomp)
+    push!(weg.prevk, estkrs)
+    return emf
+end
+
+function reset(weg::WegsteinUpdateRule)
+    resize!(weg.prevc, 0)
+    resize!(weg.prevk, 0)
 end
 
 abstract type ConvergenceTest end
@@ -41,14 +108,14 @@ struct RMSBelowTolerance <: ConvergenceTest
 end
 
 converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, comp::Dict{Element,Float64})::Bool =
-    sum( (nonneg(kr)-comp[kr.element])^2 for kr in meas ) < rbt.tolerance^2
+    sum((nonneg(kr) - comp[kr.element])^2 for kr in meas) < rbt.tolerance^2
 
 struct AllBelowTolerance <: ConvergenceTest
     tolerance::Float64
 end
 
 converged(abt::AllBelowTolerance, meas::Vector{KRatio}, comp::Dict{Element,Float64})::Bool =
-    all(abs(nonneg(kr)-comp[kr.element])<abt.tolerance for kr in meas)
+    all(abs(nonneg(kr) - comp[kr.element]) < abt.tolerance for kr in meas)
 
 struct IsApproximate <: ConvergenceTest
     atol::Float64
@@ -56,7 +123,7 @@ struct IsApproximate <: ConvergenceTest
 end
 
 converged(ia::IsApproximate, meas::Vector{KRatio}, comp::Dict{Element,Float64}) =
-    all( (abs(1.0 - nonneg(kr)/comp[kr.element])<rtol) || (abs(nonneg(kr)-comp[kr.element]) < atol) for kr in meas)
+    all((abs(1.0 - nonneg(kr) / comp[kr.element]) < rtol) || (abs(nonneg(kr) - comp[kr.element]) < atol) for kr in meas)
 
 struct Iteration
     mctype::Type{<:MatrixCorrection}
@@ -69,10 +136,10 @@ struct Iteration
     Iteration(
         mct::Type{<:MatrixCorrection},
         fct::Type{<:FluorescenceCorrection};
-        updater=NaiveUpdateRule(),
-        converged=RMSBelowTolerance(0.001),
-        unmeasured=NullUnmeasuredRule()) =
-        new(mct,fct,updater,converged,unmeasured,TimerOutput())
+        updater = NaiveUpdateRule(),
+        converged = RMSBelowTolerance(0.0001),
+        unmeasured = NullUnmeasuredRule(),
+    ) = new(mct, fct, updater, converged, unmeasured, TimerOutput())
 end
 
 function ZAF(iter::Iteration, mat::Material, kr::KRatio)::MultiZAF
@@ -86,61 +153,68 @@ end
 Make a first estimate at the composition.
 """
 function firstEstimate(iter::Iteration, name::String, measured::Vector{KRatio})::Material
-    mfs = Dict{Element,Float64}( (kr.element, nonneg(kr) * kr.standard[kr.element]) for kr in measured )
+    mfs = Dict{Element,Float64}((kr.element, nonneg(kr) * kr.standard[kr.element]) for kr in measured)
     return material(name, compute(iter.unmeasured, mfs))
 end
 
 struct IterationResult
     comp::Material
     kratios::Vector{KRatio}
-    computed::Dict{Element, Float64}
+    computed::Dict{Element,Float64}
     converged::Bool
     iterations::Int
 end
 
 function Base.show(io::IO, itres::IterationResult)
-    print(itres.converged ? "Converged in $(itres.iterations) to $(itres.comp)\n" : "Failed to converge after $(itres.iterations).")
+    print(itres.converged ? "Converged in $(itres.iterations) to $(itres.comp)\n" :
+          "Failed to converge after $(itres.iterations).")
 end
 
-NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame =
-    compare(itres.comp, known)
+NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(itres.comp, known)
 
 NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
-    mapreduce(itres->compare(itres, known),append!,itress)
+    mapreduce(itres -> compare(itres, known), append!, itress)
 
 NeXLCore.material(itres::IterationResult) = itres.comp
 
 mutable struct Counter
     count::Int
     terminate::Int
-    Counter(terminate::Int) = new(0,terminate)
+    Counter(terminate::Int) = new(0, terminate)
 end
 
-update(it::Counter)::Bool =
-    (it.count+=1) <= it.terminate
+update(it::Counter)::Bool = (it.count += 1) <= it.terminate
 
-terminated(it::Counter) =
-    it.count > it.terminate
+terminated(it::Counter) = it.count > it.terminate
 
 """
     computeKs(iter::Iteration, est::Material)::Dict{Element, Float64}
 
 Given an estimate of the composition compute the corresponding k-ratios.
 """
-function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element, Float64}
+function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element,Float64}
     estkrs = Dict{Element,Float64}()
     # Precompute ZAFs for std
-    nc, stdZafs = NullCoating(), Dict{KRatio, MultiZAF}()
+    nc, stdZafs = NullCoating(), Dict{KRatio,MultiZAF}()
     for kr in measured
         coating = get(kr.stdProps, :Coating, nc)
         @timeit iter.timer "ZAF[std]" stdZafs[kr] = ZAF(iter, kr.standard, kr)
     end
     for kr in measured
-        # Build ZAF for unk
-        @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
-        # Compute the total correction and the resulting k-ratio
-        @timeit iter.timer "gZAFc" gzafc =  gZAFc(unkZaf, stdZafs[kr], kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
-        estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
+        if nonneg(kr)>0.0
+            # Build ZAF for unk
+            @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
+            # Compute the total correction and the resulting k-ratio
+            @timeit iter.timer "gZAFc" gzafc = gZAFc(
+                unkZaf,
+                stdZafs[kr],
+                kr.unkProps[:TakeOffAngle],
+                kr.stdProps[:TakeOffAngle],
+            )
+            estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
+        else
+            estkrs[kr.element] = 0.0
+        end
     end
     return estkrs
 end
@@ -154,6 +228,7 @@ function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::Ite
     @timeit iter.timer "FirstComp" estcomp = firstEstimate(iter, name, measured)
     @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured)
     iters = Counter(100)
+    reset(iter.updater)
     while !converged(iter.converged, measured, estkrs) && update(iters)
         # println("$(estcomp) for $(estkrs)")
         @timeit iter.timer "NextEst" upd = update(iter.updater, estcomp, measured, estkrs)

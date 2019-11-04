@@ -23,6 +23,8 @@ export matrixcorrection
 include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction.
 export detail # Output the details of the matrix correction
+export gZAFc # Combined correction factor
+export k # Computed k-ratio
 
 include("xpp.jl")
 export ϕ # ϕ(ρz) function
