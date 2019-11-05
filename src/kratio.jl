@@ -44,7 +44,7 @@ struct KRatio
 end
 
 NeXLCore.element(kr::KRatio) = kr.element
-nonneg(kr::KRatio) = max(0.0, kr.kratio)
+nonnegk(kr::KRatio) = max(0.0, kr.kratio)
 
 Base.show(io::IO, kr::KRatio) = print(io, "k[$(name(kr.standard)), $(name(kr.lines))] = $(kr.kratio)")
 

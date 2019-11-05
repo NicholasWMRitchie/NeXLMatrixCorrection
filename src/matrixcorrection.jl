@@ -424,8 +424,9 @@ end
       unk::Material,
       std::Material,
       cxrs,
-      e0,
-      coating=NeXLCore.NullCoating()
+      e0;
+      unkCoating = NullCoating(),
+      stdCoating = NullCoating(),
     )
 
 Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard for a

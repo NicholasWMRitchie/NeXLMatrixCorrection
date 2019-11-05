@@ -1,6 +1,8 @@
 module NeXLMatrixCorrection
 
 using NeXLCore
+using PeriodicTable
+using Requires
 
 include("matrixcorrection.jl")
 export tabulate # tabulate ZAF corrections
@@ -45,10 +47,16 @@ export UnmeasuredElementRule # Calculation elements by difference or stoichiomet
 export NullUnmeasuredRule # Don't do anything..
 export UpdateRule # A rule implementing update(...)
 export NaiveUpdateRule # Simple iteration
+export WegsteinUpdateRule # Wegstein iteration (gradient)
+export RecordingUpdateRule
 export ConvergenceTest # Test for convergence using converged(...)
 export RMSBelowTolerance, AllBelowTolerance, IsApproximate # Difference implementations of ConvergenceTest
 export Iteration # Defines the iteration procedure
 export IterationResult # The output from iterateks(...)
 export iterateks # Perform the iteration
+
+function __init__()
+    @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")
+end
 
 end

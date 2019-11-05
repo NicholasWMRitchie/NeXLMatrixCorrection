@@ -31,44 +31,18 @@ function update(::NaiveUpdateRule, prevcomp::Material, measured::Vector{KRatio},
 }
     emf = Dict{Element,Float64}()
     for mkr in measured
-        emf[mkr.element] = (nonneg(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
+        emf[mkr.element] = (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
     end
     return emf
 end
 
 function reset(::NaiveUpdateRule) end
 
-struct PAPUpdateRule <: UpdateRule end
-
-function update(#
-    ::PAPUpdateRule,
-    prevcomp::Material,
-    measured::Vector{KRatio},
-    estkrs::Dict{Element,Float64},
-)::Dict{Element,Float64}
-    emf = Dict{Element,Float64}()
-    for mkr in measured
-        cs = mkr.standard[mkr.element]
-        k, km, c = estkrs[mkr.element] * cs, nonneg(mkr) * cs, prevcomp[mkr.element]
-        α = ((1.0 - k) / k) * (c / (1.0 - c))
-        if km / c < 1.0
-            cu = (α * km) / (α + (1.0 - α) * km)
-        else
-            cu = (α - sqrt(α^2 + 4.0 * km * (1 - α))) / (2.0 * (α - 1.0))
-        end
-        emf[mkr.element] = cu * cs
-    end
-    return emf
-end
-
-function reset(::PAPUpdateRule) end
-
-
 struct WegsteinUpdateRule <: UpdateRule
     prevc::Vector{Material}
     prevk::Vector{Dict{Element,Float64}}
     factor::Float64
-    WegsteinUpdateRule(f::Float64) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(),f)
+    WegsteinUpdateRule(f::Float64=0.3) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(),f)
 end
 
 function update( #
@@ -77,18 +51,19 @@ function update( #
     measured::Vector{KRatio},
     estkrs::Dict{Element,Float64}
 )::Dict{Element,Float64}
+    bound(x,min,max) = x < min ? min : (x > max ? max : x)
     emf = Dict{Element,Float64}()
-    if length(weg.prevc) < 1
+    if length(weg.prevc) < 2
         for mkr in measured
-            emf[mkr.element] = (nonneg(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
+            emf[mkr.element] = (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
         end
     else
         cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
-            elm, km = mkr.element, nonneg(mkr)
+            elm, km = mkr.element, nonnegk(mkr)
             fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
             dfdk = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
-            emf[elm] = cn[elm] + (km * fcn - cn[elm])/(1.0 - weg.factor*km*dfdk)
+            emf[elm] = cn[elm] + (km * fcn - cn[elm])/(1.0 - bound(km*dfdk, -weg.factor, weg.factor))
         end
     end
     push!(weg.prevc, prevcomp)
@@ -101,29 +76,54 @@ function reset(weg::WegsteinUpdateRule)
     resize!(weg.prevk, 0)
 end
 
+struct RecordingUpdateRule <: UpdateRule
+    base::UpdateRule
+    estkrs::Vector{Dict{Element,Float64}}
+    comps::Vector{Dict{Element,Float64}}
+    RecordingUpdateRule(ur::UpdateRule) = new(ur,Vector{Dict{Element,Float64}}(),Vector{Dict{Element,Float64}}())
+end
+
+function NeXLMatrixCorrection.update( #
+    rur::RecordingUpdateRule,
+    prevcomp::Material,
+    measured::Vector{KRatio},
+    estkrs::Dict{Element,Float64},
+)::Dict{Element,Float64}
+    res = NeXLMatrixCorrection.update(rur.base, prevcomp, measured, estkrs)
+    push!(rur.estkrs, estkrs)
+    push!(rur.comps, res)
+    return res
+end
+
+function NeXLMatrixCorrection.reset(rur::RecordingUpdateRule)
+    resize!(rur.estkrs,0)
+    resize!(rur.comps,0)
+    NeXLMatrixCorrection.reset(rur.base)
+end
+
 abstract type ConvergenceTest end
 
 struct RMSBelowTolerance <: ConvergenceTest
     tolerance::Float64
 end
 
-converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, comp::Dict{Element,Float64})::Bool =
-    sum((nonneg(kr) - comp[kr.element])^2 for kr in meas) < rbt.tolerance^2
+converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool =
+    sum((nonnegk(kr) - computed[kr.element])^2 for kr in meas) < rbt.tolerance^2
 
 struct AllBelowTolerance <: ConvergenceTest
     tolerance::Float64
 end
 
-converged(abt::AllBelowTolerance, meas::Vector{KRatio}, comp::Dict{Element,Float64})::Bool =
-    all(abs(nonneg(kr) - comp[kr.element]) < abt.tolerance for kr in meas)
+converged(abt::AllBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool =
+    all(abs(nonnegk(kr) - computed[kr.element]) < abt.tolerance for kr in meas)
 
 struct IsApproximate <: ConvergenceTest
     atol::Float64
     rtol::Float64
 end
 
-converged(ia::IsApproximate, meas::Vector{KRatio}, comp::Dict{Element,Float64}) =
-    all((abs(1.0 - nonneg(kr) / comp[kr.element]) < rtol) || (abs(nonneg(kr) - comp[kr.element]) < atol) for kr in meas)
+converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,Float64}) =
+    all((abs(1.0 - nonnegk(kr) / computed[kr.element]) < rtol) || (abs(nonnegk(kr) - computed[kr.element]) < atol) for kr in meas)
 
 struct Iteration
     mctype::Type{<:MatrixCorrection}
@@ -136,7 +136,7 @@ struct Iteration
     Iteration(
         mct::Type{<:MatrixCorrection},
         fct::Type{<:FluorescenceCorrection};
-        updater = NaiveUpdateRule(),
+        updater = WegsteinUpdateRule(),
         converged = RMSBelowTolerance(0.0001),
         unmeasured = NullUnmeasuredRule(),
     ) = new(mct, fct, updater, converged, unmeasured, TimerOutput())
@@ -153,7 +153,7 @@ end
 Make a first estimate at the composition.
 """
 function firstEstimate(iter::Iteration, name::String, measured::Vector{KRatio})::Material
-    mfs = Dict{Element,Float64}((kr.element, nonneg(kr) * kr.standard[kr.element]) for kr in measured)
+    mfs = Dict{Element,Float64}((kr.element, nonnegk(kr) * kr.standard[kr.element]) for kr in measured)
     return material(name, compute(iter.unmeasured, mfs))
 end
 
@@ -194,14 +194,13 @@ Given an estimate of the composition compute the corresponding k-ratios.
 """
 function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element,Float64}
     estkrs = Dict{Element,Float64}()
-    # Precompute ZAFs for std
+    # Precompute ZAFs for std - Pull this out...
     nc, stdZafs = NullCoating(), Dict{KRatio,MultiZAF}()
-    for kr in measured
-        coating = get(kr.stdProps, :Coating, nc)
+    for kr in filter(k->nonnegk(k) > 0.0, measured)
         @timeit iter.timer "ZAF[std]" stdZafs[kr] = ZAF(iter, kr.standard, kr)
     end
     for kr in measured
-        if nonneg(kr)>0.0
+        if nonnegk(kr) > 0.0
             # Build ZAF for unk
             @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
             # Compute the total correction and the resulting k-ratio
@@ -211,7 +210,7 @@ function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Di
                 kr.unkProps[:TakeOffAngle],
                 kr.stdProps[:TakeOffAngle],
             )
-            estkrs[kr.element] = gzafc * est[kr.element] / kr.standard[kr.element]
+            estkrs[kr.element] = max(1.0e-7, gzafc * est[kr.element] / kr.standard[kr.element])
         else
             estkrs[kr.element] = 0.0
         end
