@@ -77,3 +77,53 @@ function NeXLCore.tabulate(krs::AbstractVector{KRatio})::DataFrame
         KRatio = krv
     )
 end
+
+"""
+    elements(krs::Vector{KRatio})::Vector{Element}
+
+Returns a vector containing the elements present in krs (no duplicate elements).
+"""
+function elements(krs::Vector{KRatio})::Vector{Element}
+    res=Vector{Element}()
+    for kr in krs
+        if !(kr.element in res)
+            push!(res, kr.element)
+        end
+    end
+    return res
+end
+
+"""
+KRatioOptimizer abstract type
+
+Defines an optimizeks(kro::KRatioOptimizer, krs::Vector{KRatio})::Vector{KRatio} method which takes a vector
+of k-ratios which may have redundant data (more than one KRatio per element) and trims it down to a vector
+of k-ratios with one KRatio per element.
+"""
+abstract type KRatioOptimizer end
+
+"""
+    SimpleKRatioOptimizer
+
+Implements a simple optimizer based on shell first, overvoltage next and brightness last.
+"""
+struct SimpleKRatioOptimizer <: KRatioOptimizer
+    overvoltage::Float64
+end
+
+function optimizeks(skro::SimpleKRatioOptimizer, krs::Vector{KRatio})::Vector{KRatio}
+    function score(kr)
+        br = brightest(kr.lines)
+        ov = min(kr.stdProps[:BeamEnergy], kr.unkProps[:BeamEnergy]) / edgeenergy(br)
+        sc = convert(Float64, 'O'-shell(br)) - # Line K->4, L->3, M->2, N->1
+            skro.overvoltage / ov + # Overvoltage (<1 if ov > over)
+            0.1*sum(weight.(kr.lines)) # line weight (favor brighter)
+        return ( sc, kr )
+    end
+    res = Vector{KRatio}()
+    for elm in elements(krs)
+        scored = score.(filter(k->k.element==elm, krs))
+        push!(res, sort(scored,lt=(sc1,sc2)->isless(sc1[1],sc2[1]))[end][2])
+    end
+    return res
+end

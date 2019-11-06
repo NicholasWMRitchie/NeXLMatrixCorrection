@@ -41,6 +41,10 @@ export reedFluorescence # Construct a structure encapsulating the Reed fluoresce
 
 include("kratio.jl")
 export KRatio # k-ratio data struct
+export elements # Elements present in a Vector{KRatio}
+export KRatioOptimizer
+export SimpleKRatioOptimizer
+export optimizeks
 
 include("iterate.jl")
 export UnmeasuredElementRule # Calculation elements by difference or stoichiometry or ???
