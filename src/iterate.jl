@@ -55,15 +55,19 @@ function update( #
     emf = Dict{Element,Float64}()
     if length(weg.prevc) < 2
         for mkr in measured
-            emf[mkr.element] = (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
+            emf[mkr.element] = estkrs[mkr.element] > 0.0 ? (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
         end
     else
         cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
             elm, km = mkr.element, nonnegk(mkr)
-            fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
-            dfdk = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
-            emf[elm] = cn[elm] + (km * fcn - cn[elm])/(1.0 - bound(km*dfdk, -weg.factor, weg.factor))
+            if (kn[elm] > 0) && (knm1[elm] > 0)
+                fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
+                dfdk = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
+                emf[elm] = cn[elm] + (km * fcn - cn[elm])/(1.0 - bound(km*dfdk, -weg.factor, weg.factor))
+            else
+                emf[elm] = 0.0
+            end
         end
     end
     push!(weg.prevc, prevcomp)
@@ -234,6 +238,7 @@ function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::Ite
         @timeit iter.timer "Unmeasured" unmeas = compute(iter.unmeasured, upd)
         @timeit iter.timer "Material" estcomp = material(name, unmeas)
         @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured)
+        println("$(iters.count) $(estcomp) $(estkrs)")
     end
     return IterationResult(estcomp, measured, estkrs, !terminated(iters), iters.count)
 end

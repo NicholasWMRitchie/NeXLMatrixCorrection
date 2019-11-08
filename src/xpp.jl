@@ -295,7 +295,7 @@ function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
     )
     @assert(
         V0v > 1.0,
-        "The beam energy must be larger than the mean energy loss.",
+        "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))",
     )
     Dv, Pjv, mv, Wbarv = D(Jv), P(Jv), m(ashell), Wbar(ηbarv)
     invSv = invS(U0v, V0v, Mv, Dv, Pjv, T(Pjv, mv))
