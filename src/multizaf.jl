@@ -9,26 +9,16 @@ struct MultiZAF
         elm = element(xrays[1])
         mat = material(first(values(zafs)))
         e0 = beamEnergy(first(values(zafs)))
-        @assert(
-            all(f -> isequal(element(f), elm), xrays),
-            "MultiZAF constructor: All the characteristic X-rays must be from the same element.",
-        )
-        @assert(
-            all(f -> isequal(element(f), elm), keys(zafs)),
-            "MultiZAF constructor: All the shells must be from the same element as the X-rays.",
-        )
-        @assert(
-            all(f -> haskey(zafs, inner(f)), xrays),
+        @assert all(f -> isequal(element(f), elm), xrays)
+            "MultiZAF constructor: All the characteristic X-rays must be from the same element."
+        @assert all(f -> isequal(element(f), elm), keys(zafs))
+            "MultiZAF constructor: All the shells must be from the same element as the X-rays."
+        @assert all(f -> haskey(zafs, inner(f)), xrays)
             "MultiZAF constructor: There must be a ZAF correction for each characteristic X-ray.",
-        )
-        @assert(
-            all(f -> isequal(material(f), mat), values(zafs)),
-            "MultiZAF constructor: All the materials must match.",
-        )
-        @assert(
-            all(f -> isequal(beamEnergy(f), e0), values(zafs)),
-            "MultiZAF constructor: All the beam energies must match.",
-        )
+        @assert all(f -> isequal(material(f), mat), values(zafs))
+            "MultiZAF constructor: All the materials must match."
+        @assert all(f -> isequal(beamEnergy(f), e0), values(zafs))
+            "MultiZAF constructor: All the beam energies must match."
         return new(xrays, zafs)
     end
 end
@@ -151,7 +141,7 @@ a DataFrame.
 """
 function NeXLCore.tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
     tot = gZAFc(unk, std, θunk, θstd)
-    @assert isequal(element(unk), element(std))
+    @assert isequal(element(unk), element(std)) "The unknown and standard's elements must match."
     return DataFrame(
         Unknown = [name(material(unk))],
         E₀ᵤ = [beamEnergy(unk)],

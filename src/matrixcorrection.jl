@@ -62,14 +62,8 @@ function ZA(
     θunk::AbstractFloat,
     θstd::AbstractFloat
 )
-    @assert(
-        isequal(unk.subshell, inner(xray)),
-        "Unknown and X-ray don't match in XPP",
-    )
-    @assert(
-        isequal(std.subshell, inner(xray)),
-        "Standard and X-ray don't match in XPP",
-    )
+    @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
+    @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
     return Fχ(unk, xray, θunk) / Fχ(std, xray, θstd)
 end
 
@@ -78,10 +72,8 @@ end
 The atomic number correction factor.
 """
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
-    @assert(
-        isequal(unk.subshell, std.subshell),
-        "Unknown and standard matrix corrections don't apply to the same sub-shell.",
-    )
+    @assert isequal(unk.subshell, std.subshell)
+        "Unknown and standard matrix corrections don't apply to the same sub-shell."
     return F(unk) / F(std)
 end
 
@@ -96,14 +88,8 @@ function A(
     θunk::AbstractFloat,
     θstd::AbstractFloat
 )
-    @assert(
-        isequal(unk.subshell, inner(xray)),
-        "Unknown and X-ray don't match in XPP",
-    )
-    @assert(
-        isequal(std.subshell, inner(xray)),
-        "Standard and X-ray don't match in XPP",
-    )
+    @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
+    @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
 end
 
@@ -258,10 +244,8 @@ function NeXLCore.tabulate(
     θunk::AbstractFloat,
     θstd::AbstractFloat
 )::DataFrame
-    @assert(
-        isequal(atomicsubshell(unk.za), atomicsubshell(std.za)),
-        "The atomic sub-shell for the standard and unknown don't match.",
-    )
+    @assert isequal(atomicsubshell(unk.za), atomicsubshell(std.za))
+        "The atomic sub-shell for the standard and unknown don't match."
     cxrs = characteristic(
         element(atomicsubshell(unk.za)),
         trans,

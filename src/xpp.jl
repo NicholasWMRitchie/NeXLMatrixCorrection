@@ -42,7 +42,7 @@ The function P&P uses to describe the deceleration of an electron in a material.
 Output units are (keV/cm)/(g/cm^3) = keV cm^2/g. (PAP eqn 5)
 """
 function dEdρs(mat::Material, Ekev::AbstractFloat) #C1
-    @assert(Ekev<50.0)
+    @assert Ekev<50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
     # PAP Eqn 8
     function f(mat::Material, Ekev::AbstractFloat)
         j = J(mat)
@@ -91,7 +91,7 @@ invS(U0, V0, M, D, P, T) = #C1
 Computes S, the stopping power at the specified energy (in keV)
 """
 function S(mat::Material, ashell::AtomicSubShell, Ekev)
-    @assert(Ekev < 50.0)
+    @assert Ekev<50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
     j = J(mat)
     return 1.0 /
            invS(
@@ -289,14 +289,8 @@ function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
     e0, Mv, Jv, = 0.001 * E0, M(mat), J(mat)
     Zbarbv, eLv = Zbarb(mat), 0.001 * energy(ashell)
     U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(Zbarbv)
-    @assert(
-        U0v > 1.0,
-        "The beam energy must be larger than the subshell edge energy.",
-    )
-    @assert(
-        V0v > 1.0,
-        "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))",
-    )
+    @assert U0v > 1.0  "The beam energy must be larger than the subshell edge energy."
+    @assert V0v > 1.0  "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))"
     Dv, Pjv, mv, Wbarv = D(Jv), P(Jv), m(ashell), Wbar(ηbarv)
     invSv = invS(U0v, V0v, Mv, Dv, Pjv, T(Pjv, mv))
     qv, Rv, ϕ0v, QlAv = q(Wbarv),

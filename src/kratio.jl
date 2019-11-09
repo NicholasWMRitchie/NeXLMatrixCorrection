@@ -72,8 +72,8 @@ function NeXLCore.tabulate(krs::AbstractVector{KRatio})::DataFrame
         E0std = e0s,
         θunk = toau,
         θstd = toas,
-        Material = mat,
-        Celm = celm,
+        Standard = mat,
+        Cstd = celm,
         KRatio = krv
     )
 end

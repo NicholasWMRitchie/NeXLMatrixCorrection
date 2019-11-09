@@ -53,7 +53,7 @@ function update( #
 )::Dict{Element,Float64}
     bound(x,min,max) = x < min ? min : (x > max ? max : x)
     emf = Dict{Element,Float64}()
-    if length(weg.prevc) < 2
+    if length(weg.prevc) < 1
         for mkr in measured
             emf[mkr.element] = estkrs[mkr.element] > 0.0 ? (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
         end
@@ -64,7 +64,7 @@ function update( #
             if (kn[elm] > 0) && (knm1[elm] > 0)
                 fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
                 dfdk = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
-                emf[elm] = cn[elm] + (km * fcn - cn[elm])/(1.0 - bound(km*dfdk, -weg.factor, weg.factor))
+                emf[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km*dfdk, -weg.factor, weg.factor))
             else
                 emf[elm] = 0.0
             end
@@ -85,6 +85,26 @@ struct RecordingUpdateRule <: UpdateRule
     estkrs::Vector{Dict{Element,Float64}}
     comps::Vector{Dict{Element,Float64}}
     RecordingUpdateRule(ur::UpdateRule) = new(ur,Vector{Dict{Element,Float64}}(),Vector{Dict{Element,Float64}}())
+end
+
+function tabulate(rur::RecordingUpdateRule)
+    dkrs, dcs = Dict{Element, Vector{Float64}}(), Dict{Element,Vector{Float64}}()
+    allelms = union(keys(rur.estkrs[1]), keys(rur.comps[1]))
+    for elm in allelms
+        dkrs[elm], dcs[elm] = [], []
+    end
+    for i in eachindex(rur.estkrs)
+        for elm in allelms
+            push!(dkrs[elm], get(rur.estkrs[i], elm, 0.0))
+            push!(dcs[elm], get(rur.comps[i], elm, 0.0))
+        end
+    end
+    df = DataFrame(Iter=collect(eachindex(rur.estkrs)))
+    for elm in allelms
+        df[!, Symbol("C($(elm.symbol))")]=dcs[elm]
+        df[!, Symbol("k($(elm.symbol))")]=dkrs[elm]
+    end
+    return df
 end
 
 function NeXLMatrixCorrection.update( #
@@ -146,10 +166,11 @@ struct Iteration
     ) = new(mct, fct, updater, converged, unmeasured, TimerOutput())
 end
 
-function ZAF(iter::Iteration, mat::Material, kr::KRatio)::MultiZAF
-    coating = get(kr.stdProps, :Coating, NullCoating())
-    return ZAF(iter.mctype, iter.fctype, mat, kr.lines, kr.stdProps[:BeamEnergy], coating)
+function _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{CharXRay})::MultiZAF
+    coating = get(props, :Coating, NullCoating())
+    return ZAF(iter.mctype, iter.fctype, mat, lines, props[:BeamEnergy], coating)
 end
+
 
 """
     firstEstimate(iter::Iteration)::Material
@@ -196,17 +217,12 @@ terminated(it::Counter) = it.count > it.terminate
 
 Given an estimate of the composition compute the corresponding k-ratios.
 """
-function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio})::Dict{Element,Float64}
+function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio}, stdZafs::Dict{KRatio,MultiZAF})::Dict{Element,Float64}
     estkrs = Dict{Element,Float64}()
-    # Precompute ZAFs for std - Pull this out...
-    nc, stdZafs = NullCoating(), Dict{KRatio,MultiZAF}()
-    for kr in filter(k->nonnegk(k) > 0.0, measured)
-        @timeit iter.timer "ZAF[std]" stdZafs[kr] = ZAF(iter, kr.standard, kr)
-    end
     for kr in measured
         if nonnegk(kr) > 0.0
             # Build ZAF for unk
-            @timeit iter.timer "ZAF[unk]" unkZaf = ZAF(iter, est, kr)
+            @timeit iter.timer "ZAF[unk]" unkZaf = _ZAF(iter, est, kr.unkProps, kr.lines)
             # Compute the total correction and the resulting k-ratio
             @timeit iter.timer "gZAFc" gzafc = gZAFc(
                 unkZaf,
@@ -228,17 +244,17 @@ end
 Iterate to find the composition that produces the measured k-ratios.
 """
 function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
+    stdZafs = Dict( ( kr, _ZAF(iter, kr.standard, kr.stdProps, kr.lines) ) #
+                        for kr in filter(k->k.kratio > 0.0, measured) )
     @timeit iter.timer "FirstComp" estcomp = firstEstimate(iter, name, measured)
-    @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured)
+    @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
     iters = Counter(100)
     reset(iter.updater)
     while !converged(iter.converged, measured, estkrs) && update(iters)
-        # println("$(estcomp) for $(estkrs)")
         @timeit iter.timer "NextEst" upd = update(iter.updater, estcomp, measured, estkrs)
         @timeit iter.timer "Unmeasured" unmeas = compute(iter.unmeasured, upd)
         @timeit iter.timer "Material" estcomp = material(name, unmeas)
-        @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured)
-        println("$(iters.count) $(estcomp) $(estkrs)")
+        @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
     end
     return IterationResult(estcomp, measured, estkrs, !terminated(iters), iters.count)
 end

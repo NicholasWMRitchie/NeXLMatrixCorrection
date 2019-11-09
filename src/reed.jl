@@ -31,8 +31,7 @@ function familyfactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
          res = 1.0 / 0.24
       elseif (fA == 'L') && (fB == 'K')
          res = 0.24
-      elseif fA == 'M'
-         @assert((fB == 'K') || (fB == 'L'))
+      elseif (fA == 'M') && ((fB == 'K') || (fB == 'L'))
          res = 0.02
       else
          res = 0.0
@@ -60,7 +59,8 @@ struct ReedInternal
 
    function ReedInternal(comp::Material, primary::CharXRay, secondary::AtomicSubShell, e0::Float64)
       bElm, aElm = element(primary), element(secondary)
-      @assert (aElm in keys(comp)) && (bElm in keys(comp))
+      @assert aElm in keys(comp) "Element $(aElm.symbol) not in $(comp). (aElm)"
+      @assert bElm in keys(comp) "Element $(bElm.symbol) not in $(comp). (bElm)"
       cB = comp[bElm]
       muB_A, muB = mac(aElm, primary), mac(comp, primary)
       ionizeF = ionizationfraction(secondary)
@@ -95,7 +95,7 @@ primaries specified in reed.
 """
 function F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64)
    function finternal(ri::ReedInternal, secondary::CharXRay, toa::Float64, comp::Material)
-      @assert(ri.kk >= 0.0, "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)")
+      @assert ri.kk >= 0.0 "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)"
       u = mac(comp, secondary) / (sin(toa) * ri.muB)
       # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
       return normWeight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
