@@ -355,7 +355,7 @@ matrixcorrection(
 ) = xpp(mat, ashell, e0)
 
 
-function NeXLCore.tabulate(
+function tabulate( #
     unk::Material,
     stds::Dict{Element,Material},
     e0::AbstractFloat,
@@ -369,7 +369,7 @@ function NeXLCore.tabulate(
         for ashell in atomicsubshells(elm, e0)
             append!(
                 df,
-                tabulate(
+                tabulate( #
                     ZAF(mctype, fctype, unk, std, ashell, e0)...,
                     alltransitions,
                     θunk, θstd

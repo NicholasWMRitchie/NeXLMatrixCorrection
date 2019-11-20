@@ -136,10 +136,10 @@ k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) =
 """
     tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-tabulate a matrix correction relative to the specified unknown and standard in
+Tabulate a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
-function NeXLCore.tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+function tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
     tot = gZAFc(unk, std, θunk, θstd)
     @assert isequal(element(unk), element(std)) "The unknown and standard's elements must match."
     return DataFrame(
@@ -212,7 +212,7 @@ end
 """
     detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrame
 
-tabulate a matrix correction relative to the specified unknown and standard in
+Tabulate a matrix correction relative to the specified unknown and standard in
 a DataFrame.
 """
 detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
@@ -221,8 +221,8 @@ detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd
 """
     tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-tabulate a matrix correction relative to a specified Dict of unknowns and
+Tabulate a matrix correction relative to a specified Dict of unknowns and
 standards in a DataFrame.
 """
-NeXLCore.tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
+tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
     mapreduce(tmm -> tabulate(tmm[1], tmm[2], θunk, θstd), append!, mzs)

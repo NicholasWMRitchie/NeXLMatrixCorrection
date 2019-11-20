@@ -5,7 +5,6 @@ using PeriodicTable
 using Requires
 
 include("matrixcorrection.jl")
-export tabulate # tabulate ZAF corrections
 export Z # Atomic number correction
 export A # Absorption correction
 export F # Compute the flurorescence correction
@@ -21,6 +20,7 @@ export transmission # Coating transmission
 export carboncoating # Build a carbon coating
 export Fχ # Absorbed intensity function
 export matrixcorrection
+export tabulate # Report ZAF results as a table
 
 include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction.
