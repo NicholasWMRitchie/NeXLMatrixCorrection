@@ -232,12 +232,13 @@ zaf(
 ) = ZAFCorrection(za, f, coating)
 
 """
-    Base.convert(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
+    NeXLCore.asa(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
 
 Tabulate a matrix correction relative to the specified unknown and standard
 for the iterable of Transition, trans.
 """
-function tabulate(#
+function NeXLCore.asa(#
+    ::Type{DataFrame},
     unk::ZAFCorrection,
     std::ZAFCorrection,
     trans,

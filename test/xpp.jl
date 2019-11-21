@@ -106,7 +106,7 @@ end
     @test isapprox(F(zafZr...,n"Zr L3-M5",θ,θ), 1.0020,atol=0.001)
     @test isapprox(F(zafO...,n"O K-L3",θ,θ), 0.9996,atol=0.001)
 
-#    print(convert(DataFrame, Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
+#    print(asa(DataFrame, Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
 end
 
 @testset "U3O8 at 25 keV" begin
@@ -185,5 +185,5 @@ end
     @test isapprox(F(zafZr...,θ,θ), 1.0015,atol=0.001)
     @test isapprox(F(zafO...,θ,θ), 0.9996,atol=0.001)
 
-#    print(convert(DataFrame, Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
+#    print(asa(DataFrame, Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
 end
