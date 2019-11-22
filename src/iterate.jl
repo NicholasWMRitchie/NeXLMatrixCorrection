@@ -87,7 +87,7 @@ struct RecordingUpdateRule <: UpdateRule
     RecordingUpdateRule(ur::UpdateRule) = new(ur,Vector{Dict{Element,Float64}}(),Vector{Dict{Element,Float64}}())
 end
 
-function NeXLCore.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
+function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
     dkrs, dcs = Dict{Element, Vector{Float64}}(), Dict{Element,Vector{Float64}}()
     allelms = union(keys(rur.estkrs[1]), keys(rur.comps[1]))
     for elm in allelms

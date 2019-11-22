@@ -48,7 +48,7 @@ nonnegk(kr::KRatio) = max(0.0, kr.kratio)
 
 Base.show(io::IO, kr::KRatio) = print(io, "k[$(name(kr.standard)), $(name(kr.lines))] = $(kr.kratio)")
 
-function NeXLCore.asa(::Type{DataFrame}, krs::AbstractVector{KRatio})::DataFrame
+function NeXLUncertainties.asa(::Type{DataFrame}, krs::AbstractVector{KRatio})::DataFrame
     elms, zs, lines, e0u = Vector{String}(), Vector{Int}(), Vector{Vector{CharXRay}}(), Vector{Float64}()
     e0s, toau, toas, mat = Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{String}()
     celm, krv = Vector{Float64}(), Vector{Float64}()
