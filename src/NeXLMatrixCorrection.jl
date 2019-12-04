@@ -1,5 +1,6 @@
 module NeXLMatrixCorrection
 
+using NeXLUncertainties
 using NeXLCore
 using PeriodicTable
 using Requires

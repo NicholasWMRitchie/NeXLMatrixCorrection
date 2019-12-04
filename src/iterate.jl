@@ -25,15 +25,16 @@ struct NaiveUpdateRule <: UpdateRule end
 
 Determine the next estimate of the composition that brings the estkrs closer to measured.
 """
-function update(::NaiveUpdateRule, prevcomp::Material, measured::Vector{KRatio}, estkrs::Dict{Element,Float64})::Dict{
-    Element,
-    Float64,
-}
-    emf = Dict{Element,Float64}()
+function update(::NaiveUpdateRule, #
+    prevcomp::Material, #
+    measured::Vector{KRatio}, #
+    estkrs::Dict{Element,Float64}, #
+)::Dict{Element, Float64}
+    cnp1 = Dict{Element,Float64}()
     for mkr in measured
-        emf[mkr.element] = (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
+        cnp1[mkr.element] = (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
     end
-    return emf
+    return cnp1
 end
 
 function reset(::NaiveUpdateRule) end
@@ -49,30 +50,31 @@ function update( #
     weg::WegsteinUpdateRule,
     prevcomp::Material,
     measured::Vector{KRatio},
-    estkrs::Dict{Element,Float64}
+    estkrs::Dict{Element,Float64},
 )::Dict{Element,Float64}
     bound(x,min,max) = x < min ? min : (x > max ? max : x)
-    emf = Dict{Element,Float64}()
-    if length(weg.prevc) < 1
+    cnp1, itercx = Dict{Element,Float64}(), length(weg.prevc)
+    if itercx < 1
         for mkr in measured
-            emf[mkr.element] = estkrs[mkr.element] > 0.0 ? (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
+            cnp1[mkr.element] = estkrs[mkr.element] > 0.0 ? (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
         end
     else
-        cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
+        cn = itercx <= 5 ? NeXLCore.asnormalized(prevcomp) : prevcomp
+        cnm1, kn, knm1 = weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
             elm, km = mkr.element, nonnegk(mkr)
             if (kn[elm] > 0) && (knm1[elm] > 0)
                 fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
-                dfdk = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
-                emf[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km*dfdk, -weg.factor, weg.factor))
+                dfdk = ((fcn - fcnm1) / (cn[elm] - cnm1[elm]))
+                cnp1[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km*dfdk, -weg.factor, weg.factor))
             else
-                emf[elm] = 0.0
+                cnp1[elm] = 0.0
             end
         end
     end
     push!(weg.prevc, prevcomp)
     push!(weg.prevk, estkrs)
-    return emf
+    return cnp1
 end
 
 function reset(weg::WegsteinUpdateRule)
