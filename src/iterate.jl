@@ -43,7 +43,8 @@ struct WegsteinUpdateRule <: UpdateRule
     prevc::Vector{Material}
     prevk::Vector{Dict{Element,Float64}}
     factor::Float64
-    WegsteinUpdateRule(f::Float64=0.3) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(),f)
+    norm::Vector{Float64}
+    WegsteinUpdateRule(f::Float64=0.3) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(),f,Float64[])
 end
 
 function update( #
@@ -52,21 +53,24 @@ function update( #
     measured::Vector{KRatio},
     estkrs::Dict{Element,Float64},
 )::Dict{Element,Float64}
-    bound(x,min,max) = x < min ? min : (x > max ? max : x)
+    bound(x, min, max) = x < min ? min : (x > max ? max : x)
     cnp1, itercx = Dict{Element,Float64}(), length(weg.prevc)
     if itercx < 1
+        push!(weg.norm, 1.0)
         for mkr in measured
             cnp1[mkr.element] = estkrs[mkr.element] > 0.0 ? (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
         end
     else
-        cn = itercx <= 5 ? NeXLCore.asnormalized(prevcomp) : prevcomp
-        cnm1, kn, knm1 = weg.prevc[end], estkrs, weg.prevk[end]
+        safediv(a, b) = isapprox(b, 0.0, atol = 1.0e-12) ? 1.0 : a / b
+        push!(weg.norm, itercx % 5 ≠ 0 ? weg.norm[end] : #
+            weg.norm[end] / sum(safediv(nonnegk(mkr), estkr[mkr.element]) * prevcomp[mkr.element] for mkr in measured))
+        cn, cnm1, kn, knm1 = NeXLCore.asnormalized(prevcomp, weg.norm[end]), weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
             elm, km = mkr.element, nonnegk(mkr)
             if (kn[elm] > 0) && (knm1[elm] > 0)
-                fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
+                fcn, fcnm1 = cn[elm] / kn[elm], cnm1[elm] / knm1[elm] # c = k*f
                 dfdk = ((fcn - fcnm1) / (cn[elm] - cnm1[elm]))
-                cnp1[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km*dfdk, -weg.factor, weg.factor))
+                cnp1[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km * dfdk, -weg.factor, weg.factor))
             else
                 cnp1[elm] = 0.0
             end
