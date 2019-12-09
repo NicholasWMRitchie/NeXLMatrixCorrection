@@ -1,9 +1,9 @@
 module NeXLMatrixCorrection
 
-using NeXLUncertainties
-using NeXLCore
-using PeriodicTable
+using Reexport
 using Requires
+
+@reexport using NeXLCore
 
 include("matrixcorrection.jl")
 export Z # Atomic number correction

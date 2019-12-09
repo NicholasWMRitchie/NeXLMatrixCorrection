@@ -13,7 +13,7 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 deps = ["Requires"]
 git-tree-sha1 = "f465a1b1bf5f3c2a6d422fafce3f3f20b9849535"
 repo-rev = "master"
-repo-url = "https://github.com/usnistgov/BoteSalvatICX.jl.git"
+repo-url = "https://github.com/usnistgov/BoteSalvatICX.jl"
 uuid = "fe54227b-96c7-489b-9963-dd1ce2905f30"
 version = "0.0.1"
 
@@ -25,9 +25,9 @@ version = "0.5.18"
 
 [[CategoricalArrays]]
 deps = ["Compat", "DataAPI", "Future", "JSON", "Missings", "Printf", "Reexport", "Unicode"]
-git-tree-sha1 = "4d85a015093760ff23b20f3e25fa195b4cb76794"
+git-tree-sha1 = "9c3fd1ebb503d271943c4ea94332d55ea900c9cb"
 uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
-version = "0.7.3"
+version = "0.7.4"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -88,7 +88,7 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[FFAST]]
 deps = ["CSV", "DataFrames", "Requires"]
-git-tree-sha1 = "4e79997e9d64cd15bf636249c1bea1eeb70e1b7c"
+git-tree-sha1 = "68786a7a68068bc38fa4ada4b52d3cb11cb030fd"
 repo-rev = "master"
 repo-url = "https://github.com/usnistgov/FFAST.jl"
 uuid = "10506e09-08cd-5f0b-aee5-631de1bcc925"
@@ -156,10 +156,10 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[MacroTools]]
-deps = ["Compat", "DataStructures", "Test"]
-git-tree-sha1 = "82921f0e3bde6aebb8e524efc20f4042373c0c06"
+deps = ["DataStructures", "Markdown", "Random"]
+git-tree-sha1 = "e2fc7a55bb2224e203bbd8b59f72b91323233458"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.2"
+version = "0.5.3"
 
 [[Markdown]]
 deps = ["Base64"]
@@ -175,8 +175,8 @@ version = "0.4.3"
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[NeXLCore]]
-deps = ["BoteSalvatICX", "CSV", "Colors", "DataFrames", "FFAST", "NeXLUncertainties", "PeriodicTable", "Printf", "Requires", "Unitful"]
-git-tree-sha1 = "9b74545e74c572efe100c7002547f2becf227ed4"
+deps = ["BoteSalvatICX", "CSV", "Colors", "DataFrames", "FFAST", "NeXLUncertainties", "PeriodicTable", "Printf", "Reexport", "Requires", "Unitful"]
+git-tree-sha1 = "2c4a9b21c170cd5086c04d95d4ed70d68a4108e9"
 repo-rev = "master"
 repo-url = "https://github.com/NicholasWMRitchie/NeXLCore.jl.git"
 uuid = "93a0284f-3680-435e-8d39-dd6e52a1dbc8"
