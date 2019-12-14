@@ -1,9 +1,9 @@
 module NeXLMatrixCorrection
 
-using NeXLUncertainties
-using NeXLCore
-using PeriodicTable
+using Reexport
 using Requires
+
+@reexport using NeXLCore
 
 include("matrixcorrection.jl")
 export Z # Atomic number correction
@@ -42,7 +42,6 @@ export reedFluorescence # Construct a structure encapsulating the Reed fluoresce
 
 include("kratio.jl")
 export KRatio # k-ratio data struct
-export elements # Elements present in a Vector{KRatio}
 export KRatioOptimizer
 export SimpleKRatioOptimizer
 export optimizeks

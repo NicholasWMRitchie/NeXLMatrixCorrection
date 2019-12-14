@@ -80,11 +80,11 @@ function NeXLUncertainties.asa(::Type{DataFrame}, krs::AbstractVector{KRatio})::
 end
 
 """
-    elements(krs::Vector{KRatio})::Vector{Element}
+    elms(krs::Vector{KRatio})::Vector{Element}
 
 Returns a vector containing the elements present in krs (no duplicate elements).
 """
-function elements(krs::Vector{KRatio})::Vector{Element}
+function NeXLCore.elms(krs::Vector{KRatio})::Vector{Element}
     res=Vector{Element}()
     for kr in krs
         if !(kr.element in res)
@@ -122,7 +122,7 @@ function optimizeks(skro::SimpleKRatioOptimizer, krs::Vector{KRatio})::Vector{KR
         return ( sc, kr )
     end
     res = Vector{KRatio}()
-    for elm in elements(krs)
+    for elm in elms(krs)
         scored = score.(filter(k->k.element==elm, krs))
         push!(res, sort(scored,lt=(sc1,sc2)->isless(sc1[1],sc2[1]))[end][2])
     end
