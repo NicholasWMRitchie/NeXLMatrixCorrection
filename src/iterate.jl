@@ -43,7 +43,7 @@ struct WegsteinUpdateRule <: UpdateRule
     prevc::Vector{Material}
     prevk::Vector{Dict{Element,Float64}}
     factor::Float64
-    WegsteinUpdateRule(f::Float64=0.3) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(),f)
+    WegsteinUpdateRule(f::Float64 = 0.5) = new(Vector{Material}(), Vector{Dict{Element,Float64}}(), f)
 end
 
 function update( #
@@ -52,21 +52,21 @@ function update( #
     measured::Vector{KRatio},
     estkrs::Dict{Element,Float64},
 )::Dict{Element,Float64}
-    bound(x,min,max) = x < min ? min : (x > max ? max : x)
+    bound(x, min, max) = x < min ? min : (x > max ? max : x)
     cnp1, itercx = Dict{Element,Float64}(), length(weg.prevc)
     if itercx < 1
         for mkr in measured
-            cnp1[mkr.element] = estkrs[mkr.element] > 0.0 ? (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
+            cnp1[mkr.element] = estkrs[mkr.element] > 0.0 ?
+                                (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
         end
     else
-        cn = itercx <= 5 ? NeXLCore.asnormalized(prevcomp) : prevcomp
-        cnm1, kn, knm1 = weg.prevc[end], estkrs, weg.prevk[end]
+        cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
             elm, km = mkr.element, nonnegk(mkr)
             if (kn[elm] > 0) && (knm1[elm] > 0)
-                fcn, fcnm1 = cn[elm]/kn[elm], cnm1[elm]/knm1[elm] # c = k*f
+                fcn, fcnm1 = cn[elm] / kn[elm], cnm1[elm] / knm1[elm] # c = k*f
                 dfdk = ((fcn - fcnm1) / (cn[elm] - cnm1[elm]))
-                cnp1[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km*dfdk, -weg.factor, weg.factor))
+                cnp1[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km * dfdk, -weg.factor, weg.factor))
             else
                 cnp1[elm] = 0.0
             end
@@ -86,25 +86,32 @@ struct RecordingUpdateRule <: UpdateRule
     base::UpdateRule
     estkrs::Vector{Dict{Element,Float64}}
     comps::Vector{Dict{Element,Float64}}
-    RecordingUpdateRule(ur::UpdateRule) = new(ur,Vector{Dict{Element,Float64}}(),Vector{Dict{Element,Float64}}())
+    prev::Vector{Material}
+    meas::Dict{Element, KRatio}
+    RecordingUpdateRule(ur::UpdateRule) =
+        new(ur,Vector{Dict{Element,Float64}}(),Vector{Dict{Element,Float64}}(),Vector{Material}(),Dict{Element,KRatio}())
 end
 
 function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
-    dkrs, dcs = Dict{Element, Vector{Float64}}(), Dict{Element,Vector{Float64}}()
-    allelms = union(keys(rur.estkrs[1]), keys(rur.comps[1]))
+    dkrs, dcs, prev = Dict{Element, Vector{Float64}}(), Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
+    allelms = union(keys(rur.estkrs[1]), keys(rur.comps[1]), keys(rur.prev[1]), keys(rur.meas))
     for elm in allelms
-        dkrs[elm], dcs[elm] = [], []
+        dkrs[elm], dcs[elm], prev[elm], meas[elm] = [], [], [], []
     end
     for i in eachindex(rur.estkrs)
         for elm in allelms
             push!(dkrs[elm], get(rur.estkrs[i], elm, 0.0))
             push!(dcs[elm], get(rur.comps[i], elm, 0.0))
+            push!(prev[elm], rur.prev[i][elm])
+            push!(meas[elm], rur.meas[elm])
         end
     end
     df = DataFrame(Iter=collect(eachindex(rur.estkrs)))
     for elm in allelms
-        df[!, Symbol("C($(elm.symbol))")]=dcs[elm]
-        df[!, Symbol("k($(elm.symbol))")]=dkrs[elm]
+        df[!, Symbol("Prev($(elm.symbol))")]=prev[elm]
+        df[!, Symbol("Next($(elm.symbol))")]=dcs[elm]
+        df[!, Symbol("kest($(elm.symbol))")]=dkrs[elm]
+        df[!, Symbol("meas($(elm.symbol))")]=meas[elm]
     end
     return df
 end
@@ -116,14 +123,20 @@ function NeXLMatrixCorrection.update( #
     estkrs::Dict{Element,Float64},
 )::Dict{Element,Float64}
     res = NeXLMatrixCorrection.update(rur.base, prevcomp, measured, estkrs)
+    if isempty(rur.meas)
+        append!(rur.meas, measured)
+    end
+    push!(rur.prev, prevcomp)
     push!(rur.estkrs, estkrs)
     push!(rur.comps, res)
     return res
 end
 
 function NeXLMatrixCorrection.reset(rur::RecordingUpdateRule)
-    resize!(rur.estkrs,0)
-    resize!(rur.comps,0)
+    resize!(rur.estkrs, 0)
+    resize!(rur.comps, 0)
+    resize!(rur.prev, 0)
+    resize!(rur.meas, 0)
     NeXLMatrixCorrection.reset(rur.base)
 end
 
@@ -214,6 +227,8 @@ update(it::Counter)::Bool = (it.count += 1) <= it.terminate
 
 terminated(it::Counter) = it.count > it.terminate
 
+value(it::Counter) = it.count
+
 """
     computeKs(iter::Iteration, est::Material)::Dict{Element, Float64}
 
@@ -246,17 +261,33 @@ end
 Iterate to find the composition that produces the measured k-ratios.
 """
 function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
+    eval(computed) = sum((nonnegk(kr) - computed[kr.element])^2 for kr in measured)
     stdZafs = Dict( ( kr, _ZAF(iter, kr.standard, kr.stdProps, kr.lines) ) #
                         for kr in filter(k->k.kratio > 0.0, measured) )
     @timeit iter.timer "FirstComp" estcomp = firstEstimate(iter, name, measured)
     @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
+    # If no convergence report it but return closest result...
+    bestComp, bestKrs, bestEval = estcomp, estkrs, eval(estkrs)
     iters = Counter(100)
     reset(iter.updater)
+    norm = 1.0
     while !converged(iter.converged, measured, estkrs) && update(iters)
         @timeit iter.timer "NextEst" upd = update(iter.updater, estcomp, measured, estkrs)
         @timeit iter.timer "Unmeasured" unmeas = compute(iter.unmeasured, upd)
-        @timeit iter.timer "Material" estcomp = material(name, unmeas)
+        estcomp = asnormalized(material(name, unmeas), norm)
+        #estcomp = material(name, unmeas)
         @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
+        if (iters.count > 4) && (iters.count % 5 == 0)
+            norm = 1.0 / mapreduce(mkr->unmeas[mkr.element], +, measured)
+        end
+        if eval(estkrs)<bestEval
+            bestComp, bestKrs, bestEval = estcomp, estkrs, eval(estkrs)
+        end
     end
-    return IterationResult(estcomp, measured, estkrs, !terminated(iters), iters.count)
+    if terminated(iters)
+        @warn "$(name) did not converge - using best non-converged result."
+        return IterationResult(bestComp, measured, bestKrs, false, iters.count)
+    else
+        return IterationResult(estcomp, measured, estkrs, true, iters.count)
+    end
 end

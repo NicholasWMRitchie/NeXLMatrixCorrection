@@ -1,3 +1,4 @@
+using NeXLUncertainties
 using NeXLCore
 
 """
@@ -20,14 +21,14 @@ struct KRatio
     unkProps::Dict{Symbol,Any} # Beam energy, take-off angle, coating, ???
     stdProps::Dict{Symbol,Any} # Beam energy, take-off angle, coating, ???
     standard::Material
-    kratio::Float64
+    kratio::UncertainValue
 
     function KRatio(
         lines::Vector{CharXRay},
         unkProps::Dict{Symbol,<:Any},
         stdProps::Dict{Symbol,<:Any},
         standard::Material,
-        kratio::Float64,
+        kratio::AbstractFloat
     )
         if length(lines) < 1
             error("Must specify at least one characteristic X-ray.")
@@ -39,12 +40,12 @@ struct KRatio
         if standard[elm] <= 1.0e-4
             error("The standard must contain the element $(elm).  $(standard[elm])")
         end
-        return new(elm, lines, unkProps, stdProps, standard, kratio)
+        return new(elm, lines, unkProps, stdProps, standard, convert(UncertainValue, kratio))
     end
 end
 
 NeXLCore.element(kr::KRatio) = kr.element
-nonnegk(kr::KRatio) = max(0.0, kr.kratio)
+nonnegk(kr::KRatio) = max(zero(typeof(kr.kratio), kr.kratio))
 
 Base.show(io::IO, kr::KRatio) = print(io, "k[$(name(kr.standard)), $(name(kr.lines))] = $(kr.kratio)")
 
