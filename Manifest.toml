@@ -5,11 +5,11 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[BoteSalvatICX]]
 deps = ["Requires"]
-git-tree-sha1 = "beebf50b3f023e729530f306abf6b2d5abb9d07d"
+git-tree-sha1 = "48a512a94c04a57b47d971f478e6fe60504347d0"
 repo-rev = "master"
 repo-url = "https://github.com/usnistgov/BoteSalvatICX.jl"
 uuid = "fe54227b-96c7-489b-9963-dd1ce2905f30"
-version = "0.0.1"
+version = "0.0.3-dev"
 
 [[CSV]]
 deps = ["CategoricalArrays", "DataFrames", "Dates", "FilePathsBase", "Mmap", "Parsers", "PooledArrays", "Tables", "Unicode", "WeakRefStrings"]
@@ -31,9 +31,9 @@ version = "0.7.4"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "10050a24b09e8e41b951e9976b109871ce98d965"
+git-tree-sha1 = "b41d0f666d46ba128c6a0fc632d6e33fbfc03604"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.8.0"
+version = "0.9.0"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Printf", "Reexport"]
@@ -88,7 +88,7 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[FFAST]]
 deps = ["CSV", "DataFrames", "Requires"]
-git-tree-sha1 = "cf04f3ba4a6aa4366ee02a657f6cd4c3c03781bd"
+git-tree-sha1 = "1d191a388144103d3b19bb42b236067a00e06e28"
 repo-rev = "master"
 repo-url = "https://github.com/usnistgov/FFAST.jl"
 uuid = "10506e09-08cd-5f0b-aee5-631de1bcc925"
@@ -101,9 +101,9 @@ uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
 version = "0.7.0"
 
 [[FixedPointNumbers]]
-git-tree-sha1 = "d14a6fa5890ea3a7e5dcab6811114f132fec2b4b"
+git-tree-sha1 = "bd1386f890e172ef38e1c735cda58cbf004a7c9a"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-version = "0.6.1"
+version = "0.7.0"
 
 [[Future]]
 deps = ["Random"]
@@ -176,19 +176,19 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[NeXLCore]]
 deps = ["BoteSalvatICX", "CSV", "Colors", "DataFrames", "FFAST", "NeXLUncertainties", "PeriodicTable", "PhysicalConstants", "Printf", "Reexport", "Requires", "Unitful"]
-git-tree-sha1 = "75f44e0be2f535dd5044d962ea12bc2538eb3512"
+git-tree-sha1 = "052ee3ed4076fb242d3d3261214ddc844cb39272"
 repo-rev = "master"
 repo-url = "https://github.com/NicholasWMRitchie/NeXLCore.jl.git"
 uuid = "93a0284f-3680-435e-8d39-dd6e52a1dbc8"
-version = "0.0.2"
+version = "0.0.3-dev"
 
 [[NeXLUncertainties]]
 deps = ["DataFrames", "LinearAlgebra", "Printf", "SparseArrays"]
-git-tree-sha1 = "4e49d9e4277f99f466aa91fea6a82b018a2881c6"
+git-tree-sha1 = "94fc80aeb6151725ee793c6d8e7414e7a7620a2c"
 repo-rev = "master"
 repo-url = "https://github.com/NicholasWMRitchie/NeXLUncertainties.jl.git"
 uuid = "7127f3d6-1721-46bc-bb38-8fc703dd438e"
-version = "0.0.2"
+version = "0.0.3-dev"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
