@@ -232,8 +232,6 @@ update(it::Counter)::Bool = (it.count += 1) <= it.terminate
 
 terminated(it::Counter) = it.count > it.terminate
 
-value(it::Counter) = it.count
-
 """
     computeKs(iter::Iteration, est::Material)::Dict{Element, Float64}
 
