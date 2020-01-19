@@ -1,6 +1,5 @@
 # Implements ZAF matrix correction based on a k-ratio from multiple simultaneously
 # measured characteristic X-ray lines.  MultiZAF can hold the ZAF correction
-using BoteSalvatICX
 
 struct MultiZAF
     xrays::Vector{CharXRay}
