@@ -35,7 +35,7 @@ k240 =  uvs(
     JzLabel(n"Zr") => Ju(n"Zr"), #
     JzLabel(n"Ba") => Ju(n"Ba"), #
 
-    NeXLMatrixCorrection.mLabel(inner(cxr))=>uv(m,0.01*m))
+    NeXLMatrixCorrection.mLabel(inner(cxr))=>uv(m,0.01*m)
 );
 
 mjz = StepMJZbarb(material, [ n"O", n"Mg", n"Si", n"Ti", n"Zn", n"Zr", n"Ba" ] )
