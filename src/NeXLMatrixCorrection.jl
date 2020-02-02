@@ -36,6 +36,11 @@ export xpp # Build an XPP correction
 export ZAF # Build a full ZAF correction based on XPP
 export XPPCorrection # XPPCorrection structure
 
+include("xppu.jl")
+export JzLabel
+export Ju
+export StepMJZbarb, StepDPT, StepQlaOoS
+
 include("reed.jl")
 export ReedFluorescence
 export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
