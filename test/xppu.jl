@@ -71,7 +71,10 @@ print(qla_res)
 println("MC Result")
 print(qla_mcres)
 
+struct StepRPhi0 <: MeasurementModel
 
+
+end
 
 
 #end
