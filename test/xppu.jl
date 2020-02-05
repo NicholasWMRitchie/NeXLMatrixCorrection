@@ -54,7 +54,7 @@ print(mjz_mcres)
 dpt = StepDPT(material, inner(cxr)) | allinp
 
 dpt_res = dpt(mjz_res);
-dpt_mcres = mcpropagate(dpt, mjz_res, 1000, parallel=false, rng=rgen);
+dpt_mcres = mcpropagate(dpt ∘ mjz, k240, 1000, parallel=false, rng=rgen);
 
 println("Analytical Result")
 print(dpt_res)
@@ -63,7 +63,8 @@ print(dpt_mcres)
 
 qla = StepQlaOoS(material, inner(cxr))
 qla_res = qla(dpt_res);
-qla_mcres = mcpropagate(qla, dpt_res, 1000, parallel=false, rng=rgen)
+qla_model = qla ∘ dpt ∘ mjz
+qla_mcres = mcpropagate(qla_model, k240, 1000, parallel=false, rng=rgen)
 
 println("Analytical Result")
 print(qla_res)
