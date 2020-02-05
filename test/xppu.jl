@@ -35,24 +35,26 @@ k240 =  uvs(
     JzLabel(n"Zr") => Ju(n"Zr"), #
     JzLabel(n"Ba") => Ju(n"Ba"), #
 
+    NeXLMatrixCorrection.E0Label(material)=>uv(20.0e3,0.1e3),
     NeXLMatrixCorrection.mLabel(inner(cxr))=>uv(m,0.01*m)
 );
 
-mjz = StepMJZbarb(material, [ n"O", n"Mg", n"Si", n"Ti", n"Zn", n"Zr", n"Ba" ] )
+allinp = AllInputs()
+mjz = StepMJZbarb(material, [ n"O", n"Mg", n"Si", n"Ti", n"Zn", n"Zr", n"Ba" ] ) |
+    MaintainLabels([NeXLMatrixCorrection.mLabel, NeXLMatrixCorrection.E0Label], k240)
 
-mjz_res = mjz(k240)
-mjz_mcres = mcpropagate(mjz, k240, 10000, parallel=false, rng=rgen)
+mjz_res = mjz(k240);
+mjz_mcres = mcpropagate(mjz, k240, 10000, parallel=false, rng=rgen);
 
 println("Analytical Result")
 print(mjz_res)
 println("MC Result")
 print(mjz_mcres)
 
-dpt = StepDPT(material, inner(cxr))
+dpt = StepDPT(material, inner(cxr)) | allinp
 
-dpt_inp = cat(k240,mjz_res);
-dpt_res = dpt(dpt_inp)
-dpt_mcres = mcpropagate(dpt, dpt_inp, 1000, parallel=false, rng=rgen)
+dpt_res = dpt(mjz_res);
+dpt_mcres = mcpropagate(dpt, mjz_res, 1000, parallel=false, rng=rgen);
 
 println("Analytical Result")
 print(dpt_res)
@@ -60,9 +62,8 @@ println("MC Result")
 print(dpt_mcres)
 
 qla = StepQlaOoS(material, inner(cxr))
-qla_inp = cat(dpt_inp, dpt_res, uvs(NeXLMatrixCorrection.E0Label(material)=>uv(20.0e3,0.1e3)));
-qla_res = qla(qla_inp);
-qla_mcres = mcpropagate(qla, qla_inp, 1000, parallel=false, rng=rgen)
+qla_res = qla(dpt_res);
+qla_mcres = mcpropagate(qla, dpt_res, 1000, parallel=false, rng=rgen)
 
 println("Analytical Result")
 print(qla_res)

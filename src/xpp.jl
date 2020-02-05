@@ -14,14 +14,14 @@ M(mat::Material) = #C1
 
 """
     J(elm)
-Mean ionization potential for the specified element in keV. (PAP Eqn 7)
+Mean ionization potential for the specified element in eV. (PAP Eqn 7)
 """
 J(elm::Element) = #C1
-    1.0e-3 * z(elm) * (10.04 + 8.25 * exp(-z(elm) / 11.22))
+    z(elm) * (10.04 + 8.25 * exp(-z(elm) / 11.22))
 
 """
     J(mat::Material)
-Mean ionization potential for the specified material in keV. (PAP Eqn 6)
+Mean ionization potential for the specified material in eV. (PAP Eqn 6)
 """
 J(mat::Material) = #C1
     exp(sum(massfraction(elm, mat) * (z(elm) / a(elm, mat)) * log(J(elm)) for elm in keys(mat)) /
@@ -43,13 +43,13 @@ Output units are (keV/cm)/(g/cm^3) = keV cm^2/g. (PAP eqn 5)
 """
 function dEdρs(mat::Material, Ekev::AbstractFloat) #C1
     @assert Ekev<50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
+    Jkev = 0.001*J(mat) # XPP expects in keV
     # PAP Eqn 8
-    function f(mat::Material, Ekev::AbstractFloat)
-        j = J(mat)
-        d, p, v = D(j), P(j), Ekev / j
+    function f(mat, Ekev, Jkev)
+        d, p, v = D(j), P(j), Ekev / Jkev
         return sum(i -> d[i] * v^p[i], 1:3)
     end
-    return -(M(mat) / J(mat)) / f(mat, Ekev)
+    return -(M(mat) / Jkev) / f(mat, Ekev)
 end
 
 """
@@ -66,7 +66,7 @@ R0(J, D, P, M, Ekev) = #C1
 Total trajectory (range) of an electron with initial energy e0kev. (in cm/(g/cm^3))
 """
 function Base.range(mat::Material, e0keV)
-    j = J(mat)
+    j = 0.001*J(mat) # XPP expects in keV
     return R0(j, D(j), P(j), M(mat), e0keV)
 end
 
@@ -92,15 +92,15 @@ Computes S, the stopping power at the specified energy (in keV)
 """
 function S(mat::Material, ashell::AtomicSubShell, Ekev)
     @assert Ekev<50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
-    j = J(mat)
+    jkev = 0.001*J(mat) # XPP expects in keV
     return 1.0 /
            invS(
         Ekev / (0.001*energy(ashell)),
-        Ekev / j,
+        Ekev / jkev,
         M(mat),
-        D(j),
-        P(j),
-        T(P(j), m(ashell)),
+        D(jkev),
+        P(jkev),
+        T(P(jkev), m(ashell)),
     )
 end
 
@@ -285,8 +285,8 @@ Construct an XPPCorrection object for the specified material, atomicsubshell,
 beam energy (in eV).
 """
 function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
-    # XPP calculations expect E0, eLv in keV
-    e0, Mv, Jv, = 0.001 * E0, M(mat), J(mat)
+    # XPP calculations expect E0, eLv, J in keV
+    e0, Mv, Jv, = 0.001 * E0, M(mat), 0.001*J(mat)
     Zbarbv, eLv = Zbarb(mat), 0.001 * energy(ashell)
     U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(Zbarbv)
     @assert U0v > 1.0  "The beam energy must be larger than the subshell edge energy."
