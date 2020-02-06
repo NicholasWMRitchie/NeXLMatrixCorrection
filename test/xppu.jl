@@ -41,7 +41,7 @@ k240 =  uvs(
 
 allinp = AllInputs()
 mjz = StepMJZbarb(material, [ n"O", n"Mg", n"Si", n"Ti", n"Zn", n"Zr", n"Ba" ] ) |
-    MaintainLabels([NeXLMatrixCorrection.mLabel, NeXLMatrixCorrection.E0Label], k240)
+    MaintainLabels([NeXLMatrixCorrection.mLabel], k240)
 
 mjz_res = mjz(k240);
 mjz_mcres = mcpropagate(mjz, k240, 10000, parallel=false, rng=rgen);
@@ -72,8 +72,46 @@ println("MC Result")
 print(qla_mcres)
 
 struct StepRPhi0 <: MeasurementModel
+    material::String
+    shell::AtomicSubShell
+end
 
+struct RLabel <: Label
+    material::String
+end
 
+struct ϕ0Label <: Label
+    material::String
+    shell::AtomicSubShell
+end
+
+function NeXLUncertainties.compute(rp::StepRPhi0, inputs::LabeledValues, withJac::Bool)::MMResult
+    # inputs
+    E0l, ql, JU0l = E0keVLabel(rp.material), qLabel(rp.Material), JU0Label(rp.material)
+    ηl, Wbarl = ηLabel(rp.Material), WbarLabel(rp.Material)
+    e0, q, JU0 = inputs[E0l], inputs[ql], inputs[JU0l]
+    η, Wbar = inputs[ηl], inputs[Wbarl]
+    Ea = 0.001 * energy(rp.shell)
+    U0 = e0/Ea
+    # outputs
+    GU0 = (U0-1.0-(1.0-1.0/U0^(1.0+q))/(1+q))/((2.0+q)*JU0)
+    R = 1.0 - η*Wbar*(1.0-GU0)
+    ϕ0 = 1.0+3.3*(1.0-1.0/U0^(2.0-2.3*η))*η^1.2
+
+    Rl, ϕ0l = RLabel(rp.material), ϕ0Label(rp.material, rp.shell)
+    vals = LabeledValues( [ Rl, ϕ0l ], [ R, ϕ0 ])
+    jac = withJac ? zeros(Float64, length(vals), length(inputs)) : nothing
+    if withJac
+        δGUδE0 = (1.0/(JU0*Ea))*(((1.0-U0^(-2.0-q))/(2.0+q))-GU0)
+        δGUδq = ((U0^(1.0+q)-1.0)-(1.0-q)*log(U0))/(JU0*(1.0+q)^2*(2.0+q)*U0^(1.0+q))
+        jac[1, indexin(ηl, inputs)] = Wbar*(1.0-GU0) # δRδη
+        jac[1, indexin(E0l, inputs)] = η*Wbar*δGUδE0 # δRδE0
+        jac[1, indexin(ql, inputs)] = η*Wbar*δGUδq   # δRδq
+        jac[1, indexin(Wbarl, inputs)] = η*(1.0-GU0) # δRδWbar
+        jac[2, indexin(ηl, inputs)]= η^0.2*(3.96*(1.0-U0^(2.3η-2.0))-7.59*η*U0^(2.3η-2.0)*log(U0)) # δϕ0δη
+        jac[2, indexin(E0l, inputs)] = 7.59*η^1.2*(0.869565-η)*U0^(2.3η-3.0) # δϕ0δE0
+    end
+    return (vals, jac)
 end
 
 

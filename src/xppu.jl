@@ -36,7 +36,7 @@ end
 Base.show(io::IO, e0::E0Label) = print(io, "E0[", e0.material, "]")
 
 struct E0keVLabel <: Label
-    material::Label
+    material::String
 end
 
 Base.show(io::IO, e0::E0keVLabel) = print(io, "E0[", e0.material, " in keV]")
@@ -71,7 +71,7 @@ function NeXLUncertainties.compute(mjz::StepMJZbarb, inputs::LabeledValues, with
     J = exp(sum((c[i] * z[i] / a[i]) * log(j[i]) for i in eachindex(z)) / M) # in keV
     Zb = sum(c[i] * sqrt(z[i]) for i in eachindex(z))^2
     values = [M, J, Zb, keV * e0 ]
-    jacob = withJac ? zeros(Float64, 3, length(inputs)) : missing
+    jacob = withJac ? zeros(Float64, length(values), length(inputs)) : missing
     if withJac
         for i in eachindex(z)
             mfl, awl, jz = mfls[i], awls[i], jzs[i]
@@ -183,6 +183,10 @@ struct JU0Label <: Label
     material::String
 end
 
+struct WbarLabel <: Label
+    material::String
+end
+
 struct qLabel <: Label
     material::String
 end
@@ -196,21 +200,19 @@ Base.show(io::IO, d::OoSLabel) = print(io, "(1/S)[", d.material, ",", d.shell, "
 
 function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build labels
-    Dls = collect(DLabel(qoos.material, qoos.shell, k) for k = 1:3)
-    Pls = collect(PLabel(qoos.material, qoos.shell, k) for k = 1:3)
-    Tls = collect(TLabel(qoos.material, qoos.shell, k) for k = 1:3)
+    Dls = collect(DLabel(qoos.material, qoos.shell, k) for k in 1:3)
+    Pls = collect(PLabel(qoos.material, qoos.shell, k) for k in 1:3)
+    Tls = collect(TLabel(qoos.material, qoos.shell, k) for k in 1:3)
     e0l, ml = E0keVLabel(qoos.material), mLabel(qoos.shell)
-    Jl, Ml = JLabel(qoos.material), BigMLabel(qoos.material)
-    Zl = ZbarbLabel(material),
-
+    Jl, Ml, Zl = JLabel(qoos.material), BigMLabel(qoos.material), ZbarbLabel(qoos.material)
     # Extract values
     D, P, T = map(l -> inputs[l], Dls), map(l -> inputs[l], Pls), map(l -> inputs[l], Tls)
     E0, m, M, J, Zbarb = inputs[e0l], inputs[ml], inputs[Ml], inputs[Jl], inputs[Zl]
-    Ea = 0.001 * energy(qoos.shell)
+    Ea = 0.001 * energy(qoos.shell) # in keV
     U0, V0 = E0 / Ea, E0 / J
     # Calculate results
     Qla = log(U0) / ((U0^m) * Ea^2)
-    h = collect((D[k] * (V0 / U0)^P[k]) * (T[k] * U0^T[k] * log(U0) - U0^T[k] + 1.0) / (T[k]^2) for k = 1:3)
+    h = collect((D[k] * (V0 / U0)^P[k]) * (T[k] * U0^T[k] * log(U0) - U0^T[k] + 1.0) / (T[k]^2) for k in eachindex(Dls))
     f = J / (M * Ea)
     OoS = f * sum(h)
     η = 1.75e-3 * Zbarb + 0.37 * (1.0 - exp(-0.015 * Zbarb^1.3))
@@ -226,25 +228,25 @@ function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, with
     jacob = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
         # Qla
-        jacob[1, indexin(e0l, inputs)] = (1.0 - m * log(U0)) / (U0^(m + 1) * EakeV^3)
+        jacob[1, indexin(e0l, inputs)] = (1.0 - m * log(U0)) / (U0^(m + 1) * Ea^3)
         jacob[1, indexin(ml, inputs)] = -Qla * log(U0)
         # 1/S
-        for k = 1:3
+        for k in eachindex(h)
             jacob[2, indexin(Dls[k], inputs)] = f * (h[k] / D[k])
             jacob[2, indexin(Pls[k], inputs)] = f * log(Ea / J) * h[k]
             jacob[2, indexin(Tls[k], inputs)] = f *
-                                                ((1 / T[k]) * (D[k] * (U0^T[k]) * (EakeV / J)^P[k]) * log(U0)^2 -
+                                                ((1 / T[k]) * (D[k] * (U0^T[k]) * (Ea / J)^P[k]) * log(U0)^2 -
                                                  2.0 * h[k])
         end
         jacob[2, indexin(Ml, inputs)] = -OoS / M
         jacob[2, indexin(e0l, inputs)] = (f / E0) * log(U0) *
-                                         sum(D[k] * (Ea / J)^P[k] * (U0^T[k]) for k = 1:3)
-        jacob[2, indexin(Jl, inputs)] = (-1.0 / (M * Ea)) * sum(P[k] * h[k] for k = 1:3)
+                                         sum(D[k] * ((Ea / J)^P[k]) * (U0^T[k]) for k in eachindex(h))
+        jacob[2, indexin(Jl, inputs)] = (-1.0 / (M * Ea)) * sum(P[k] * h[k] for k in eachindex(h))
         # η
         δηδZbarb = (1.75e-3 + 7.215e-3 * exp(-0.015 * Zbarb^1.3)) * (Zbarb^0.3)
         jacob[3, indexin(Zl, inputs)] = δηδZbarb
         # J(U0)
-        jacob[4, indexin(e0l)] = log(U0) / Ea
+        jacob[4, indexin(e0l, inputs)] = (1.0+log(U0)) / Ea
         # Wbar
         δWbarδZbarb = (1.0 / 3.7 + 4.55 * η^3.55) * δηδZbarb
         jacob[5, indexin(Zl, inputs)] = δWbarδZbarb
