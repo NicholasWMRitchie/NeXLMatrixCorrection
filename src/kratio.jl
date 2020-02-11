@@ -45,7 +45,7 @@ struct KRatio
 end
 
 NeXLCore.element(kr::KRatio) = kr.element
-nonnegk(kr::KRatio) = max(zero(typeof(kr.kratio), kr.kratio))
+nonnegk(kr::KRatio) = max(zero(typeof(kr.kratio)), kr.kratio)
 
 Base.show(io::IO, kr::KRatio) = print(io, "k[$(name(kr.standard)), $(name(kr.lines))] = $(kr.kratio)")
 
@@ -63,7 +63,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, krs::AbstractVector{KRatio})::
         push!(toas, get(kr.stdProps, :TakeOffAngle, -1.0))
         push!(mat, name(kr.standard))
         push!(celm, kr.standard[kr.element])
-        push!(krv, kr.kratio)
+        push!(krv, value(kr.kratio))
     end
     return DataFrame(
         Element = elms,

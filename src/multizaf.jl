@@ -126,10 +126,10 @@ end
 """
     k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) =
 
-Compute the k-ratio for the specified measurement conditions.
+Compute the k-ratio for the specified measurement conditions. k = C / ZAF
 """
 k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) =
-    gZAFc(unk, std, θunk, θstd) * material(unk)[element(unk)] / material(std)[element(unk)]
+    (material(unk)[element(unk)] / material(std)[element(unk)])*gZAFc(unk, std, θunk, θstd)
 
 
 """

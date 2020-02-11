@@ -32,7 +32,7 @@ function update(::NaiveUpdateRule, #
 )::Dict{Element, Float64}
     cnp1 = Dict{Element,Float64}()
     for mkr in measured
-        cnp1[mkr.element] = (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element]
+        cnp1[mkr.element] = (value(nonnegk(mkr)) / estkrs[mkr.element]) * prevcomp[mkr.element]
     end
     return cnp1
 end
@@ -59,19 +59,20 @@ function update( #
         push!(weg.norm, 1.0)
         for mkr in measured
             cnp1[mkr.element] = estkrs[mkr.element] > 0.0 ?
-                                (nonnegk(mkr) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
+                                (value(nonnegk(mkr)) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
         end
     else
         safediv(a, b) = isapprox(b, 0.0, atol = 1.0e-12) ? 1.0 : a / b
-        push!(weg.norm, itercx % 5 ≠ 0 ? weg.norm[end] : #
-            weg.norm[end] / sum(safediv(nonnegk(mkr), estkr[mkr.element]) * prevcomp[mkr.element] for mkr in measured))
-        cn, cnm1, kn, knm1 = NeXLCore.asnormalized(prevcomp, weg.norm[end]), weg.prevc[end], estkrs, weg.prevk[end]
+        # push!(weg.norm,  ? weg.norm[end] : sum(cnp1[mkr.element] for mkr in measured))
+        # cn = prevcomp # itercx < 5 ?  NeXLCore.asnormalized(prevcomp, weg.norm[end]) : prevcomp
+        cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
-            elm, km = mkr.element, nonnegk(mkr)
-            if (kn[elm] > 0) && (knm1[elm] > 0)
-                fcn, fcnm1 = cn[elm] / kn[elm], cnm1[elm] / knm1[elm] # c = k*f
-                dfdk = ((fcn - fcnm1) / (cn[elm] - cnm1[elm]))
-                cnp1[elm] = cn[elm] + (km * fcn - cn[elm]) / (1.0 - bound(km * dfdk, -weg.factor, weg.factor))
+            elm, km = mkr.element, value(nonnegk(mkr))
+            if value(nonnegk(mkr)) > 0
+                fcn, fcnm1 = cn[elm] / kn[elm], cnm1[elm] / knm1[elm] # c_est,n = k_est,n*f_n
+                dfdc = ((fcn - fcnm1) / (cn[elm] - cnm1[elm]))
+                dc = bound((km * fcn - cn[elm]) / (1.0 - bound(km * dfdc, -weg.factor, weg.factor)),-0.01,0.01)
+                cnp1[elm] = cn[elm] + dc
             else
                 cnp1[elm] = 0.0
             end
@@ -98,7 +99,8 @@ struct RecordingUpdateRule <: UpdateRule
 end
 
 function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
-    dkrs, dcs, prev = Dict{Element, Vector{Float64}}(), Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
+    dkrs, dcs = Dict{Element, Vector{Float64}}(), Dict{Element,Vector{Float64}}()
+    prev, meas = Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
     allelms = union(keys(rur.estkrs[1]), keys(rur.comps[1]), keys(rur.prev[1]), keys(rur.meas))
     for elm in allelms
         dkrs[elm], dcs[elm], prev[elm], meas[elm] = [], [], [], []
@@ -108,7 +110,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
             push!(dkrs[elm], get(rur.estkrs[i], elm, 0.0))
             push!(dcs[elm], get(rur.comps[i], elm, 0.0))
             push!(prev[elm], rur.prev[i][elm])
-            push!(meas[elm], rur.meas[elm])
+            push!(meas[elm], value(rur.meas[elm].kratio))
         end
     end
     df = DataFrame(Iter=collect(eachindex(rur.estkrs)))
@@ -129,7 +131,9 @@ function NeXLMatrixCorrection.update( #
 )::Dict{Element,Float64}
     res = NeXLMatrixCorrection.update(rur.base, prevcomp, measured, estkrs)
     if isempty(rur.meas)
-        append!(rur.meas, measured)
+        for kr in measured
+            rur.meas[kr.element] = kr
+        end
     end
     push!(rur.prev, prevcomp)
     push!(rur.estkrs, estkrs)
@@ -141,7 +145,7 @@ function NeXLMatrixCorrection.reset(rur::RecordingUpdateRule)
     resize!(rur.estkrs, 0)
     resize!(rur.comps, 0)
     resize!(rur.prev, 0)
-    resize!(rur.meas, 0)
+    empty!(rur.meas)
     NeXLMatrixCorrection.reset(rur.base)
 end
 
@@ -152,14 +156,14 @@ struct RMSBelowTolerance <: ConvergenceTest
 end
 
 converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool =
-    sum((nonnegk(kr) - computed[kr.element])^2 for kr in meas) < rbt.tolerance^2
+    sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in meas) < rbt.tolerance^2
 
 struct AllBelowTolerance <: ConvergenceTest
     tolerance::Float64
 end
 
 converged(abt::AllBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool =
-    all(abs(nonnegk(kr) - computed[kr.element]) < abt.tolerance for kr in meas)
+    all(abs(value(nonnegk(kr)) - computed[kr.element]) < abt.tolerance for kr in meas)
 
 struct IsApproximate <: ConvergenceTest
     atol::Float64
@@ -167,7 +171,7 @@ struct IsApproximate <: ConvergenceTest
 end
 
 converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,Float64}) =
-    all((abs(1.0 - nonnegk(kr) / computed[kr.element]) < rtol) || (abs(nonnegk(kr) - computed[kr.element]) < atol) for kr in meas)
+    all((abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < rtol) || (abs(value(nonnegk(kr)) - computed[kr.element]) < atol) for kr in meas)
 
 struct Iteration
     mctype::Type{<:MatrixCorrection}
@@ -198,7 +202,7 @@ end
 Make a first estimate at the composition.
 """
 function firstEstimate(iter::Iteration, name::String, measured::Vector{KRatio})::Material
-    mfs = Dict{Element,Float64}((kr.element, nonnegk(kr) * kr.standard[kr.element]) for kr in measured)
+    mfs = Dict{Element,Float64}((kr.element, value(nonnegk(kr)) * kr.standard[kr.element]) for kr in measured)
     return material(name, compute(iter.unmeasured, mfs))
 end
 
@@ -211,8 +215,8 @@ struct IterationResult
 end
 
 function Base.show(io::IO, itres::IterationResult)
-    print(itres.converged ? "Converged in $(itres.iterations) to $(itres.comp)\n" :
-          "Failed to converge after $(itres.iterations).")
+    print(io, itres.converged ? "Converged in $(itres.iterations) to $(itres.comp)\n" :
+          "Failed to converge after $(itres.iterations) as $(itres.comp).")
 end
 
 NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(itres.comp, known)
@@ -240,17 +244,17 @@ Given an estimate of the composition compute the corresponding k-ratios.
 function computeKs(iter::Iteration, est::Material, measured::Vector{KRatio}, stdZafs::Dict{KRatio,MultiZAF})::Dict{Element,Float64}
     estkrs = Dict{Element,Float64}()
     for kr in measured
-        if nonnegk(kr) > 0.0
+        if value(nonnegk(kr)) > 0.0
             # Build ZAF for unk
             @timeit iter.timer "ZAF[unk]" unkZaf = _ZAF(iter, est, kr.unkProps, kr.lines)
             # Compute the total correction and the resulting k-ratio
-            @timeit iter.timer "gZAFc" gzafc = gZAFc(
+            @timeit iter.timer "gZAFc" kc = k(
                 unkZaf,
                 stdZafs[kr],
                 kr.unkProps[:TakeOffAngle],
                 kr.stdProps[:TakeOffAngle],
             )
-            estkrs[kr.element] = max(1.0e-7, gzafc * est[kr.element] / kr.standard[kr.element])
+            estkrs[kr.element] = max(1.0e-7, kc)
         else
             estkrs[kr.element] = 0.0
         end
@@ -264,25 +268,25 @@ end
 Iterate to find the composition that produces the measured k-ratios.
 """
 function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
-    eval(computed) = sum((nonnegk(kr) - computed[kr.element])^2 for kr in measured)
+    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
     stdZafs = Dict( ( kr, _ZAF(iter, kr.standard, kr.stdProps, kr.lines) ) #
-                        for kr in filter(k->k.kratio > 0.0, measured) )
+                        for kr in filter(k->value(k.kratio) > 0.0, measured) )
     @timeit iter.timer "FirstComp" estcomp = firstEstimate(iter, name, measured)
     @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
     # If no convergence report it but return closest result...
     bestComp, bestKrs, bestEval = estcomp, estkrs, eval(estkrs)
     iters = Counter(100)
     reset(iter.updater)
-    norm = 1.0
+    #norm = 1.0
     while !converged(iter.converged, measured, estkrs) && update(iters)
         @timeit iter.timer "NextEst" upd = update(iter.updater, estcomp, measured, estkrs)
         @timeit iter.timer "Unmeasured" unmeas = compute(iter.unmeasured, upd)
-        estcomp = asnormalized(material(name, unmeas), norm)
-        #estcomp = material(name, unmeas)
+        # estcomp = asnormalized(material(name, unmeas), norm)
+        estcomp = material(name, unmeas)
         @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
-        if (iters.count > 4) && (iters.count % 5 == 0)
-            norm = 1.0 / mapreduce(mkr->unmeas[mkr.element], +, measured)
-        end
+        #if (iters.count > 4) && (iters.count % 5 == 0)
+        #    norm = 1.0 / mapreduce(mkr->unmeas[mkr.element], +, measured)
+        #end
         if eval(estkrs)<bestEval
             bestComp, bestKrs, bestEval = estcomp, estkrs, eval(estkrs)
         end
