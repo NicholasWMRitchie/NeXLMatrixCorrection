@@ -58,20 +58,21 @@ function update( #
     if itercx < 1
         push!(weg.norm, 1.0)
         for mkr in measured
-            cnp1[mkr.element] = estkrs[mkr.element] > 0.0 ?
-                                (value(nonnegk(mkr)) / estkrs[mkr.element]) * prevcomp[mkr.element] : 0.0
+            elm, km = mkr.element, value(nonnegk(mkr))
+            cnp1[elm] = estkrs[elm] > 0.0 ? (km / estkrs[elm]) * prevcomp[elm] : 0.0
         end
     else
-        safediv(a, b) = isapprox(b, 0.0, atol = 1.0e-12) ? 1.0 : a / b
-        # push!(weg.norm,  ? weg.norm[end] : sum(cnp1[mkr.element] for mkr in measured))
-        # cn = prevcomp # itercx < 5 ?  NeXLCore.asnormalized(prevcomp, weg.norm[end]) : prevcomp
         cn, cnm1, kn, knm1 = prevcomp, weg.prevc[end], estkrs, weg.prevk[end]
         for mkr in measured
             elm, km = mkr.element, value(nonnegk(mkr))
-            if value(nonnegk(mkr)) > 0
-                fcn, fcnm1 = cn[elm] / kn[elm], cnm1[elm] / knm1[elm] # c_est,n = k_est,n*f_n
-                dfdc = ((fcn - fcnm1) / (cn[elm] - cnm1[elm]))
-                dc = bound((km * fcn - cn[elm]) / (1.0 - bound(km * dfdc, -weg.factor, weg.factor)),-0.01,0.01)
+            if km > 0
+                fcn, fcnm1 = (cn[elm] / kn[elm]), (cnm1[elm] / knm1[elm]) # c_{est,n} = k_{est,n*f_n}
+                dfdc = (fcn - fcnm1) / (cn[elm] - cnm1[elm])
+                den = 1.0 - km * dfdc
+                dc = (km/kn[elm] - 1.0) * cn[elm] # Simple iteration
+                if (abs(dfdc) < 10.0) && (den > 0.5) && (den < 1.5)
+                    dc = (km * fcn - cn[elm]) / den # Wegstein
+                end
                 cnp1[elm] = cn[elm] + dc
             else
                 cnp1[elm] = 0.0
@@ -271,19 +272,24 @@ function iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::Ite
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
     stdZafs = Dict( ( kr, _ZAF(iter, kr.standard, kr.stdProps, kr.lines) ) #
                         for kr in filter(k->value(k.kratio) > 0.0, measured) )
-    @timeit iter.timer "FirstComp" estcomp = firstEstimate(iter, name, measured)
-    @timeit iter.timer "FirstKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
+    # @timeit iter.timer "FirstComp"
+    estcomp = firstEstimate(iter, name, measured)
+    # @timeit iter.timer "FirstKs"
+    estkrs = computeKs(iter, estcomp, measured, stdZafs)
     # If no convergence report it but return closest result...
     bestComp, bestKrs, bestEval = estcomp, estkrs, eval(estkrs)
     iters = Counter(100)
     reset(iter.updater)
     #norm = 1.0
     while !converged(iter.converged, measured, estkrs) && update(iters)
-        @timeit iter.timer "NextEst" upd = update(iter.updater, estcomp, measured, estkrs)
-        @timeit iter.timer "Unmeasured" unmeas = compute(iter.unmeasured, upd)
+        # @timeit iter.timer "NextEst"
+        upd = update(iter.updater, estcomp, measured, estkrs)
+        # @timeit iter.timer "Unmeasured"
+        unmeas = compute(iter.unmeasured, upd)
         # estcomp = asnormalized(material(name, unmeas), norm)
         estcomp = material(name, unmeas)
-        @timeit iter.timer "ComputeKs" estkrs = computeKs(iter, estcomp, measured, stdZafs)
+        # @timeit iter.timer "ComputeKs"
+        estkrs = computeKs(iter, estcomp, measured, stdZafs)
         #if (iters.count > 4) && (iters.count % 5 == 0)
         #    norm = 1.0 / mapreduce(mkr->unmeas[mkr.element], +, measured)
         #end
