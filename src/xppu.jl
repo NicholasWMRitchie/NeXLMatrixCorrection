@@ -112,38 +112,38 @@ end
 
 Base.show(io::IO, m::mLabel) = print(io, "m[", m.shell, "]")
 
-struct DLabel <: Label
+struct DkLabel <: Label
     material::String
     shell::AtomicSubShell
     k::Int
 end
 
-Base.show(io::IO, d::DLabel) = print(io, "D[", d.material, ",", d.shell, ",", d.k, "]")
+Base.show(io::IO, d::DkLabel) = print(io, "D[", d.material, ",", d.shell, ",", d.k, "]")
 
-struct PLabel <: Label
+struct PkLabel <: Label
     material::String
     shell::AtomicSubShell
     k::Int
 end
 
-Base.show(io::IO, p::PLabel) = print(io, "P[", p.material, ",", p.shell, ",", p.k, "]")
+Base.show(io::IO, p::PkLabel) = print(io, "P[", p.material, ",", p.shell, ",", p.k, "]")
 
-struct TLabel <: Label
+struct TkLabel <: Label
     material::String
     shell::AtomicSubShell
     k::Int
 end
 
-Base.show(io::IO, t::TLabel) = print(io, "T[", t.material, ",", t.shell, ",", t.k, "]")
+Base.show(io::IO, t::TkLabel) = print(io, "T[", t.material, ",", t.shell, ",", t.k, "]")
 
 function NeXLUncertainties.compute(dpt::StepDPT, inputs::LabeledValues, withJac::Bool)::MMResult
     # inputs
     Jl, ml = JLabel(dpt.material), mLabel(dpt.shell)
     J, m = inputs[Jl], inputs[ml]
     # outputs
-    Dls = [DLabel(dpt.material, dpt.shell, k) for k = 1:3]
-    Pls = [PLabel(dpt.material, dpt.shell, k) for k = 1:3]
-    Tls = [TLabel(dpt.material, dpt.shell, k) for k = 1:3]
+    Dls = [DkLabel(dpt.material, dpt.shell, k) for k = 1:3]
+    Pls = [PkLabel(dpt.material, dpt.shell, k) for k = 1:3]
+    Tls = [TkLabel(dpt.material, dpt.shell, k) for k = 1:3]
 
     D = (6.6e-6, 1.12e-5 * (1.35 - 0.45 * J^2), 2.2e-6 / J)
     P = (0.78, 0.1, 0.25J - 0.5)
@@ -209,9 +209,9 @@ Base.show(io::IO, d::OoSLabel) = print(io, "¹/ₛ[", d.material, ",", d.shell, 
 
 function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build labels
-    Dls = collect(DLabel(qoos.material, qoos.shell, k) for k in 1:3)
-    Pls = collect(PLabel(qoos.material, qoos.shell, k) for k in 1:3)
-    Tls = collect(TLabel(qoos.material, qoos.shell, k) for k in 1:3)
+    Dls = collect(DkLabel(qoos.material, qoos.shell, k) for k in 1:3)
+    Pls = collect(PkLabel(qoos.material, qoos.shell, k) for k in 1:3)
+    Tls = collect(TkLabel(qoos.material, qoos.shell, k) for k in 1:3)
     e0l, ml = E0keVLabel(qoos.material), mLabel(qoos.shell)
     Jl, Ml, Zl = JLabel(qoos.material), BigMLabel(qoos.material), ZbarbLabel(qoos.material)
     # Extract values
@@ -346,14 +346,14 @@ function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac
     # Input labels
     Zbl, Qlal = ZbarbLabel(st.material), QlaLabel(st.material, st.shell)
     OoSl, Rl = OoSLabel(st.material, st.shell), RLabel(st.material, st.shell)
-    ϕ0l, e0keV = ϕ0Label(st.material, st.shell), E0keVLabel(st.material)
+    ϕ0l, e0l = ϕ0Label(st.material, st.shell), E0keVLabel(st.material)
     # Input values
     Zb, Qla, OoS, R, ϕ0 = inputs[Zbl], inputs[Qlal], inputs[OoSl], inputs[Rl], inputs[ϕ0l]
-    E0, Ea = inputs[e0keV], 0.001*energy(st.shell)
+    E0, Ea = inputs[e0l], 0.001*energy(st.shell)
     U0 = E0/Ea
     # Computed quantities
-    X, Y = 1.0 + 1.3*log(Zb), 0.2 + Zb/200.0
-    FoRbar = 1.0 + (X*log(1.0+Y*(1.0-U0^-0.42)))/log(1.0+Y)
+    X, Y, u42 = 1.0 + 1.3*log(Zb), 0.2 + Zb/200.0, U0^0.42
+    FoRbar = 1.0 + (X*log(1.0+Y*(1.0-1.0/u42)))/log(1.0+Y)
     F = R*OoS/Qla
     if FoRbar >= ϕ0
         Rbar = F / FoRbar
@@ -366,18 +366,16 @@ function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
         δXδZb, δYδZb, = 1.3/Zb, 1.0/200.0
-        δFoRbδX = (log(1.0+Y*(1.0-U0^(-0.42))))/log(1.0+Y)
-        u42 = U0^0.42
-        @show u42
-        l1y = log(1.0+Y*(1.0-u42))
-        @show l1y
-        δFoRbδY = X*((log(1.0+Y)*(u42-1.0))/(u42+Y*(u42-1.0)) - log(1.0+Y*(1.0-u42))/(1.0+Y))/(log(1+Y)^2)
-        δFoRbδZb = δFoRbδX*δXδZb  + δFoRbδY*δYδZb
-        δFoRbδU0 = (0.42*X*Y)/(U0^-1.42*(1.0+Y*(1.0-U0^-0.42))*log(1.0+Y))
+        δFoRbδX = log(1.0+Y*(1.0-1.0/u42))/log(1.0+Y)
+        δFoRbδY = X*(((u42-1.0)*log(1.0+Y))/(u42+Y*(u42-1.0)) - log(1.0+Y-Y/u42)/(1.0+Y))/(log(1+Y)^2)
+
+        δFoRbδZb = δFoRbδX*δXδZb + δFoRbδY*δYδZb
+        δFoRbδU0 = (0.42*X*Y)/(U0*u42*(1.0+Y*(1.0-1.0/u42))*log(1.0+Y))
 
         δFδR = OoS/Qla
         δFδOoS = R/Qla
-        δFδQla = -2.0*R*OoS/(Qla^2)
+        δFδQla = -R*OoS/(Qla^2)
+
         if FoRbar >= ϕ0
             δRbarδF = 1.0/FoRbar
             δRbarδFoRbar = -F/FoRbar^2
@@ -387,20 +385,148 @@ function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac
             δRbarδϕ0 = -F/ϕ0^2
             δRbarδFoRbar = 0.0
         end
-        @Assert indexin(fl, inputs)==1
-        jac[1, Qlal] = δFδQla
-        jac[1, OoSl] = δFδOoS
-        jac[1, Rl] = δFδR
-        jac[1, Zbl] = δRbarδFoRbar * δFoRbδZb
-        jac[1, ϕ0l] = 0.0
-        jac[1, e0l] = 0.0
-        @Assert indexin(rbarl, inputs)==2
-        jac[2, Qlal] = δRbarδF * δFδQla
-        jac[2, OoSl] = δRbarδF * δFδOoS
-        jac[2, Rl] = δRbarδF * δFδR
-        jac[2, Zbl] = δRbarδFoRbar * δFoRbδZb
-        jac[2, ϕ0l] = δRbarδϕ0
-        jac[2, e0l] = δRbarδFoRbar * δFoRbδU0 / Ea
+        @Assert indexin(fl, vals)==1
+        jac[1, indexin(Qlal, inputs)] = δFδQla
+        jac[1, indexin(OoSl, inputs)] = δFδOoS
+        jac[1, indexin(Rl, inputs)] = δFδR
+        jac[1, indexin(Zbl, inputs)] = δRbarδFoRbar * δFoRbδZb
+        jac[1, indexin(ϕ0l, inputs)] = 0.0
+        jac[1, indexin(e0l, inputs)] = 0.0
+        @Assert indexin(rbarl, vals)==2
+        jac[2, indexin(Qlal, inputs)] = δRbarδF * δFδQla
+        jac[2, indexin(OoSl, inputs)] = δRbarδF * δFδOoS
+        jac[2, indexin(Rl, inputs)] = δRbarδF * δFδR
+        jac[2, indexin(Zbl, inputs)] = δRbarδFoRbar * δFoRbδZb
+        jac[2, indexin(ϕ0l, inputs)] = δRbarδϕ0
+        jac[2, indexin(e0l, inputs)] = δRbarδFoRbar * δFoRbδU0 / Ea
+    end
+    return (vals, jac)
+end
+
+struct StepPb <: MeasurementModel
+    material::String
+    shell::AtomicSubShell
+end
+
+struct PLabel <: Label
+    material::String
+    shell::AtomicSubShell
+end
+
+struct bLabel <: Label
+    material::String
+    shell::AtomicSubShell
+end
+
+function NeXLUncertainties.compute(st::StepPb, inputs::LabeledValues, withJac::Bool)::MMResult
+    # Extract input variables
+    args = ( st.material, st.shell )
+    Rbarl, Fl, ϕ0l = RbarLabel(args...),  FLabel(args...), ϕ0Label(args...)
+    Zbarl, e0l = ZbarbLabel(st.material), E0keVLabel(st.material)
+    Rbar, F, Zbar, ϕ0, e0 = inputs[Rbarl], inputs[Fl], inputs[Zbarl], inputs[ϕ0l], inputs[e0l]
+    Ea = 0.001*energy(st.shell)
+    U0 = e0/Ea
+    # Compute outputs
+    g = 0.22*log(4Zbar)*(1.0-2.0*exp(-Zbar*(U0-1.0)/15.0))
+    h = 1.0 - 10.0*(1.0 - 1.0/(1.0 + U0/10.0))/(Zbar^2)
+    b = sqrt(2.0)*(1.0+sqrt(1.0-Rbar*ϕ0/F))/Rbar
+    gh4max = 0.9*b*(Rbar^2)*(b-2.0ϕ0/F)
+    if g*(h^4) < gh4max
+        P = g*(h^4)*F/(Rbar^2)
+    else
+        P = gh4max*F/(Rbar^2)
+    end
+    vals = LabeledValues( [bLabel(args...), PLabel(args...)], [b, P])
+    jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
+    if withJac
+        δgδZb = g/(Zbar*log(4.0Zbar)) + 0.0293*exp(-Zbar*(U0-1.0)/15.0)*(U0-1.0)*log(4.0Zbar)
+        δgδU0 = 0.0293*exp(-Zbar*(U0-1.0)/15.0)*Zbar*log(4.0Zbar)
+        δhδZb = 20.0*(1.0 - 1.0/(1.0+U0/10.0))/(Zbar^3)
+        δhδU0 = -1.0/(((1.0+U0/10.0)*Zbar)^2)
+        δbδRbar = -b/Rbar - ϕ0/(F*Rbar*sqrt(2.0*(1.0-ϕ0*Rbar/F)))
+        δbδϕ0 = -1.0/(F*sqrt(2.0*(1.0-ϕ0*Rbar/F)))
+        δbδF = ϕ0/(F^2*sqrt(2.0*(1.0-ϕ0*Rbar/F)))
+
+        δPδg, δPδh, δPδF, δPδRbar = P/g, 4.0P/h, P/F, -2.0*P/Rbar
+
+        @Assert indexin(bLabel(args...), vals)==1
+        jac[1, indexin(Rbarl, inputs)] = δbδRbar
+        jac[1, indexin(Fl, inputs)] = δbδF
+        jac[1, indexin(ϕ0l, inputs)] = δbδϕ0
+        # jac[1, indexin(Zbarl, inputs)] = 0.0
+        # jac[1, indexin(e0l, inputs)] = 0.0
+        @Assert indexin(PLabel(args...), vals)==2
+        if g*(h^4) < gh4max
+            jac[2, indexin(Rbarl, inputs)] = δPδRbar
+            jac[2, indexin(Fl, inputs)] = δPδF
+            # jac[2, indexin(ϕ0l, inputs)] = 0.0
+            jac[2, indexin(Zbarl, inputs)] = δPδg * δgδZb + δPδh * δhδZb
+            jac[2, indexin(e0l, inputs)] = (δPδg * δgδU0 + δPδh * δhδU0)/Ea
+        else
+            δPδϕ0 = ((1.8*Rbar)/F)*((F*b-ϕ0)*δbδϕ0-b)
+            #jac[2, indexin(Rbarl, inputs)] = 0.0
+            jac[2, indexin(Fl, inputs)] = 0.9*b^2
+            jac[2, indexin(ϕ0l, inputs)] = δPδϕ0
+            #jac[2, indexin(Zbarl, inputs)] = 0.0
+            #jac[2, indexin(e0l, inputs)] = 0.0
+        end
+    end
+    return (vals, jac)
+end
+
+struct Stepaϵ <: MeasurementModel
+    material::String
+    shell::AtomicSubShell
+end
+
+struct aLabel <: Label
+    material::String
+    shell::AtomicSubShell
+end
+
+struct ϵLabel <: Label
+    material::String
+    shell::AtomicSubShell
+end
+
+function NeXLUncertainties.compute(st::Stepaϵ, inputs::LabeledValues, withJac::Bool)::MMResult
+    # Extract input variables
+    args = ( st.material, st.shell )
+    Rbarl, Fl, ϕ0l = RbarLabel(args...),  FLabel(args...), ϕ0Label(args...)
+    Pl, bl = PLabel(args...), bLabel(args...)
+    Rbar, F, ϕ0, P, b = inputs[Rbarl], inputs[Fl], inputs[ϕ0l], inputs[Pl], inputs[bl]
+    # Compute the values
+    den, tiny = b*F*(2.0 - b*Rbar) - ϕ0, 1.0e-6
+    a = (P + b*(2.0ϕ0 - b*F))/den
+    ϵ = (a-b)/b
+    if abs(ϵ)<tiny
+        ϵ = tiny
+        a = b*(1.0+ϵ)
+    end
+    vals = LabeledValues([aLabel(args...), ϵLabel(args...)],[ a, ϵ ])
+    jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
+    if withJac
+        δaδP = 1.0/den
+        δaδϕ0 = (3.0*b^2*F + P - 2.0*b^3*F*Rbar)/(den^2)
+        δaδRbar = (b^2*F*(P+2.0*b*ϕ0-b^2*F))/(den^2)
+        δaδF = b*(P*(b*Rbar-2.0)+b*ϕ0*(2.0*b*Rbar-3.0))/(den^2)
+        δaδb = -2.0*(F*(P - b*(ϕ0+P*Rbar)+b^2*(F-ϕ0*Rbar))+ ϕ0^2 )/(den^2)
+
+        δϵδa = 1.0/b
+        δϵδb = -a/(b^2)
+
+        @Assert indexin(aLabel(args...),vals)==1
+        jac[1, indexin(Rbarl, inputs)] = δaδRbar
+        jac[1, indexin(Fl, inputs)] = δaδF
+        jac[1, indexin(ϕ0l, inputs)] = δaδϕ0
+        jac[1, indexin(Pl, inputs)] = δaδP
+        jac[1, indexin(bl, inputs)] = δaδb
+        @Assert indexin(ϵLabel(args...),vals)==2
+        jac[2, indexin(Rbarl, inputs)] = δϵδa * δaδRbar
+        jac[2, indexin(Fl, inputs)] = δϵδa * δaδF
+        jac[2, indexin(ϕ0l, inputs)] = δϵδa * δaδϕ0
+        jac[2, indexin(Pl, inputs)] = δϵδa * δaδP
+        jac[2, indexin(bl, inputs)] = δϵδb
     end
     return (vals, jac)
 end
