@@ -205,7 +205,7 @@ struct OoSLabel <: Label
     shell::AtomicSubShell
 end
 
-Base.show(io::IO, d::OoSLabel) = print(io, "¹/ₛ)[", d.material, ",", d.shell, "]")
+Base.show(io::IO, d::OoSLabel) = print(io, "¹/ₛ[", d.material, ",", d.shell, "]")
 
 function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build labels
@@ -277,9 +277,10 @@ end
 
 struct RLabel <: Label
     material::String
+    shell::AtomicSubShell
 end
 
-Base.show(io::IO, rl::RLabel) = print(io,"R[$(rl.material)]")
+Base.show(io::IO, rl::RLabel) = print(io,"R[$(rl.material),$(rl.shell)]")
 
 struct ϕ0Label <: Label
     material::String
@@ -301,7 +302,7 @@ function NeXLUncertainties.compute(rp::StepRPhi0, inputs::LabeledValues, withJac
     R = 1.0 - η*Wbar*(1.0-GU0)
     ϕ0 = 1.0+3.3*(1.0-1.0/U0^(2.0-2.3*η))*η^1.2
 
-    Rl, ϕ0l = RLabel(rp.material), ϕ0Label(rp.material, rp.shell)
+    Rl, ϕ0l = RLabel(rp.material, rp.shell), ϕ0Label(rp.material, rp.shell)
     vals = LabeledValues( [ Rl, ϕ0l ], [ R, ϕ0 ])
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
@@ -341,14 +342,15 @@ end
 
 Base.show(io::IO, l::FLabel) = print(io,"F[$(l.material),$(l.shell)]")
 
-function NeXLUncertainties.compute(sfr::StepFRBar, inputs::LabeledValues, withJac::Bool)::MMResult
+function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac::Bool)::MMResult
     # Input labels
-    args = ( sfr.material, sfr.shell )
-    Zbl = ZbarbLabel(sfr.material), Qlal = QlaLabel(args...)
-    OoSl, Rl = OoSLabel(args...), RLabel(args...)
-    ϕ0l, e0keV = ϕ0Label(args...), E0keVLabel(sfr.material)
+    Zbl, Qlal = ZbarbLabel(st.material), QlaLabel(st.material, st.shell)
+    OoSl, Rl = OoSLabel(st.material, st.shell), RLabel(st.material, st.shell)
+    ϕ0l, e0keV = ϕ0Label(st.material, st.shell), E0keVLabel(st.material)
     # Input values
     Zb, Qla, OoS, R, ϕ0 = inputs[Zbl], inputs[Qlal], inputs[OoSl], inputs[Rl], inputs[ϕ0l]
+    E0, Ea = inputs[e0keV], 0.001*energy(st.shell)
+    U0 = E0/Ea
     # Computed quantities
     X, Y = 1.0 + 1.3*log(Zb), 0.2 + Zb/200.0
     FoRbar = 1.0 + (X*log(1.0+Y*(1.0-U0^-0.42)))/log(1.0+Y)
@@ -359,12 +361,16 @@ function NeXLUncertainties.compute(sfr::StepFRBar, inputs::LabeledValues, withJa
         Rbar = R / ϕ0
     end
     # Output quantities
-    vals = LabeledValues([ FLabel(args...), RbarLabel(args...)], [F, Rbar])
+    fl, rbarl =  FLabel(st.material, st.shell), RbarLabel(st.material, st.shell)
+    vals = LabeledValues([ fl, rbarl], [F, Rbar])
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
         δXδZb, δYδZb, = 1.3/Zb, 1.0/200.0
-        δFoRbδX = (log(1.0+Y*(1.0-U0^-0.42)))/log(1.0+Y)
+        δFoRbδX = (log(1.0+Y*(1.0-U0^(-0.42))))/log(1.0+Y)
         u42 = U0^0.42
+        @show u42
+        l1y = log(1.0+Y*(1.0-u42))
+        @show l1y
         δFoRbδY = X*((log(1.0+Y)*(u42-1.0))/(u42+Y*(u42-1.0)) - log(1.0+Y*(1.0-u42))/(1.0+Y))/(log(1+Y)^2)
         δFoRbδZb = δFoRbδX*δXδZb  + δFoRbδY*δYδZb
         δFoRbδU0 = (0.42*X*Y)/(U0^-1.42*(1.0+Y*(1.0-U0^-0.42))*log(1.0+Y))
@@ -381,14 +387,14 @@ function NeXLUncertainties.compute(sfr::StepFRBar, inputs::LabeledValues, withJa
             δRbarδϕ0 = -F/ϕ0^2
             δRbarδFoRbar = 0.0
         end
-        @Assert indexin(FLabel(args...), inputs)==1
+        @Assert indexin(fl, inputs)==1
         jac[1, Qlal] = δFδQla
         jac[1, OoSl] = δFδOoS
         jac[1, Rl] = δFδR
         jac[1, Zbl] = δRbarδFoRbar * δFoRbδZb
         jac[1, ϕ0l] = 0.0
         jac[1, e0l] = 0.0
-        @Assert indexin(RbarLabel(args...), inputs)==2
+        @Assert indexin(rbarl, inputs)==2
         jac[2, Qlal] = δRbarδF * δFδQla
         jac[2, OoSl] = δRbarδF * δFδOoS
         jac[2, Rl] = δRbarδF * δFδR

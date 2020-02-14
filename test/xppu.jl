@@ -99,21 +99,51 @@ dpt_mcres = mcpropagate(dpt ∘ mjz, k240, 1000, parallel=false, rng=rgen);
 # println("MC Result")
 # print(dpt_mcres)
 
-retain = MaintainLabels([NeXLMatrixCorrection.E0keVLabel], dpt_res)
+retain = MaintainLabels([NeXLMatrixCorrection.E0keVLabel, NeXLMatrixCorrection.ZbarbLabel ], dpt_res)
 
 qla = StepQlaOoS(material, inner(cxr)) | retain
 qla_res = qla(dpt_res);
 qla_model = qla ∘ dpt ∘ mjz
 qla_mcres = mcpropagate(qla_model, k240, 10000, parallel=false, rng=rgen)
 
-println("Analytical Result")
-print(qla_res)
-println("MC Result")
-print(qla_mcres)
+#println("Analytical Result")
+#print(qla_res)
+#println("MC Result")
+#print(qla_mcres)
 
-rp = NeXLMatrixCorrection.StepRPhi0(material, inner(cxr))
+@test isapprox(value(qla_res[NeXLMatrixCorrection.QlaLabel(material,inner(cxr))]), 0.548, atol=0.001)
+@test isapprox(value(qla_res[NeXLMatrixCorrection.OoSLabel(material, inner(cxr))]), 3.21e-06, atol=0.01e-6)
+@test isapprox(value(qla_res[NeXLMatrixCorrection.ηLabel(material)]),0.253, atol=0.001)
+@test isapprox(value(qla_res[NeXLMatrixCorrection.JU0Label(material)]), 99.8, atol=0.1)
+@test isapprox(value(qla_res[NeXLMatrixCorrection.WbarLabel(material)]), 0.665, atol=0.001)
+@test isapprox(value(qla_res[NeXLMatrixCorrection.qLabel(material)]),0.987, atol=0.001)
+
+@test isapprox(σ(qla_res[NeXLMatrixCorrection.QlaLabel(material,inner(cxr))]), 0.0173, atol=0.001)
+@test isapprox(σ(qla_res[NeXLMatrixCorrection.OoSLabel(material, inner(cxr))]), 9e-08, atol=1.0e-8)
+@test isapprox(σ(qla_res[NeXLMatrixCorrection.ηLabel(material)]),0.00243, atol=0.0001)
+@test isapprox(σ(qla_res[NeXLMatrixCorrection.JU0Label(material)]), 0.682, atol=0.001)
+@test isapprox(σ(qla_res[NeXLMatrixCorrection.WbarLabel(material)]), 0.00074, atol=0.00001)
+@test isapprox(σ(qla_res[NeXLMatrixCorrection.qLabel(material)]),0.0066, atol=0.0001)
+
+maintain = MaintainLabels([NeXLMatrixCorrection.E0keVLabel, NeXLMatrixCorrection.ZbarbLabel, NeXLMatrixCorrection.OoSLabel, NeXLMatrixCorrection.QlaLabel ], qla_res)
+
+rp = NeXLMatrixCorrection.StepRPhi0(material, inner(cxr)) | maintain
 rp_res = rp(qla_res)
 rp_model = rp ∘ qla ∘ dpt ∘ mjz
 rp_mcres = mcpropagate(rp_model, k240, 1000, parallel=false, rng=rgen)
+
+#println("Analytical Result")
+#print(rp_res)
+#println("MC Result")
+#print(rp_mcres)
+
+@test isapprox(value(rp_res[NeXLMatrixCorrection.RLabel(material,inner(cxr))]), 0.852, atol=0.001)
+@test isapprox(value(rp_res[NeXLMatrixCorrection.ϕ0Label(material,inner(cxr))]), 1.63, atol=0.01)
+
+@test isapprox(σ(rp_res[NeXLMatrixCorrection.RLabel(material,inner(cxr))]), 0.00163, atol=0.001)
+@test isapprox(σ(rp_res[NeXLMatrixCorrection.ϕ0Label(material, inner(cxr))]), 0.0072, atol=0.0001)
+
+frbar = StepFRBar(material, inner(cxr))
+
 
 #end
