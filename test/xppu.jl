@@ -143,7 +143,7 @@ rp_mcres = mcpropagate(rp_model, k240, 1000, parallel=false, rng=rgen)
 @test isapprox(σ(rp_res[NeXLMatrixCorrection.RLabel(material,inner(cxr))]), 0.00163, atol=0.001)
 @test isapprox(σ(rp_res[NeXLMatrixCorrection.ϕ0Label(material, inner(cxr))]), 0.0072, atol=0.0001)
 
-frbar = StepFRBar(material, inner(cxr))
-
+frbar = NeXLMatrixCorrection.StepFRBar(material, inner(cxr))
+frbar_res = frbar(rp_res)
 
 #end
