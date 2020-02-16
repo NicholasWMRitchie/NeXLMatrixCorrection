@@ -3,8 +3,6 @@ using DataFrames
 # Implements Pouchou and Pichoir's XPP model from the description in the book
 # Electron Probe Quantification edited by Kurt Heinrich and Dale E. Newbury
 
-struct XPP <: MatrixCorrection end
-
 """
     M(mat::Material)
 P&P's M from top line in page 35
@@ -240,11 +238,12 @@ function Fχ(χ, A, a, B, b, ϕ0)
 end
 
 """
-   XPPCorrection
+   XPP
+
 Represents the essential intermediary values for an XPP matrix correction of
 characteristic X-rays from a particular atomic sub-shell in a particular material.
 """
-struct XPPCorrection <: MatrixCorrection
+struct XPP <: MatrixCorrection
     # Configuration data
     subshell::AtomicSubShell
     material::Material
@@ -256,9 +255,38 @@ struct XPPCorrection <: MatrixCorrection
     B # Amplitude  factor
     b # Width factor
     F # Integral under the ϕ(ρz) curve
+
+"""
+    XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
+
+Construct an XPP object for the specified material, atomicsubshell,
+beam energy (in eV).
+"""
+    function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
+        # XPP calculations expect E0, eLv, J in keV
+        e0, Mv, Jv, = 0.001 * E0, M(mat), 0.001*J(mat)
+        Zbarbv, eLv = Zbarb(mat), 0.001 * energy(ashell)
+        U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(Zbarbv)
+        @assert U0v > 1.0  "The beam energy must be larger than the subshell edge energy."
+        @assert V0v > 1.0  "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))"
+        Dv, Pjv, mv, Wbarv = D(Jv), P(Jv), m(ashell), Wbar(ηbarv)
+        invSv = invS(U0v, V0v, Mv, Dv, Pjv, T(Pjv, mv))
+        qv, Rv, ϕ0v, QlAv = q(Wbarv),
+            R(ηbarv, Wbarv, U0v),
+            ϕ0(U0v, ηbarv),
+            QlA(U0v, eLv, mv)
+        Fv, FoverRbarv = F(Rv, invSv, QlAv), FoverRbar(X(Zbarbv), Y(Zbarbv), U0v)
+        Rbarv = Rbar(Fv, FoverRbarv, ϕ0v)
+        bv = b(Rbarv, ϕ0v, Fv)
+        Pv = P(Zbarbv, U0v, Fv, Rbarv, ϕ0v, bv)
+        ϵv = ϵ(Pv, bv, ϕ0v, Fv, Rbarv)
+        av, Bv = a(bv, ϵv), B(bv, Fv, Pv, ϕ0v, ϵv)
+        Av = A(Bv, bv, ϕ0v, Fv, ϵv)
+        return new(ashell, mat, E0, ϕ0v, Av, av, Bv, bv, Fv)
+    end
 end
 
-function internals(xpps::AbstractArray{XPPCorrection})
+function internals(xpps::AbstractArray{XPP})
     return DataFrame(
         SubShell = [xpp.subshell for xpp in xpps],
         Material = [name(xpp.material) for xpp in xpps],
@@ -273,87 +301,50 @@ function internals(xpps::AbstractArray{XPPCorrection})
 end
 
 
-Base.show(io::IO, xpp::XPPCorrection) =
+Base.show(io::IO, xpp::XPP) =
     print(
         io,
         "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]",
     )
 
-"""
-    XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
-Construct an XPPCorrection object for the specified material, atomicsubshell,
-beam energy (in eV).
-"""
-function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
-    # XPP calculations expect E0, eLv, J in keV
-    e0, Mv, Jv, = 0.001 * E0, M(mat), 0.001*J(mat)
-    Zbarbv, eLv = Zbarb(mat), 0.001 * energy(ashell)
-    U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(Zbarbv)
-    @assert U0v > 1.0  "The beam energy must be larger than the subshell edge energy."
-    @assert V0v > 1.0  "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))"
-    Dv, Pjv, mv, Wbarv = D(Jv), P(Jv), m(ashell), Wbar(ηbarv)
-    invSv = invS(U0v, V0v, Mv, Dv, Pjv, T(Pjv, mv))
-    qv, Rv, ϕ0v, QlAv = q(Wbarv),
-        R(ηbarv, Wbarv, U0v),
-        ϕ0(U0v, ηbarv),
-        QlA(U0v, eLv, mv)
-    Fv, FoverRbarv = F(Rv, invSv, QlAv), FoverRbar(X(Zbarbv), Y(Zbarbv), U0v)
-    Rbarv = Rbar(Fv, FoverRbarv, ϕ0v)
-    bv = b(Rbarv, ϕ0v, Fv)
-    Pv = P(Zbarbv, U0v, Fv, Rbarv, ϕ0v, bv)
-    ϵv = ϵ(Pv, bv, ϕ0v, Fv, Rbarv)
-    av, Bv = a(bv, ϵv), B(bv, Fv, Pv, ϕ0v, ϵv)
-    Av = A(Bv, bv, ϕ0v, Fv, ϵv)
-    return XPPCorrection(ashell, mat, E0, ϕ0v, Av, av, Bv, bv, Fv)
-end
-
-"""
-    xpp(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
-Construct an XPPCorrection object for the specified material, atomicsubshell,
-and beam energy (in eV).
-"""
-xpp(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)::XPPCorrection =
-    XPP(mat, ashell, E0)
-
-Fχ(xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
+Fχ(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) =
     Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
-F(xpp::XPPCorrection) = xpp.F
-NeXLCore.atomicsubshell(mc::XPPCorrection) = mc.subshell
-NeXLCore.material(mc::XPPCorrection) = mc.material
-beamEnergy(mc::XPPCorrection) = mc.E0 # in eV
+F(xpp::XPP) = xpp.F
+NeXLCore.atomicsubshell(mc::XPP) = mc.subshell
+NeXLCore.material(mc::XPP) = mc.material
+beamEnergy(mc::XPP) = mc.E0 # in eV
 
 """
     ϕ(ρz, xpp::XPP)
 Computes the ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕ(ρz, xpp::XPPCorrection) = ϕ(ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ϕ(ρz, xpp::XPP) = ϕ(ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 """
     ϕabs(ρz, xpp::XPP, xray::CharXRay, θtoa)
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(ρz, xpp::XPPCorrection, xray::CharXRay, θtoa::AbstractFloat) =
+ϕabs(ρz, xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) =
     ϕ(ρz, xpp) * exp(-χ(material(xpp), xray, θtoa) * ρz)
 
 
 """
     matrixcorrection(
-      ::Type{XPPCorrection},
+      ::Type{XPP},
       mat::Material,
       ashell::AtomicSubShell,
       e0,
     )
 
-Constructs an XPPCorrection algorithm.
+Constructs an XPP algorithm.
 """
 matrixcorrection(
-    ::Type{XPPCorrection},
+    ::Type{XPP},
     mat::Material,
     ashell::AtomicSubShell,
     e0,
-) = xpp(mat, ashell, e0)
-
+) = XPP(mat, ashell, e0)
 
 function tabulate( #
     unk::Material,
@@ -361,8 +352,8 @@ function tabulate( #
     e0::AbstractFloat,
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-    mctype::Type{MatrixCorrection}=XPPCorrection,
-    fctype::Type{FluorescenceCorrection}=ReedFluorescence
+    mctype::Type{<:MatrixCorrection}=XPP,
+    fctype::Type{<:FluorescenceCorrection}=ReedFluorescence
 )
     df = DataFrame()
     for (elm, std) in stds

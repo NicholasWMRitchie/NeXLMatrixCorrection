@@ -112,11 +112,11 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         icxU = ionizationcrosssection(sh, beamEnergy(zafU))
         icxS = ionizationcrosssection(sh, beamEnergy(zafS))
+        z = Z(zafU, zafS)
         for cxr in cxrs2
             w = weight(cxr)
-            a += w * (icxU / icxS) * Z(unk.zafs[sh], std.zafs[sh]) *
-                A(zafU, zafS, cxr, θunk, θstd) *  F(zafU, zafS, cxr, θunk, θstd) *
-                coating(zafU, zafS, cxr, θunk, θstd)
+            a += w * (icxU / icxS) * z * A(zafU, zafS, cxr, θunk, θstd) *
+                F(zafU, zafS, cxr, θunk, θstd) * coating(zafU, zafS, cxr, θunk, θstd)
             n += w
         end
     end
@@ -225,3 +225,15 @@ standards in a DataFrame.
 """
 tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
     mapreduce(tmm -> tabulate(tmm[1], tmm[2], θunk, θstd), append!, mzs)
+
+
+function tabulate(unk::Material,
+                std::Material,
+                lines::Vector{CharXRay},
+                e0::Float64,
+                toa::Float64;
+                zacorr::Type{<:MatrixCorrection} = XPP,
+                fcorr::Type{<:FluorescenceCorrection} = ReedFluorescence)
+    zafs = ZAF(zacorr, fcorr, unk, std, lines, e0)
+    tabulate(zafs..., toa, toa)
+end

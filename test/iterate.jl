@@ -16,8 +16,8 @@ using NeXLMatrixCorrection
 
     toa, e0 = props[:TakeOffAngle], props[:BeamEnergy]
     # Computed k-ratios
-    kfek = NeXLMatrixCorrection.k(ZAF(XPPCorrection, ReedFluorescence, unk, fe, fek, e0)...,toa,toa)
-    kcrk =  NeXLMatrixCorrection.k(ZAF(XPPCorrection, ReedFluorescence, unk, cr, crk, e0)...,toa,toa)
+    kfek = NeXLMatrixCorrection.k(ZAF(XPP, ReedFluorescence, unk, fe, fek, e0)...,toa,toa)
+    kcrk =  NeXLMatrixCorrection.k(ZAF(XPP, ReedFluorescence, unk, cr, crk, e0)...,toa,toa)
 
     # Use these as the "measured" k-ratios
     krs = [
@@ -27,7 +27,7 @@ using NeXLMatrixCorrection
     print(krs)
     ENV["Columns"]=160
     up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
-    iter=Iteration(XPPCorrection,ReedFluorescence, updater=up)
+    iter=Iteration(XPP,ReedFluorescence, updater=up)
     println(analyticaltotal(unk))
     res=iterateks(iter, "Result", krs)
     print(res)

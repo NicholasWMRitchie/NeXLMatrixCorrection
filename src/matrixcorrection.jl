@@ -68,7 +68,7 @@ function ZA(
 end
 
 """
-    Z(unk::XPP, std::XPP)
+    Z(unk::MatrixCorrection, std::MatrixCorrection)
 The atomic number correction factor.
 """
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
@@ -78,7 +78,7 @@ function Z(unk::MatrixCorrection, std::MatrixCorrection)
 end
 
 """
-    A(unk::XPP, std::XPP, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
+    A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
 The absorption correction factors.
 """
 function A(
@@ -334,20 +334,21 @@ end
 Constructs an ZAFCorrection object using the mctype correction model with
 the fluorescence model for the specified parameters.
 """
-ZAF(
+function ZAF(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     mat::Material,
     ashell::AtomicSubShell,
     e0::AbstractFloat,
     coating = NullCoating(),
-) =
-    ZAFCorrection(
-        matrixcorrection(mctype, mat, ashell, e0),
-        fluorescencecorrection(fctype, mat, ashell, e0),
+)
+    norm = asnormalized(mat)  # Ensures convergence of the interation algorithms...
+    return ZAFCorrection(
+        matrixcorrection(mctype, norm, ashell, e0),
+        fluorescencecorrection(fctype, norm, ashell, e0),
         coating,
     )
-
+end
 
 """
     ZAF(

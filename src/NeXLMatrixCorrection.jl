@@ -34,7 +34,7 @@ export ϕ # ϕ(ρz) function
 export ϕabs # ϕ(ρz) function (absorbed)
 export xpp # Build an XPP correction
 export ZAF # Build a full ZAF correction based on XPP
-export XPPCorrection # XPPCorrection structure
+export XPP # XPP structure
 
 include("xppu.jl")
 export JzLabel
