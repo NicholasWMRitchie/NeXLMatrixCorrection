@@ -1,35 +1,138 @@
 using Test
 using NeXLMatrixCorrection
 
-@testset "Iteration" begin
-    # Measurement conditions
-    props = Dict{Symbol,Any}(:BeamEnergy=>15.0e3,:TakeOffAngle=>deg2rad(40.0))
-    # Unknown material
-    unk = material("0.6Fe+0.4Cr",Dict(n"Fe"=>0.6, n"Cr"=>0.4))
-    # Standard materials
-    fe = pure(n"Fe")
-    cr = pure(n"Cr")
+function testIterate(unk, stds, e0, θ)
+	toa = deg2rad(θ)
+	props = Dict{Symbol,Any}(:BeamEnergy=>e0,:TakeOffAngle=>toa)
+	krs = KRatio[]
+	for (lines, std) in stds
+		elm = element(lines[1])
+		zu = ZAF(XPP, ReedFluorescence, unk, lines, e0)
+		zs = ZAF(XPP, ReedFluorescence, std, lines, e0)
+		k = gZAFc(zu, zs, toa, toa) * unk[elm] / std[elm]
+		push!(krs, KRatio(lines, props, props, std, k))
+	end
+	println(krs)
+	up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
+	iter=Iteration(XPP,ReedFluorescence, updater=up)
+	return iterateks(iter, "Result", krs)
+end
+@testset "Iteration tests" begin
+	@testset "FeCr series at 15 keV (normalized inputs)" begin
+		mat = material("0.6Fe+0.4Cr",Dict(n"Fe"=>0.6, n"Cr"=>0.4))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
 
-    # Characteristic x-rays
-    fek = characteristic(n"Fe",kalpha,0.01)
-    crk = characteristic(n"Cr",kalpha,0.01)
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
 
-    toa, e0 = props[:TakeOffAngle], props[:BeamEnergy]
-    # Computed k-ratios
-    kfek = NeXLMatrixCorrection.k(ZAF(XPP, ReedFluorescence, unk, fe, fek, e0)...,toa,toa)
-    kcrk =  NeXLMatrixCorrection.k(ZAF(XPP, ReedFluorescence, unk, cr, crk, e0)...,toa,toa)
+		mat = material("0.2Fe+0.8Cr",Dict(n"Fe"=>0.2, n"Cr"=>0.8))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
 
-    # Use these as the "measured" k-ratios
-    krs = [
-        KRatio(fek,props,props,fe,kfek),
-        KRatio(crk,props,props,cr,kcrk),
-    ]
-    print(krs)
-    ENV["Columns"]=160
-    up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
-    iter=Iteration(XPP,ReedFluorescence, updater=up)
-    println(analyticaltotal(unk))
-    res=iterateks(iter, "Result", krs)
-    print(res)
-    @test res.converged
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.8Fe+0.2Cr",Dict(n"Fe"=>0.8, n"Cr"=>0.2))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.99Fe+0.01Cr",Dict(n"Fe"=>0.99, n"Cr"=>0.01))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.01Fe+0.99Cr",Dict(n"Fe"=>0.01, n"Cr"=>0.99))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+	end
+
+	@testset "FeCr series at 15 keV (non-normalized inputs)" begin
+		mat = material("0.62Fe+0.4Cr",Dict(n"Fe"=>0.62, n"Cr"=>0.4))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.18Fe+0.84Cr",Dict(n"Fe"=>0.18, n"Cr"=>0.84))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.85Fe+0.22Cr",Dict(n"Fe"=>0.85, n"Cr"=>0.22))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.95Fe+0.01Cr",Dict(n"Fe"=>0.95, n"Cr"=>0.01))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+
+		mat = material("0.03Fe+0.99Cr",Dict(n"Fe"=>0.03, n"Cr"=>0.99))
+		res = testIterate(mat, Dict( [ n"Fe K-L3" ]=> pure(n"Fe"), [ n"Cr K-L3" ]=> pure(n"Cr")), 15.0e3, 40.0)
+
+		@test res.converged
+		@test isapprox(res.comp[n"Fe"], mat[n"Fe"], atol=0.00005)
+		@test isapprox(res.comp[n"Cr"], mat[n"Cr"], atol=0.00005)
+	end
+
+	@testset "K240 tests - Pure standards" begin
+		mat = material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+		stds = Dict(
+			[ n"O K-L3" ] => pure(n"O"),
+			[ n"Si K-L3" ] => pure(n"Si"),
+			[ n"Mg K-L3" ] => pure(n"Mg"),
+			[ n"Ba L3-M5" ] => pure(n"Ba"),
+			[ n"Ti K-L3" ] => pure(n"Ti"),
+			[ n"Zn K-L3" ] => pure(n"Zn"),
+			[ n"Zr L3-M5" ] => pure(n"Zr")
+		)
+		res = testIterate(mat, stds, 20.0e3, deg2rad(40))
+		@test res.converged
+		@test isapprox(res.comp[n"O"], mat[n"O"], atol=0.00005)
+		@test isapprox(res.comp[n"Si"], mat[n"Si"], atol=0.00005)
+		@test isapprox(res.comp[n"Mg"], mat[n"Mg"], atol=0.00005)
+		@test isapprox(res.comp[n"Ba"], mat[n"Ba"], atol=0.00005)
+		@test isapprox(res.comp[n"Ti"], mat[n"Ti"], atol=0.00005)
+		@test isapprox(res.comp[n"Zn"], mat[n"Zn"], atol=0.00005)
+		@test isapprox(res.comp[n"Zr"], mat[n"Zr"], atol=0.00005)
+	end
+
+	@testset "K240 tests - Simple standards" begin
+		mat = material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+		stds = Dict(
+			[ n"O K-L3" ] => parse(Material,"SiO2"),
+			[ n"Si K-L3" ] => parse(Material,"SiO2"),
+			[ n"Mg K-L3" ] => parse(Material,"MgO"),
+			[ n"Ba L3-M5" ] => parse(Material,"BaF2"),
+			[ n"Ti K-L3" ] => pure(n"Ti"),
+			[ n"Zn K-L3" ] => pure(n"Zn"),
+			[ n"Zr L3-M5" ] => pure(n"Zr")
+		)
+		res = testIterate(mat, stds, 20.0e3, deg2rad(40))
+		@test res.converged
+		@test isapprox(res.comp[n"O"], mat[n"O"], atol=0.00005)
+		@test isapprox(res.comp[n"Si"], mat[n"Si"], atol=0.00005)
+		@test isapprox(res.comp[n"Mg"], mat[n"Mg"], atol=0.00005)
+		@test isapprox(res.comp[n"Ba"], mat[n"Ba"], atol=0.00005)
+		@test isapprox(res.comp[n"Ti"], mat[n"Ti"], atol=0.00005)
+		@test isapprox(res.comp[n"Zn"], mat[n"Zn"], atol=0.00005)
+		@test isapprox(res.comp[n"Zr"], mat[n"Zr"], atol=0.00005)
+	end
 end

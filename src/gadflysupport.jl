@@ -3,8 +3,9 @@ using .Gadfly
 function Gadfly.plot(rur::RecordingUpdateRule, measured::KRatio, celm=nothing)
     elm = measured.element
     ks, cs, lbls = [], [], []
-    for i in eachindex(rur.estkrs)
-        push!(ks,rur.estkrs[i][elm])
+    for i in eachindex(rur.comps)
+        estkr = rur.comps[i][elm]*rur.zafs[i][elm]/rur.meas[elm].standard[elm]
+        push!(ks,estkr)
         push!(cs,rur.comps[i][elm])
         push!(lbls,"$(i)")
     end
