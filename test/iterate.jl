@@ -1,5 +1,6 @@
 using Test
 using NeXLMatrixCorrection
+using Random
 
 function testIterate(unk, stds, e0, θ)
 	toa = deg2rad(θ)
@@ -12,11 +13,28 @@ function testIterate(unk, stds, e0, θ)
 		k = gZAFc(zu, zs, toa, toa) * unk[elm] / std[elm]
 		push!(krs, KRatio(lines, props, props, std, k))
 	end
-	println(krs)
 	up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
 	iter=Iteration(XPP,ReedFluorescence, updater=up)
 	return iterateks(iter, "Result", krs)
 end
+
+randomize(mat::Material, qty::Float64)::Material =
+	material(mat.name, Dict(elm => mat[elm]*(1.0+qty*randn()) for elm in keys(mat)))
+
+function evaluate(mat, stds, e0, θ, tol=0.0001)
+	res = testIterate(mat, stds, e0, θ)
+	if !res.converged
+		return false
+	end
+ 	for elm in keys(mat)
+		if abs(res.comp[elm]-mat[elm]) > tol
+			return false
+		end
+	end
+	return true
+end
+
+
 @testset "Iteration tests" begin
 	@testset "FeCr series at 15 keV (normalized inputs)" begin
 		mat = material("0.6Fe+0.4Cr",Dict(n"Fe"=>0.6, n"Cr"=>0.4))
@@ -134,5 +152,33 @@ end
 		@test isapprox(res.comp[n"Ti"], mat[n"Ti"], atol=0.00005)
 		@test isapprox(res.comp[n"Zn"], mat[n"Zn"], atol=0.00005)
 		@test isapprox(res.comp[n"Zr"], mat[n"Zr"], atol=0.00005)
+	end
+	@testset "K240 tests - Unnorm" begin
+		mat = material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+		stds = Dict(
+			[ n"O K-L3" ] => parse(Material,"SiO2"),
+			[ n"Si K-L3" ] => parse(Material,"SiO2"),
+			[ n"Mg K-L3" ] => parse(Material,"MgO"),
+			[ n"Ba L3-M5" ] => parse(Material,"BaF2"),
+			[ n"Ti K-L3" ] => pure(n"Ti"),
+			[ n"Zn K-L3" ] => pure(n"Zn"),
+			[ n"Zr L3-M5" ] => pure(n"Zr")
+		)
+		Random.seed!(0xEA7BADF00D0)
+		@test evaluate(randomize(mat,0.01), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.1), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.2), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.3), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.4), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
 	end
 end

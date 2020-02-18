@@ -399,6 +399,7 @@ function ZAF(
     e0::AbstractFloat,
     coating = NullCoating()
 )
+    mat = asnormalized(mat)
     zafs = Dict((sh, ZAF(mctype, fctype, mat, sh, e0, coating)) for sh in union(inner.(cxrs)))
     return MultiZAF(cxrs, zafs)
 end

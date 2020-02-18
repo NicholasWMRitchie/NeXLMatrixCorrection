@@ -45,8 +45,7 @@ include("reed.jl")
 export ReedFluorescence
 export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
 
-include("kratio.jl")
-export KRatio # k-ratio data struct
+include("kratioopt.jl")
 export KRatioOptimizer
 export SimpleKRatioOptimizer
 export optimizeks
