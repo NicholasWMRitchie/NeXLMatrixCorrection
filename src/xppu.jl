@@ -646,7 +646,7 @@ function NeXLUncertainties.compute(st::StepχFr, inputs::LabeledValues, withJac:
     if withJac
         δχδμoρl = csc(θ)
         δχδθ = -χ * cot(θ)
-        δFrδχ = ( (A*b*ϵ)/((χ+b*(1+ϵ))^2)-B/((b+χ)^2) - (1.0+b+χ)*Fr)/(b+χ)
+        δFrδχ = (-2.0*B + ((b+χ)*(A*b*ϵ)*(2.0*χ+b*(2.0+ϵ))-(b+χ+b*ϵ)^2*ϕ0)/((b+χ+b*ϵ)^2))/((b+χ)^3)
 
         χi, Fri = indexin(χl, vals), indexin(Frl,vals)
         jac[χi, indexin(μoρl,inputs)] = δχδμoρl
@@ -654,9 +654,9 @@ function NeXLUncertainties.compute(st::StepχFr, inputs::LabeledValues, withJac:
         jac[Fri, indexin(μoρl,inputs)] = δFrδχ * δχδμoρl
         jac[Fri, indexin(θl,inputs)] = δFrδχ * δχδθ
         jac[Fri, indexin(dzl,inputs)] = -χ*Fr
-        jac[Fri, indexin(Bl,inputs)] = 1.0/(b+χ)^2
+        jac[Fri, indexin(Bl,inputs)] = 1.0/((b+χ)^2)
         jac[Fri, indexin(bl,inputs)] = (-B/((b+χ)^2) + (-A*χ*ϵ)/((χ+b*(1.0+ϵ))^2)-Fr)/(b+χ)
-        jac[Fri, indexin(Al,inputs)] = (-b*ϵ)/((b+ϵ)*(χ+b*(1.0+ϵ)))
+        jac[Fri, indexin(Al,inputs)] = (-b*ϵ)/((b+χ)*(χ+b*(1.0+ϵ)))
         jac[Fri, indexin(ϕ0l,inputs)] = 1.0/(b+χ)
         jac[Fri, indexin(ϵl,inputs)] = (-A*b)/((χ+b*(1.0+ϵ))^2)
     end
