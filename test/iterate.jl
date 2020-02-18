@@ -23,15 +23,7 @@ randomize(mat::Material, qty::Float64)::Material =
 
 function evaluate(mat, stds, e0, θ, tol=0.0001)
 	res = testIterate(mat, stds, e0, θ)
-	if !res.converged
-		return false
-	end
- 	for elm in keys(mat)
-		if abs(res.comp[elm]-mat[elm]) > tol
-			return false
-		end
-	end
-	return true
+	return res.converged && all(abs(res.comp[elm]-mat[elm]) < tol for elm in keys(mat))
 end
 
 
@@ -121,7 +113,7 @@ end
 			[ n"Zn K-L3" ] => pure(n"Zn"),
 			[ n"Zr L3-M5" ] => pure(n"Zr")
 		)
-		res = testIterate(mat, stds, 20.0e3, deg2rad(40))
+		res = testIterate(mat, stds, 20.0e3, 40)
 		@test res.converged
 		@test isapprox(res.comp[n"O"], mat[n"O"], atol=0.00005)
 		@test isapprox(res.comp[n"Si"], mat[n"Si"], atol=0.00005)
@@ -143,7 +135,7 @@ end
 			[ n"Zn K-L3" ] => pure(n"Zn"),
 			[ n"Zr L3-M5" ] => pure(n"Zr")
 		)
-		res = testIterate(mat, stds, 20.0e3, deg2rad(40))
+		res = testIterate(mat, stds, 20.0e3, 40)
 		@test res.converged
 		@test isapprox(res.comp[n"O"], mat[n"O"], atol=0.00005)
 		@test isapprox(res.comp[n"Si"], mat[n"Si"], atol=0.00005)
@@ -165,20 +157,44 @@ end
 			[ n"Zr L3-M5" ] => pure(n"Zr")
 		)
 		Random.seed!(0xEA7BADF00D0)
-		@test evaluate(randomize(mat,0.01), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.1), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.2), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.3), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.4), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
-		@test evaluate(randomize(mat,0.5), stds, 20.0e3, deg2rad(40))
+		@test evaluate(randomize(mat,0.01), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.1), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.2), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.3), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.4), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
 	end
+	@testset "FeCr tests - Unnorm" begin
+		mat = material("FeCr",Dict(n"Fe"=>0.6, n"Cr"=>0.4),missing)
+		stds = Dict(
+			[ n"Fe K-L3" ] => pure(n"Fe"),
+			[ n"Cr K-L3" ] => pure(n"Cr"),
+		)
+		Random.seed!(0xEA7BADF00D)
+		@test evaluate(randomize(mat,0.01), stds, 15.0e3, 40)
+		@test evaluate(randomize(mat,0.1), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.2), stds, 17.0e3, 40)
+		@test evaluate(randomize(mat,0.3), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.4), stds, 14.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 16.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 22.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 19.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 17.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 20.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 14.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 26.0e3, 40)
+		@test evaluate(randomize(mat,0.5), stds, 30.0e3, 40)
+	end
+
 end
