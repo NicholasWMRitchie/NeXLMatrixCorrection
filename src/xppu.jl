@@ -29,38 +29,32 @@ Base.show(io::IO, mjz::StepMJZbarb) = print(io, "MJZbarb[", mjz.material, "]")
 struct BigMLabel <: Label
     material::String
 end
-
 Base.show(io::IO, m::BigMLabel) = print(io, "M[", m.material, "]")
 
 struct JLabel <: Label # in keV
     material::String
 end
-
 Base.show(io::IO, j::JLabel) = print(io, "J[", j.material, "]")
 
 struct E0Label <: Label
     material::String
 end
-
 Base.show(io::IO, e0::E0Label) = print(io, "E0[", e0.material, "]")
 
 struct E0keVLabel <: Label
     material::String
 end
-
-Base.show(io::IO, e0::E0keVLabel) = print(io, "E0[", e0.material, " in keV]")
+Base.show(io::IO, e0::E0keVLabel) = print(io, "E0(keV)[", e0.material, "]")
 
 struct ZbarbLabel <: Label
     material::String
 end
-
 Base.show(io::IO, zb::ZbarbLabel) = print(io, "Zbarb[", zb.material, "]")
 
 function Ju(elm::Element, f = 0.01) #C1
     j = NeXLMatrixCorrection.J(elm) # from xpp.jl (in eV)
     return uv(j, f * j)
 end
-
 
 function NeXLUncertainties.compute(mjz::StepMJZbarb, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build the labels once...
@@ -109,7 +103,6 @@ end
 struct mLabel <: Label
     shell::AtomicSubShell
 end
-
 Base.show(io::IO, m::mLabel) = print(io, "m[", m.shell, "]")
 
 struct DkLabel <: Label
@@ -117,7 +110,6 @@ struct DkLabel <: Label
     shell::AtomicSubShell
     k::Int
 end
-
 Base.show(io::IO, d::DkLabel) = print(io, "D[", d.material, ",", d.shell, ",", d.k, "]")
 
 struct PkLabel <: Label
@@ -125,7 +117,6 @@ struct PkLabel <: Label
     shell::AtomicSubShell
     k::Int
 end
-
 Base.show(io::IO, p::PkLabel) = print(io, "P[", p.material, ",", p.shell, ",", p.k, "]")
 
 struct TkLabel <: Label
@@ -133,7 +124,6 @@ struct TkLabel <: Label
     shell::AtomicSubShell
     k::Int
 end
-
 Base.show(io::IO, t::TkLabel) = print(io, "T[", t.material, ",", t.shell, ",", t.k, "]")
 
 function NeXLUncertainties.compute(dpt::StepDPT, inputs::LabeledValues, withJac::Bool)::MMResult
@@ -181,31 +171,33 @@ struct QlaLabel <: Label
     material::String
     shell::AtomicSubShell
 end
-
 Base.show(io::IO, qla::QlaLabel) = print(io, "Qla[", qla.material, ",", qla.shell, "]")
 
 struct ηLabel <: Label
     material::String
 end
+Base.show(io::IO, m::ηLabel) = print(io, "η[", m.material, "]")
 
 struct JU0Label <: Label
     material::String
 end
+Base.show(io::IO, m::JU0Label) = print(io, "J(U0)[", m.material, "]")
 
 struct WbarLabel <: Label
     material::String
 end
+Base.show(io::IO, m::WbarLabel) = print(io, "Wbar[", m.material, "]")
 
 struct qLabel <: Label
     material::String
 end
+Base.show(io::IO, m::qLabel) = print(io, "q[", m.material, "]")
 
 struct OoSLabel <: Label
     material::String
     shell::AtomicSubShell
 end
-
-Base.show(io::IO, d::OoSLabel) = print(io, "¹/ₛ[", d.material, ",", d.shell, "]")
+Base.show(io::IO, d::OoSLabel) = print(io, "1/S[", d.material, ",", d.shell, "]")
 
 function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build labels
@@ -279,14 +271,12 @@ struct RLabel <: Label
     material::String
     shell::AtomicSubShell
 end
-
 Base.show(io::IO, rl::RLabel) = print(io, "R[$(rl.material),$(rl.shell)]")
 
 struct ϕ0Label <: Label
     material::String
     shell::AtomicSubShell
 end
-
 Base.show(io::IO, l::ϕ0Label) = print(io, "ϕ₀[$(l.material),$(l.shell)]")
 
 function NeXLUncertainties.compute(rp::StepRPhi0, inputs::LabeledValues, withJac::Bool)::MMResult
@@ -332,14 +322,12 @@ struct RbarLabel <: Label
     material::String
     shell::AtomicSubShell
 end
-
 Base.show(io::IO, l::RbarLabel) = print(io, "Rbar[$(l.material),$(l.shell)]")
 
 struct FLabel <: Label
     material::String
     shell::AtomicSubShell
 end
-
 Base.show(io::IO, l::FLabel) = print(io, "F[$(l.material),$(l.shell)]")
 
 function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac::Bool)::MMResult
@@ -514,7 +502,7 @@ function NeXLUncertainties.compute(st::Stepaϵ, inputs::LabeledValues, withJac::
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
         δaδP = 1.0 / den # Ok
-        δaδϕ0 = (b^2 * F*(3.0 - 2.0 * b * Rbar) + P) / (den^2) # Ok
+        δaδϕ0 = (b^2 * F * (3.0 - 2.0 * b * Rbar) + P) / (den^2) # Ok
         δaδRbar = (b^2 * F * (P + 2.0 * b * ϕ0 - b^2 * F)) / (den^2) # Ok
         δaδF = b * (P * (b * Rbar - 2.0) + b * ϕ0 * (2.0 * b * Rbar - 3.0)) / (den^2) # Ok
         δaδb = -2.0 * (F * (P - b * (ϕ0 + P * Rbar) + b^2 * (F - ϕ0 * Rbar)) + ϕ0^2) / (den^2) # Ok
@@ -533,7 +521,7 @@ function NeXLUncertainties.compute(st::Stepaϵ, inputs::LabeledValues, withJac::
         jac[2, indexin(Fl, inputs)] = δϵδa * δaδF
         jac[2, indexin(ϕ0l, inputs)] = δϵδa * δaδϕ0
         jac[2, indexin(Pl, inputs)] = δϵδa * δaδP
-        jac[2, indexin(bl, inputs)] = (b*δaδb - a)/(b^2)
+        jac[2, indexin(bl, inputs)] = (b * δaδb - a) / (b^2)
     end
     return (vals, jac)
 end
@@ -560,105 +548,285 @@ function NeXLUncertainties.compute(st::StepAB, inputs::LabeledValues, withJac::B
     args = (st.material, st.shell)
     ϵl, bl, Fl, Pl, ϕ0l = ϵLabel(args...), bLabel(args...), FLabel(args...), PLabel(args...), ϕ0Label(args...)
     # Extract input variables
-    ϵ, b, F, P, ϕ0 =  inputs[ϵl], inputs[bl], inputs[Fl], inputs[Pl], inputs[ϕ0l]
+    ϵ, b, F, P, ϕ0 = inputs[ϵl], inputs[bl], inputs[Fl], inputs[Pl], inputs[ϕ0l]
     # Compute the values
-    B = (b^2*F*(1.0+ϵ)-P-ϕ0*b*(2.0+ϵ))/ϵ
-    A = (B/b + ϕ0 - b*F)*((1.0+ϵ)/ϵ)
+    B = (b^2 * F * (1.0 + ϵ) - P - ϕ0 * b * (2.0 + ϵ)) / ϵ
+    A = (B / b + ϕ0 - b * F) * ((1.0 + ϵ) / ϵ)
     Al, Bl = ALabel(args...), BLabel(args...)
-    vals = LabeledValues([ Al, Bl ],[ A, B ])
+    vals = LabeledValues([Al, Bl], [A, B])
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
-        δBδϵ = ( P + 2.0*b*ϕ0 - b^2*F)/(ϵ^2)
-        δBδb = (2.0*b*F*(1.0+ϵ) - (2.0+ϵ)*ϕ0) / ϵ
-        δBδF = b^2*(1.0+ϵ)/ϵ
-        δBδP = -1.0/ϵ
-        δBδϕ0 = -b*(2.0+ϵ)/ϵ
+        δBδϵ = (P + 2.0 * b * ϕ0 - b^2 * F) / (ϵ^2)
+        δBδb = (2.0 * b * F * (1.0 + ϵ) - (2.0 + ϵ) * ϕ0) / ϵ
+        δBδF = b^2 * (1.0 + ϵ) / ϵ
+        δBδP = -1.0 / ϵ
+        δBδϕ0 = -b * (2.0 + ϵ) / ϵ
 
-        δAδϵ = -A/(ϵ*(1.0+ϵ)) + (δBδϵ/b)*((1.0+ϵ)/ϵ)
-        δAδb = (δBδb/b - (B/(b^2)+F))*((1.0+ϵ)/ϵ)
-        δAδF = ((δBδF - b^2)/b)*((1.0+ϵ)/ϵ)
-        δAδϕ0 = ((b+δBδϕ0)/b)*((1.0+ϵ)/ϵ)
-        δAδP = (δBδP/b)*((1.0+ϵ)/ϵ)
+        δAδϵ = -A / (ϵ * (1.0 + ϵ)) + (δBδϵ / b) * ((1.0 + ϵ) / ϵ)
+        δAδb = (δBδb / b - (B / (b^2) + F)) * ((1.0 + ϵ) / ϵ)
+        δAδF = ((δBδF - b^2) / b) * ((1.0 + ϵ) / ϵ)
+        δAδϕ0 = ((b + δBδϕ0) / b) * ((1.0 + ϵ) / ϵ)
+        δAδP = (δBδP / b) * ((1.0 + ϵ) / ϵ)
 
-        Ai, Bi = indexin(Al,vals), indexin(Bl,vals)
-        jac[Ai, indexin(ϵl,inputs)] = δAδϵ
-        jac[Ai, indexin(bl,inputs)] = δAδb
-        jac[Ai, indexin(Fl,inputs)] = δAδF
-        jac[Ai, indexin(Pl,inputs)] = δAδP
-        jac[Ai, indexin(ϕ0l,inputs)] = δAδϕ0
+        Ai, Bi = indexin(Al, vals), indexin(Bl, vals)
+        jac[Ai, indexin(ϵl, inputs)] = δAδϵ
+        jac[Ai, indexin(bl, inputs)] = δAδb
+        jac[Ai, indexin(Fl, inputs)] = δAδF
+        jac[Ai, indexin(Pl, inputs)] = δAδP
+        jac[Ai, indexin(ϕ0l, inputs)] = δAδϕ0
 
-        jac[Bi, indexin(ϵl,inputs)] = δBδϵ
-        jac[Bi, indexin(bl,inputs)] = δBδb
-        jac[Bi, indexin(Fl,inputs)] = δBδF
-        jac[Bi, indexin(Pl,inputs)] = δBδP
-        jac[Bi, indexin(ϕ0l,inputs)] = δBδϕ0
+        jac[Bi, indexin(ϵl, inputs)] = δBδϵ
+        jac[Bi, indexin(bl, inputs)] = δBδb
+        jac[Bi, indexin(Fl, inputs)] = δBδF
+        jac[Bi, indexin(Pl, inputs)] = δBδP
+        jac[Bi, indexin(ϕ0l, inputs)] = δBδϕ0
     end
     return (vals, jac)
 end
 
 struct StepχFr <: MeasurementModel
     material::String
-    shell::AtomicSubShell
+    xray::CharXRay
 end
 
 struct χLabel <: Label
     material::String
-    shell::AtomicSubShell
+    xray::CharXRay
 end
-Base.show(io::IO, l::χLabel) = print(io, "χ[$(l.material),$(l.shell)]")
+Base.show(io::IO, l::χLabel) = print(io, "χ[$(l.material),$(l.xray)]")
 
 struct μoρLabel <: Label
     material::String
-    shell::AtomicSubShell
+    xray::CharXRay
 end
-Base.show(io::IO, l::μoρLabel) = print(io, "[μ/ρ][$(l.material),$(l.shell)]")
+Base.show(io::IO, l::μoρLabel) = print(io, "[μ/ρ][$(l.material),$(l.xray)]")
 
 struct θLabel <: Label
     material::String
 end
-Base.show(io::IO, l::θLabel) = print(io, "θₜₒₐ[$(l.material)]")
+Base.show(io::IO, l::θLabel) = print(io, "θ[$(l.material)]")
 
 struct dzLabel <: Label
     material::String
 end
-Base.show(io::IO, l::θLabel) = print(io, "Δz[$(l.material)]")
+Base.show(io::IO, l::dzLabel) = print(io, "Δz[$(l.material)]")
 
 struct FrLabel <: Label
     material::String
-    shell::AtomicSubShell
+    xray::CharXRay
 end
-Base.show(io::IO, l::FrLabel) = print(io, "Fᵣ[$(l.material),$(l.shell)]")
+Base.show(io::IO, l::FrLabel) = print(io, "Fᵣ[$(l.material),$(l.xray)]")
 
 function NeXLUncertainties.compute(st::StepχFr, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build input variable labels
-    args = (st.material, st.shell)
-    μoρl, θl, bl, Bl = μoρLabel(args...), θLabel(st.material), bLabel(args...), BLabel(args...)
+    args = (st.material, inner(st.xray))
+    μoρl, θl, bl, Bl = μoρLabel(st.material, st.xray), θLabel(st.material), bLabel(args...), BLabel(args...)
     Al, ϕ0l, ϵl, dzl = ALabel(args...), ϕ0Label(args...), ϵLabel(args...), dzLabel(st.material)
     # Extract input variables
     μoρ, θ, b, B = inputs[μoρl], inputs[θl], inputs[bl], inputs[Bl]
     A, ϕ0, ϵ = inputs[Al], inputs[ϕ0l], inputs[ϵl]
     # Compute the values
     χ = μoρ * csc(θ)
-    Fr = (ϕ0 + B/(b+χ)-A*b*ϵ/(b*(1+ϵ))+χ)/(b+χ)
-    χl, Frl = χLabel(args...), FrLabel(args...)
-    vals = LabeledValues([ χl, Frl ],[ χ, Fr ])
+    b1ϵχ, bχ = (b * (1.0 + ϵ) + χ), b + χ
+    Fr = (ϕ0 + B / bχ - A * b * ϵ / b1ϵχ) / bχ
+    χl, Frl = χLabel(st.material, st.xray), FrLabel(st.material, st.xray)
+    vals = LabeledValues([χl, Frl], [χ, Fr])
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
-        δχδμoρl = csc(θ)
+        δχδμoρl = χ / μoρ
         δχδθ = -χ * cot(θ)
-        δFrδχ = (-2.0*B + ((b+χ)*(A*b*ϵ)*(2.0*χ+b*(2.0+ϵ))-(b+χ+b*ϵ)^2*ϕ0)/((b+χ+b*ϵ)^2))/((b+χ)^3)
-
-        χi, Fri = indexin(χl, vals), indexin(Frl,vals)
-        jac[χi, indexin(μoρl,inputs)] = δχδμoρl
-        jac[χi, indexin(θl,inputs)] = δχδθ
-        jac[Fri, indexin(μoρl,inputs)] = δFrδχ * δχδμoρl
-        jac[Fri, indexin(θl,inputs)] = δFrδχ * δχδθ
-        jac[Fri, indexin(dzl,inputs)] = -χ*Fr
-        jac[Fri, indexin(Bl,inputs)] = 1.0/((b+χ)^2)
-        jac[Fri, indexin(bl,inputs)] = (-B/((b+χ)^2) + (-A*χ*ϵ)/((χ+b*(1.0+ϵ))^2)-Fr)/(b+χ)
-        jac[Fri, indexin(Al,inputs)] = (-b*ϵ)/((b+χ)*(χ+b*(1.0+ϵ)))
-        jac[Fri, indexin(ϕ0l,inputs)] = 1.0/(b+χ)
-        jac[Fri, indexin(ϵl,inputs)] = (-A*b)/((χ+b*(1.0+ϵ))^2)
+        δFrδχ = (-2.0 * B + (bχ * A * b * ϵ * (2.0 * χ + b * (2.0 + ϵ)) - b1ϵχ^2 * ϕ0) / (b1ϵχ^2)) / (bχ^3)
+        χi, Fri = indexin(χl, vals), indexin(Frl, vals)
+        jac[χi, indexin(μoρl, inputs)] = δχδμoρl
+        jac[χi, indexin(θl, inputs)] = δχδθ
+        jac[Fri, indexin(μoρl, inputs)] = δFrδχ * δχδμoρl
+        jac[Fri, indexin(θl, inputs)] = δFrδχ * δχδθ
+        jac[Fri, indexin(dzl, inputs)] = -χ * Fr
+        jac[Fri, indexin(Bl, inputs)] = 1.0 / (bχ^2)
+        jac[Fri, indexin(bl, inputs)] = (-B / (bχ^2) + (-A * χ * ϵ) / (b1ϵχ^2) - Fr) / bχ
+        jac[Fri, indexin(Al, inputs)] = (-b * ϵ) / (bχ * b1ϵχ)
+        jac[Fri, indexin(ϕ0l, inputs)] = 1.0 / bχ
+        jac[Fri, indexin(ϵl, inputs)] = (-A * b) / (b1ϵχ^2)
     end
     return (vals, jac)
+end
+
+struct StepFrc <: MeasurementModel
+    material::String
+    coating::String
+    xray::CharXRay
+end
+
+struct FrcLabel <: Label
+    material::String
+    coating::String
+    xray::CharXRay
+end
+Base.show(io::IO, l::FrcLabel) = print(io, "Fᵣᶜ[$(l.material),$(l.xray),$(l.coating)]")
+
+struct tcLabel <: Label
+    coating::String
+end
+Base.show(io::IO, l::tcLabel) = print(io, "tᶜ[$(l.coating)]")
+
+function NeXLUncertainties.compute(st::StepFrc, inputs::LabeledValues, withJac::Bool)::MMResult
+    # Build input variable labels
+    θl, tcl = θLabel(st.material), tcLabel(st.coating)
+    Frl, μoρcl = FrLabel(st.material, st.xray), μoρLabel(st.coating, st.xray)
+    # Extract input variables
+    θ, tc, Fr, μoρc = inputs[θl], inputs[tcl], inputs[Frl], inputs[μoρcl]
+    # Compute the values
+    Frc = exp(-μoρc * tc * csc(θ)) * Fr
+    Frcl = FrcLabel(st.material, st.coating, st.xray)
+    vals = LabeledValues([Frcl], [Frc])
+    jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
+    if withJac
+        Frci = indexin(Frcl, vals)
+        @Assert Frci==1
+        jac[Frci, indexin(tcl, inputs)] = -Frc * μoρc * csc(θ)
+        jac[Frci, indexin(θl, inputs)] = Frc * μoρc * tc * csc(θ) * cot(θ)
+        jac[Frci, indexin(μoρcl, inputs)] = -Frc * tc * csc(θ)
+        jac[Frci, indexin(Frl, inputs)] = Frc / Fr
+    end
+    return (vals, jac)
+end
+
+struct StepZA <: MeasurementModel
+    unknown::String
+    standard::String
+    xray::CharXRay
+    coatingU::String
+    coatingS::String
+end
+
+struct ZLabel <: Label
+    unknown::String
+    standard::String
+    shell::AtomicSubShell
+end
+Base.show(io::IO, l::ZLabel) = print(io, "Z[$(l.unknown),$(l.standard)]")
+
+struct AbsLabel <: Label
+    unknown::String
+    standard::String
+    xray::CharXRay
+    coatingU::String
+    coatingS::String
+end
+Base.show(io::IO, l::AbsLabel) = print(io, "A[$(l.unknown),$(l.standard),$(l.xray)]")
+
+struct ZALabel <: Label
+    unknown::String
+    standard::String
+    xray::CharXRay
+    coatingU::String
+    coatingS::String
+end
+Base.show(io::IO, l::ZALabel) = print(io, "ZA[$(l.unknown),$(l.standard),$(l.xray)]")
+
+function NeXLUncertainties.compute(st::StepZA, inputs::LabeledValues, withJac::Bool)::MMResult
+    # Build input variable labels
+    shell = inner(st.xray)
+    Ful, Frcul = FLabel(st.unknown, shell), FrcLabel(st.unknown, st.coatingU, st.xray )
+    Fsl, Frcsl = FLabel(st.standard, shell), FrcLabel(st.standard, st.coatingS, st.xray)
+    # Extract input variables
+    Fu, Frcu, Fs, Frcs = inputs[Ful], inputs[Frcul], inputs[Fsl], inputs[Frcsl]
+    # Compute the values
+    Z, A, ZA = Fu / Fs, (Frcu / Fu) / (Frcs / Fs), Frcu / Frcs
+    Zl = ZLabel(st.unknown, st.standard, shell)
+    Al = AbsLabel(st.unknown, st.standard, st.xray, st.coatingU, st.coatingS)
+    ZAl = ZALabel(st.unknown, st.standard, st.xray, st.coatingU, st.coatingS)
+    vals = LabeledValues([Zl, Al, ZAl], [Z, A, ZA])
+    jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
+    if withJac
+        Zi = indexin(Zl, vals)
+        jac[Zi, indexin(Ful, inputs)] = 1.0 / Fs
+        jac[Zi, indexin(Fsl, inputs)] = -Z / Fs
+        Ai = indexin(Al, vals)
+        jac[Ai, indexin(Ful, inputs)] = -A / Fu
+        jac[Ai, indexin(Fsl, inputs)] = A / Fs
+        jac[Ai, indexin(Frcul, inputs)] = A / Frcu
+        jac[Ai, indexin(Frcsl, inputs)] = -A / Frcs
+        ZAi = indexin(ZAl, vals)
+        jac[ZAi, indexin(Frcul, inputs)] = 1.0 / Frcs
+        jac[ZAi, indexin(Frcsl, inputs)] = -ZA / Frcs
+    end
+    return (vals, jac)
+end
+
+mjz(sample, elms, all) = StepMJZbarb(sample, elms ) | MaintainLabels( mLabel(sample) )
+dpt(sample, all) = StepDPT(sample, inner(cxr)) | allinp
+qla(sample, all) = StepQlaOoS(sample, inner(cxr)) | MaintainLabels([ E0keVLabel(sample), ZbarbLabel(sample) ])
+rp(sample, shell, all) =
+    StepRPhi0(sample, shell) |
+    MaintainLabels([ E0keVLabel(sample), ZbarbLabel(sample), OoSLabel(sample, shell), QlaLabel(sample, shell) ], all)
+frbar(sample, shell, all) =
+    StepFRBar(sample, inner(cxr)) |
+    MaintainLabels([ZbarbLabel(sample), ϕ0Label(sample, shell), E0keVLabel(sample)], all)
+pb(sample, shell, all) =
+    StepPb(sample, shell) |
+    MaintainLabels([ϕ0Label(sample, shell), RbarLabel(sample, shell), FLabel(sample, shell)], all)
+aϵ(sample, shell, all) =
+    Stepaϵ(sample, shell) |
+    MaintainLabels([ϕ0Label(sample, shell), FLabel(sample, shell), PLabel(sample, shell), bLabel(sample, shell)], all)
+AB(sample, shell, all) =
+    NeXLMatrixCorrection.StepAB(unknown, inner(cxr)) |
+    MaintainLabels( [bLabel(sample, shell), ϕ0Label(sample, shell), ϵLabel(sample, shell), FLabel(sample, shell) ], all)
+
+"""
+    steps1(sample, elms, shell, all)
+
+steps1 requires as data MassFractionLabel, AtomicWeightLabel, JzLabel, E0Label, mLabel in an UncertainValues
+"""
+steps1(sample, elms, shell, all=false) =
+    AB(sample, shell, all) ∘ aϵ(sample, shell, all) ∘ pb(sample, shell, all) ∘ frbar(sample, shell, all) ∘
+    rp(sample, shell, all) ∘ qla(sample,all) ∘ dpt(sample,all) ∘ mjz(sample, elms, all)
+
+
+χFr(sample, shell, all) =
+    NeXLMatrixCorrection.StepχFr(sample, shell) | MaintainLabels([ θLabel(sample), FLabel(sample, shell)], all)
+
+"""
+    steps2(sample, shell, all)
+
+steps2 requires as data μoρLabel, dzLabel in an UncertainValues
+"""
+steps2(sample, shell, all=false) = χFr(sample, shell, all)
+
+Frc(sample, xray, coating, all) =
+    StepFrc(sample, coating, xray) | MaintainLabels([ FLabel(sample, inner(xray))], all)
+
+"""
+    steps3(sample, xray, layer, all)
+
+steps3 requires as data tcLabel, μoρLabel for the coating in an UncertainValues
+"""
+steps3(sample, xray, layer, all=false) =
+    Frc(sample, xray, layer) | MaintainLabels(FLabel(sample, inner(xray)), all)
+
+
+
+function xppu(sample::Material, cxr::CharXRay, coating::Film, e0::UncertainValue, all=false)
+    shell = inner(cxr)
+    m=m(shell)
+    input1 = uvs(
+        ( MassFractionLabel(sample.name, elm)=>uv(sample[elm],0.01*sample[elm]) for elm in keys(sample))...,
+        ( AtomicWeightLabel(sample.name, elm)=>uv(a(elm, sample),0.001*a(elm,sample)) for elm in keys(sample))...,
+        ( JzLabel(elm)=> Ju(elm) for elm in keys(sample) )...,
+        NeXLMatrixCorrection.E0Label(unknown)=>e0,
+        NeXLMatrixCorrection.mLabel(shell)=>uv(m,0.01*m)
+    )
+    s1 = steps1(sample.name, [ keys(sample)...], shell, all)
+    r1 = s1(inputs)
+
+    input2 = uvs(
+        μoρLabel(coating.material.name)=>mac(coating),
+        dzLabel(coating.material.name)=>convert(UncertainValue, coating.thickness)
+    )
+    s2 = steps2(sample.name, shell, coating.material.name, all)
+    r2 = s2(cat(r1, input2))
+
+    s3 = steps3(sample.name, shell, coating.material.name, all)
+    r3 = steps3(r2)
+    return r3
 end
