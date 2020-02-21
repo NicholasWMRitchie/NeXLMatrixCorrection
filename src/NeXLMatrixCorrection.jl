@@ -14,6 +14,7 @@ export coating # Coating correction
 export zaf # Build a ZAFCorrection
 export ZAFCorrection
 export FluorescenceCorrection
+export NullFluorescence
 export CoatingCorrection
 export MatrixCorrection
 export ZAFc # Combined correction factor

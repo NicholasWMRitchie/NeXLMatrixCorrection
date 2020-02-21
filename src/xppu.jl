@@ -595,12 +595,6 @@ struct χLabel <: Label
 end
 Base.show(io::IO, l::χLabel) = print(io, "χ[$(l.material),$(l.xray)]")
 
-struct μoρLabel <: Label
-    material::String
-    xray::CharXRay
-end
-Base.show(io::IO, l::μoρLabel) = print(io, "[μ/ρ][$(l.material),$(l.xray)]")
-
 struct θLabel <: Label
     material::String
 end

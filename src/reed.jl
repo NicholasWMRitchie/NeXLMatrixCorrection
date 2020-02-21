@@ -104,7 +104,7 @@ function F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64)
       1.0 + mapreduce(ex -> finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
 end
 """
-    fluorescence(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicSubShell, e0::Float64)
+    fluorescencecorrection(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicSubShell, e0::Float64)
 
 Construct an instance of a ReedFluorescence correction structure to compute the
 secondary fluorescence due to a primary characteristic X-ray in the specified

@@ -6,11 +6,14 @@ using Test
 @testset "XPPU" begin
     rgen = MersenneTwister(0xBADF00D)
 
-    unknown, standard, cxr, e0 = "K240", "SiO2", n"O K-L3", 20.0e3
+    unknown, standard, cxr, e0, θtoa = "K240", "SiO2", n"O K-L3", 20.0e3, deg2rad(40.0)
     unk_mat = material(unknown, #
                 Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, #
                 n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
     std_mat = parse(Material, "SiO2")
+
+    # For comparison with direct calculation...
+    zaf = ZAF(XPP, NullFluorescence, unk_mat, std_mat, inner(cxr), e0, unkCoating=carboncoating(10.0), stdCoating=carboncoating(11.0))
 
     m=NeXLMatrixCorrection.m(inner(cxr))
 
@@ -120,10 +123,8 @@ using Test
     #println("MC Result")
     #print(rp_mcres)
 
-    xpp = NeXLMatrixCorrection.XPP(unk_mat,inner(cxr),e0)
-
     @test isapprox(value(rp_res[NeXLMatrixCorrection.RLabel(unknown,inner(cxr))]), 0.852, atol=0.001)
-    @test isapprox(value(rp_res[NeXLMatrixCorrection.ϕ0Label(unknown,inner(cxr))]), xpp.ϕ0, atol=0.01)
+    @test isapprox(value(rp_res[NeXLMatrixCorrection.ϕ0Label(unknown,inner(cxr))]), zaf[1].za.ϕ0, atol=1.0e-7)
 
     @test isapprox(σ(rp_res[NeXLMatrixCorrection.RLabel(unknown,inner(cxr))]), 0.00146, atol=0.001)
     @test isapprox(σ(rp_res[NeXLMatrixCorrection.ϕ0Label(unknown, inner(cxr))]), 0.00643, atol=0.0001)
@@ -140,10 +141,13 @@ using Test
     #println("MC Result")
     #print(frbar_mcres)
 
-    @test isapprox(value(frbar_res[NeXLMatrixCorrection.FLabel(unknown,inner(cxr))]), xpp.F, atol=0.01*xpp.F)
+    @test isapprox(value(frbar_res[NeXLMatrixCorrection.FLabel(unknown,inner(cxr))]), 0.00168, atol=0.00001)
     @test isapprox(value(frbar_res[NeXLMatrixCorrection.RbarLabel(unknown,inner(cxr))]), 3.31e-4, atol=0.01e-4)
     @test isapprox(σ(frbar_res[NeXLMatrixCorrection.FLabel(unknown,inner(cxr))]), 2.56e-5, atol=0.1e-5)
     @test isapprox(σ(frbar_res[NeXLMatrixCorrection.RbarLabel(unknown, inner(cxr))]), 5.36e-6, atol=0.1e-6)
+
+    @test isapprox(value(frbar_res[NeXLMatrixCorrection.FLabel(unknown,inner(cxr))]), zaf[1].za.F, rtol=1.0e-7)
+
 
     maintain = MaintainLabels([NeXLMatrixCorrection.ϕ0Label, NeXLMatrixCorrection.RbarLabel, NeXLMatrixCorrection.FLabel], frbar_res)
     pb = NeXLMatrixCorrection.StepPb(unknown, inner(cxr)) | maintain
@@ -163,6 +167,7 @@ using Test
     aϵ_mcres = mcpropagate(aϵ_model, input_uvs, 1000, parallel=false, rng=rgen)
 
     @test isapprox(value(aϵ_res[NeXLMatrixCorrection.aLabel(unknown,inner(cxr))]), 6.75e3, atol=0.01e3)
+    @test isapprox(value(aϵ_res[NeXLMatrixCorrection.aLabel(unknown,inner(cxr))]), zaf[1].za.a, rtol=1.0e-7)
     @test isapprox(value(aϵ_res[NeXLMatrixCorrection.ϵLabel(unknown,inner(cxr))]), -0.133, atol=0.001)
     @test isapprox(σ(aϵ_res[NeXLMatrixCorrection.aLabel(unknown,inner(cxr))]), 100, atol=10)
     @test isapprox(σ(aϵ_res[NeXLMatrixCorrection.ϵLabel(unknown,inner(cxr))]), 0.0013, atol=0.0001)
@@ -178,9 +183,13 @@ using Test
     @test isapprox(σ(AB_res[NeXLMatrixCorrection.ALabel(unknown,inner(cxr))]), 8.46, atol=0.01)
     @test isapprox(σ(AB_res[NeXLMatrixCorrection.BLabel(unknown,inner(cxr))]), 4.0e3, atol=4.0e3)
 
+    @test isapprox(value(AB_res[NeXLMatrixCorrection.ALabel(unknown,inner(cxr))]), zaf[1].za.A, rtol=1.0e-7)
+    @test isapprox(value(AB_res[NeXLMatrixCorrection.BLabel(unknown,inner(cxr))]), zaf[1].za.B, rtol=1.0e-7)
+
+
     χdata =  uvs(
         NeXLMatrixCorrection.μoρLabel(unknown,cxr)=>uv(5813.,577.), #
-        NeXLMatrixCorrection.θLabel(unknown)=>uv(deg2rad(40.0), deg2rad(0.1)), #
+        NeXLMatrixCorrection.θLabel(unknown)=>uv(θtoa, deg2rad(0.1)), #
         NeXLMatrixCorrection.dzLabel(unknown)=>uv(0.0, 1.0e-6) # 10 nm
     )
 
@@ -267,8 +276,6 @@ using Test
     #println("MC Result")
     #print(rp_mcres)
 
-    xpp = NeXLMatrixCorrection.XPP(std_mat,inner(cxr),e0)
-
     maintain = MaintainLabels([NeXLMatrixCorrection.ZbarbLabel, NeXLMatrixCorrection.ϕ0Label, NeXLMatrixCorrection.E0keVLabel], rp_res)
     frbar = NeXLMatrixCorrection.StepFRBar(standard, inner(cxr)) | maintain
     frbar_res = frbar(rp_res)
@@ -300,7 +307,7 @@ using Test
 
     χdata =  uvs(
         NeXLMatrixCorrection.μoρLabel(standard,cxr)=>uv(4123., 668.), #
-        NeXLMatrixCorrection.θLabel(standard)=>uv(deg2rad(40.0), deg2rad(0.1)), #
+        NeXLMatrixCorrection.θLabel(standard)=>uv(θtoa, deg2rad(0.1)), #
         NeXLMatrixCorrection.dzLabel(standard)=>uv(0.0, 1.0e-6) # 10 nm
     )
 
@@ -315,7 +322,7 @@ using Test
     coatS = "11 nm C"
     coatingData = uvs( #
         NeXLMatrixCorrection.tcLabel(coatS)=>uv(1.1e-6, 0.5e-6),
-        NeXLMatrixCorrection.μoρLabel(coatS, cxr)=>uv(11705.,2185.)  # n"O K-L3" in n"C"
+        NeXLMatrixCorrection.μoρLabel(coatS, cxr)=>uv(mac(pure(n"C"),cxr),2185.)  # n"O K-L3" in n"C"
      )
     Frc_input = cat(χFr_res, coatingData)
 
@@ -336,4 +343,11 @@ using Test
     @test isapprox(value(za_res[NeXLMatrixCorrection.AbsLabel(unknown, standard, cxr, coatU, coatS)]), 0.762, atol=0.01)
     @test isapprox(σ(za_res[NeXLMatrixCorrection.ZLabel(unknown, standard, inner(cxr))]), 0.024, atol=0.001)
     @test isapprox(σ(za_res[NeXLMatrixCorrection.AbsLabel(unknown, standard, cxr, coatU, coatS)]), 0.14, atol=0.01)
+
+    zaf_za = ZAFc(zaf..., cxr, θtoa, θtoa)
+    zaf_a = ZAFc(zaf..., cxr, θtoa, θtoa)/Z(zaf...)
+
+    @test isapprox(value(za_res[NeXLMatrixCorrection.ZLabel(unknown, standard, inner(cxr))]), Z(zaf...), atol=1e-5)
+    @test isapprox(value(za_res[NeXLMatrixCorrection.AbsLabel(unknown, standard, cxr, coatU, coatS)]), zaf_a, atol=1e-5)
+    @test isapprox(value(za_res[NeXLMatrixCorrection.ZALabel(unknown, standard, cxr, coatU, coatS)]), zaf_za, atol=1e-5)
 end

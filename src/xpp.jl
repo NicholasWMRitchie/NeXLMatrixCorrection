@@ -286,7 +286,7 @@ beam energy (in eV).
     end
 end
 
-function internals(xpps::AbstractArray{XPP})
+function NeXLUncertainties.asa(::Type{DataFrame}, xpps::XPP...)
     return DataFrame(
         SubShell = [xpp.subshell for xpp in xpps],
         Material = [name(xpp.material) for xpp in xpps],

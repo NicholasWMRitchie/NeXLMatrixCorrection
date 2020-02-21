@@ -116,10 +116,19 @@ Base.show(io::IO, nc::NullFluorescence) =
 
 F(nc::NullFluorescence, cxr::CharXRay, θtoa::AbstractFloat) = 1.0
 
+
+fluorescencecorrection(
+   ::Type{NullFluorescence},
+   comp::Material,
+   primarys::Vector{CharXRay},
+   secondary::AtomicSubShell,
+   e0::Float64,
+) = NullFluorescence(comp, secondary, e0)
+
 """
     CoatingCorrection
 Implements
-    transmission(zaf::CoatingCorrection, xray::CharXRay)
+    NeXLCore.transmission(zaf::CoatingCorrection, xray::CharXRay)
 """
 abstract type CoatingCorrection end
 
@@ -142,12 +151,12 @@ Constructs a carbon coating of the specified thickness (in nanometers).
 carboncoating(nm) = Coating(pure(n"C"), nm * 1.0e-7)
 
 """
-    transmission(zaf::Coating, xray::CharXRay, toa)
+    NeXLCore.transmission(zaf::Coating, xray::CharXRay, toa)
 Calculate the transmission fraction for the specified X-ray through the coating
 in the direction of the detector.
 """
-transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) =
-    transmission(layer, xray, θtoa)
+NeXLCore.transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) =
+    NeXLCore.transmission(cc.layer, xray, θtoa)
 
 Base.show(io::IO, coating::Coating) =
     Base.show(io, coating.layer)
@@ -159,10 +168,10 @@ No coating (100%) transmission.
 struct NullCoating <: CoatingCorrection end
 
 """
-    transmission(zaf::NullCoating, xray::CharXRay, toa)
+    NeXLCore.transmission(zaf::NullCoating, xray::CharXRay, toa)
 Calculate the transmission fraction for the specified X-ray through no coating (1.0).
 """
-transmission(nc::NullCoating, xray::CharXRay, θtoa::AbstractFloat) = 1.0
+NeXLCore.transmission(nc::NullCoating, xray::CharXRay, θtoa::AbstractFloat) = 1.0
 
 Base.show(io::IO, nc::NullCoating) = print(io, "no coating")
 
