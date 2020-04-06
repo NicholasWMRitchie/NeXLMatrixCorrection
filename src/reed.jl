@@ -141,7 +141,7 @@ function fluorescencecorrection(
    secondary::AtomicSubShell,
    e0::Float64;
    eThresh = 2.5e3,
-   wThresh = 0.05,
+   wThresh = 0.01,
 )
    test(cxr, ee, wt) =
       (energy(cxr) > ee) && (energy(cxr) < ee + eThresh) && (NeXLCore.edgeenergy(cxr) < e0) && (weight(cxr) > wt)
