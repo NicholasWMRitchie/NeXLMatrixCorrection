@@ -8,7 +8,7 @@ using DataFrames
 P&P's M from top line in page 35
 """
 M(mat::Material) = #C1
-    sum(massfraction(elm, mat) * z(elm) / a(elm, mat) for elm in keys(mat))
+    sum(NeXLCore.nonneg(mat, elm) * z(elm) / a(elm, mat) for elm in keys(mat))
 
 """
     J(elm)
@@ -22,7 +22,7 @@ J(elm::Element) = #C1
 Mean ionization potential for the specified material in eV. (PAP Eqn 6)
 """
 J(mat::Material) = #C1
-    exp(sum(massfraction(elm, mat) * (z(elm) / a(elm, mat)) * log(J(elm)) for elm in keys(mat)) /
+    exp(sum(NeXLCore.nonneg(mat, elm) * (z(elm) / a(elm, mat)) * log(J(elm)) for elm in keys(mat)) /
         M(mat))
 
 # From PAP eqn 8
@@ -123,7 +123,7 @@ end
 
 # PAP appendix 1
 Zbarb(mat::Material) = #C1
-    sum(massfraction(elm, mat) * sqrt(z(elm)) for elm in keys(mat))^2
+    sum(NeXLCore.nonneg(mat, elm) * sqrt(z(elm)) for elm in keys(mat))^2
 
 # PAP appendix 1
 ηbar(Zbarb) = #C2
