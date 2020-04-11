@@ -31,7 +31,7 @@ update(
     measured::Vector{KRatio}, #
     zafs::Dict{Element,Float64}, #
 )::Dict{Element,Float64} =
-    Dict(kr.element => value(nonnegk(kr)) * kr.standard[kr.element] / zafs[kr.element] for kr in measured)
+    Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
 
 function reset(::NaiveUpdateRule) end
 
@@ -50,13 +50,13 @@ function update( #
 )::Dict{Element,Float64}
     # Default to naive
     cnp1 = update(weg.fallback, prevcomp, measured, zafs)
-    fn = Dict(kr.element => kr.standard[kr.element] / zafs[kr.element] for kr in measured)
+    fn = Dict(kr.element => value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
     if !ismissing(weg.prevc)
         cn, cnm1, fnm1 = prevcomp, weg.prevc, weg.prevfn
         for mkr in measured
             elm, km = mkr.element, value(nonnegk(mkr))
             if km > 0
-                δfδc = (fn[elm] - fnm1[elm]) / (cn[elm] - cnm1[elm])
+                δfδc = (fn[elm] - fnm1[elm]) / (value(cn[elm]) - value(cnm1[elm]))
                 den = 1.0 - km * δfδc
                 if (abs(δfδc) < 10.0) && (abs(den) > 0.2)
                     Δc = (km * fn[elm] - cn[elm]) / den # Wegstein
@@ -188,6 +188,7 @@ struct Iteration
 end
 
 struct IterationResult
+    label::Label
     comp::Material
     kratios::Vector{KRatio}
     computed::Dict{Element,Float64}
@@ -196,11 +197,12 @@ struct IterationResult
 end
 
 function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult)
-    elms, mfs, ks, cks = Element[],
+    elms, mfs, ks, cks, labels = Element[],
         Float64[],
         Union{Missing,Float64}[],
-        Union{Missing,Float64}[]
+        Union{Missing,Float64}[], Label[]
     for elm in keys(ir.comp)
+        push!(labels,ir.label)
         push!(elms, elm)
         push!(mfs, ir.comp[elm])
         added = false
@@ -218,6 +220,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult)
         end
     end
     return DataFrame(
+        :Label => labels,
         :Element => elms,
         :Converged => [ir.converged for elm in keys(ir.comp)],
         :Iterations => [ir.iterations for elm in keys(ir.comp)],
@@ -227,11 +230,14 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult)
     )
 end
 
+NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult})::DataFrame =
+    asa(DataFrame,[ ir.comp for ir in irs])
+
 function Base.show(io::IO, itres::IterationResult)
     print(
         io,
-        itres.converged ? "Converged in $(itres.iterations) to $(itres.comp)\n" :
-        "Failed to converge after $(itres.iterations) as $(itres.comp).",
+        itres.converged ? "$(itres.label) converged in $(itres.iterations) to $(itres.comp)\n" :
+        "$(itres.label) failed to converge after $(itres.iterations) as $(itres.comp).",
     )
 end
 
@@ -275,34 +281,36 @@ function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZ
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
 
+iterateks(iter::Iteration, name::String, measured::Vector{KRatio}) =
+    iterateks(iter, label(name), measured)
 
 """
-    iterateks(iter::Iteration, name::String, measured::Vector{KRatio})
+    iterateks(iter::Iteration, label::Label, measured::Vector{KRatio})
 
 Iterate to find the composition that produces the measured k-ratios.
 """
 function iterateks(
     iter::Iteration,
-    name::String,
+    label::Label,
     measured::Vector{KRatio},
     maxIter::Int = 100,
 )::IterationResult
     # Compute the C = k*C_std estimate
-    firstEstimate(meas::Vector{KRatio}) =
-        Dict(kr.element => value(nonnegk(kr)) * kr.standard[kr.element] for kr in meas)
+    firstEstimate(meas::Vector{KRatio})::Dict{Element, Float64} =
+        Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
     # Compute the estimated k-ratios
     computeKs(
         estComp::Material,
         zafs::Dict{Element,Float64},
         stdComps::Dict{Element,Float64},
-    ) = Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    )::Dict{Element, Float64} = Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
     # Compute the k-ratio difference metric
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
     # Compute the standard matrix correction factors
     stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.lines) for kr in measured)
     stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in measured)
     # First estimate c_unk = k*c_std
-    estcomp = material(name, compute(iter.unmeasured, firstEstimate(measured)))
+    estcomp = material(repr(label), compute(iter.unmeasured, firstEstimate(measured)))
     # Compute the associated matrix corrections
     zafs = computeZAFs(iter, estcomp, stdZafs)
     bestComp, bestKrs = estcomp, computeKs(estcomp, zafs, stdComps)
@@ -315,17 +323,17 @@ function iterateks(
             # If no convergence report it but return closest result...
             bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
             if converged(iter.converged, measured, bestKrs)
-                return IterationResult(estcomp, measured, bestKrs, true, bestIter)
+                return IterationResult(label, estcomp, measured, bestKrs, true, bestIter)
             end
         end
         # Compute the next estimated mass fractions
         upd = update(iter.updater, estcomp, measured, zafs)
         # Apply unmeasured element rules
-        estcomp = material(name, compute(iter.unmeasured, upd))
+        estcomp = material(repr(label), compute(iter.unmeasured, upd))
         # calculated matrix correction for estcomp
         zafs = computeZAFs(iter, estcomp, stdZafs)
     end
-    @warn "$(name) did not converge in $(maxIter)."
+    @warn "$label did not converge in $(maxIter)."
     @warn "   Using best non-converged result from step $(bestIter)."
-    return IterationResult(bestComp, measured, bestKrs, false, bestIter)
+    return IterationResult(label, bestComp, measured, bestKrs, false, bestIter)
 end

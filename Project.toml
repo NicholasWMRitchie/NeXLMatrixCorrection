@@ -1,19 +1,23 @@
 name = "NeXLMatrixCorrection"
 uuid = "3ab34fdf-2fe8-473b-9b20-30f5809db337"
-version = "0.0.3-dev"
+authors = ["Nicholas W.M. Ritchie <nicholas.wm.ritchie@gmail.com>"]
+repo-url = "https://github.com/NicholasWMRitchie/NeXLMatrixCorrection.jl"
+version = "0.1.0"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Memoization = "6fafb56a-5788-4b4e-91ca-c0cea6611c73"
 NeXLCore = "93a0284f-3680-435e-8d39-dd6e52a1dbc8"
 NeXLUncertainties = "7127f3d6-1721-46bc-bb38-8fc703dd438e"
 PeriodicTable = "7b2266bf-644c-5ea3-82d8-af4bbd25a884"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 julia = "1"
+NeXLUncertainties = "0.1"
+NeXLCore = "0.1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
