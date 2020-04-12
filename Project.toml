@@ -1,6 +1,6 @@
 name = "NeXLMatrixCorrection"
 uuid = "3ab34fdf-2fe8-473b-9b20-30f5809db337"
-version = "0.0.3-dev"
+version = "0.1.0"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -10,6 +10,7 @@ NeXLUncertainties = "7127f3d6-1721-46bc-bb38-8fc703dd438e"
 PeriodicTable = "7b2266bf-644c-5ea3-82d8-af4bbd25a884"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]

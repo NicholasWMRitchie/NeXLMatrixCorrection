@@ -23,6 +23,8 @@ export carboncoating # Build a carbon coating
 export Fχ # Absorbed intensity function
 export matrixcorrection
 export tabulate # Report ZAF results as a table
+export kcoating # Calculate the k for an ultra-thin coating on a substrate
+export massthickness # Estimate the mass-thickness of a coating on a substrate
 
 include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction.

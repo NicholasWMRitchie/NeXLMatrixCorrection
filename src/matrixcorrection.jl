@@ -2,6 +2,7 @@
 
 using DataFrames
 using PeriodicTable
+using Roots
 
 """
 MatrixCorrection structs should implement
@@ -11,8 +12,8 @@ MatrixCorrection structs should implement
     atomicsubshell(mc::MatrixCorrection)
     material(mc::MatrixCorrection)
     beamEnergy(mc::MatrixCorrection)
-    ϕ(ρz)
-    ϕabs(ρz, θtoa)
+    ϕ(mc::MatrixCorrection, ρz)
+    ϕabs(mc::MatrixCorrection, ρz, θtoa)
 """
 abstract type MatrixCorrection end
 
@@ -28,8 +29,7 @@ struct NullCorrection <: MatrixCorrection
     NullCorrection(mat::Material, ashell::AtomicSubShell, e0) = new(mat, ashell, e0)
 end
 
-Base.show(io::IO, nc::NullCorrection) =
-    print(io, "Unity[" + nc.material, ", ", subshell, ", ", 0.001 * e0, " keV]")
+Base.show(io::IO, nc::NullCorrection) = print(io, "Unity[" + nc.material, ", ", subshell, ", ", 0.001 * e0, " keV]")
 
 F(mc::NullCorrection) = 1.0
 Fχ(mc::NullCorrection, xray::CharXRay, θtoa::AbstractFloat) = 1.0
@@ -41,8 +41,7 @@ beamEnergy(mc::NullCorrection) = mc.E0 # in eV
     χ(mat::Material, xray::CharXRay, θtoa)
 Angle adjusted mass absorption coefficient.
 """
-χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) =
-    mac(mat, xray) * csc(θtoa)
+χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) = mac(mat, xray) * csc(θtoa)
 
 """
     ZA(
@@ -55,13 +54,7 @@ Angle adjusted mass absorption coefficient.
 
 The atomic number and absorption correction factors.
 """
-function ZA(
-    unk::MatrixCorrection,
-    std::MatrixCorrection,
-    xray::CharXRay,
-    θunk::AbstractFloat,
-    θstd::AbstractFloat
-)
+function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
     @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
     return Fχ(unk, xray, θunk) / Fχ(std, xray, θstd)
@@ -73,7 +66,7 @@ The atomic number correction factor.
 """
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
     @assert isequal(unk.subshell, std.subshell)
-        "Unknown and standard matrix corrections don't apply to the same sub-shell."
+    "Unknown and standard matrix corrections don't apply to the same sub-shell."
     return F(unk) / F(std)
 end
 
@@ -81,13 +74,7 @@ end
     A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
 The absorption correction factors.
 """
-function A(
-    unk::MatrixCorrection,
-    std::MatrixCorrection,
-    xray::CharXRay,
-    θunk::AbstractFloat,
-    θstd::AbstractFloat
-)
+function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
     @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
@@ -107,22 +94,19 @@ Implements Castaing's First Approximation
 """
 struct NullFluorescence <: FluorescenceCorrection
 
-    NullFluorescence(mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) =
-        new()
+    NullFluorescence(mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = new()
 end
 
-Base.show(io::IO, nc::NullFluorescence) =
-    print(io, "Null[Fluor]")
+Base.show(io::IO, nc::NullFluorescence) = print(io, "Null[Fluor]")
 
 F(nc::NullFluorescence, cxr::CharXRay, θtoa::AbstractFloat) = 1.0
 
-
 fluorescencecorrection(
-   ::Type{NullFluorescence},
-   comp::Material,
-   primarys::Vector{CharXRay},
-   secondary::AtomicSubShell,
-   e0::Float64,
+    ::Type{NullFluorescence},
+    comp::Material,
+    primarys::Vector{CharXRay},
+    secondary::AtomicSubShell,
+    e0::Float64,
 ) = NullFluorescence(comp, secondary, e0)
 
 """
@@ -138,8 +122,7 @@ Implements a simple single layer coating correction.
 """
 struct Coating <: CoatingCorrection
     layer::Film
-    Coating(mat::Material, thickness::AbstractFloat) =
-        new(Film(mat, thickness))
+    Coating(mat::Material, thickness::AbstractFloat) = new(Film(mat, thickness))
 
 end
 
@@ -155,11 +138,9 @@ carboncoating(nm) = Coating(pure(n"C"), nm * 1.0e-7)
 Calculate the transmission fraction for the specified X-ray through the coating
 in the direction of the detector.
 """
-NeXLCore.transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) =
-    NeXLCore.transmission(cc.layer, xray, θtoa)
+NeXLCore.transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) = NeXLCore.transmission(cc.layer, xray, θtoa)
 
-Base.show(io::IO, coating::Coating) =
-    Base.show(io, coating.layer)
+Base.show(io::IO, coating::Coating) = Base.show(io, coating.layer)
 
 """
     NullCoating
@@ -184,11 +165,8 @@ struct ZAFCorrection
     f::FluorescenceCorrection
     coating::CoatingCorrection
 
-    ZAFCorrection(
-        za::MatrixCorrection,
-        f::FluorescenceCorrection,
-        coating::CoatingCorrection = NullCoating(),
-    ) = new(za, f, coating)
+    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
+        new(za, f, coating)
 end
 
 NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
@@ -201,44 +179,28 @@ A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, �
 ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     ZA(unk.za, std.za, cxr, θunk, θstd)
 
-coating(
-    unk::ZAFCorrection,
-    std::ZAFCorrection,
-    cxr::CharXRay,
-    θunk::AbstractFloat,
-    θstd::AbstractFloat
-) = transmission(unk.coating, cxr, θunk) / transmission(std.coating, cxr, θstd)
+coating(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
+    transmission(unk.coating, cxr, θunk) / transmission(std.coating, cxr, θstd)
 
 generation(unk::ZAFCorrection, std::ZAFCorrection, ass::AtomicSubShell) =
-    ionizationcrosssection(ass, beamEnergy(unk))/ionizationcrosssection(ass, beamEnergy(std))
+    ionizationcrosssection(ass, beamEnergy(unk)) / ionizationcrosssection(ass, beamEnergy(std))
 
 F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     F(unk.f, cxr, θunk) / F(std.f, cxr, θstd)
 
-ZAFc(
-    unk::ZAFCorrection,
-    std::ZAFCorrection,
-    cxr::CharXRay,
-    θunk::AbstractFloat,
-    θstd::AbstractFloat
-) =
-    Z(unk, std) * A(unk, std, cxr, θunk, θstd) * F(unk, std, cxr, θunk, θstd) *
-    coating(unk, std, cxr, θunk, θstd)
+ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
+    Z(unk, std) * A(unk, std, cxr, θunk, θstd) * F(unk, std, cxr, θunk, θstd) * coating(unk, std, cxr, θunk, θstd)
 
 beamEnergy(zaf::ZAFCorrection) = beamEnergy(zaf.za)
 
-Base.show(io::IO, cc::ZAFCorrection) =
-    print(io, "ZAF[", cc.za, ", ", cc.f, ", ", cc.coating, "]")
+Base.show(io::IO, cc::ZAFCorrection) = print(io, "ZAF[", cc.za, ", ", cc.f, ", ", cc.coating, "]")
 
 """
     zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating())
 Construct a ZAFCorrection object
 """
-zaf(
-    za::MatrixCorrection,
-    f::FluorescenceCorrection,
-    coating::CoatingCorrection = NullCoating(),
-) = ZAFCorrection(za, f, coating)
+zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
+    ZAFCorrection(za, f, coating)
 
 """
     NeXLUncertainties.asa(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
@@ -252,29 +214,26 @@ function NeXLUncertainties.asa(#
     std::ZAFCorrection,
     trans,
     θunk::AbstractFloat,
-    θstd::AbstractFloat
+    θstd::AbstractFloat,
 )::DataFrame
     @assert isequal(atomicsubshell(unk.za), atomicsubshell(std.za))
-        "The atomic sub-shell for the standard and unknown don't match."
+    "The atomic sub-shell for the standard and unknown don't match."
     cxrs = characteristic(
         element(atomicsubshell(unk.za)),
         trans,
         1.0e-9,
         0.999 * min(beamEnergy(unk.za), beamEnergy(std.za)),
     )
-    stds, stdE0, unks, unkE0, xray = Vector{String}(),
-        Vector{Float64}(),
-        Vector{String}(),
-        Vector{Float64}(),
-        Vector{CharXRay}()
+    stds, stdE0, unks, unkE0, xray =
+        Vector{String}(), Vector{Float64}(), Vector{String}(), Vector{Float64}(), Vector{CharXRay}()
     z, a, f, c, zaf, k, unkToa, stdToa = Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}()
+    Vector{Float64}(),
+    Vector{Float64}(),
+    Vector{Float64}(),
+    Vector{Float64}(),
+    Vector{Float64}(),
+    Vector{Float64}(),
+    Vector{Float64}()
     for cxr in cxrs
         if isequal(inner(cxr), atomicsubshell(std.za))
             elm = element(cxr)
@@ -315,13 +274,13 @@ tabulate( #
     unk::ZAFCorrection,
     std::ZAFCorrection,
     θunk::AbstractFloat,
-    θstd::AbstractFloat
+    θstd::AbstractFloat,
 )::DataFrame = tabulate(unk, std, alltransitions, θunk, θstd)
 
 function tabulate( #
     zafs::Dict{ZAFCorrection,ZAFCorrection},
     θunk::AbstractFloat,
-    θstd::AbstractFloat
+    θstd::AbstractFloat,
 )::DataFrame
     df = DataFrame()
     for (unk, std) in zafs
@@ -382,11 +341,8 @@ ZAF(
     ashell::AtomicSubShell,
     e0::AbstractFloat;
     unkCoating = NullCoating(),
-    stdCoating = NullCoating()
-) = (
-    ZAF(mctype, fctype, unk, ashell, e0, unkCoating),
-    ZAF(mctype, fctype, std, ashell, e0, stdCoating),
-)
+    stdCoating = NullCoating(),
+) = (ZAF(mctype, fctype, unk, ashell, e0, unkCoating), ZAF(mctype, fctype, std, ashell, e0, stdCoating))
 
 """
     ZAF(
@@ -406,7 +362,7 @@ function ZAF(
     mat::Material,
     cxrs,
     e0::AbstractFloat,
-    coating = NullCoating()
+    coating = NullCoating(),
 )
     mat = asnormalized(mat)
     zafs = Dict((sh, ZAF(mctype, fctype, mat, sh, e0, coating)) for sh in union(inner.(cxrs)))
@@ -437,4 +393,62 @@ ZAF(
     e0::AbstractFloat;
     unkCoating = NullCoating(),
     stdCoating = NullCoating(),
-) = ( ZAF(mctype, fctype, unk, cxrs, e0, unkCoating),  ZAF(mctype, fctype, std, cxrs, e0, stdCoating))
+) = (ZAF(mctype, fctype, unk, cxrs, e0, unkCoating), ZAF(mctype, fctype, std, cxrs, e0, stdCoating))
+
+
+"""
+    function kcoating(
+        ty::Type{<:MatrixCorrection},
+        subtrate::Material,
+        coating::Material,
+        cxr::CharXRay,
+        e0::Real,
+        toa::Real,
+        τ::Real,
+    )
+
+Estimate the k-ratio for a coating of mass-thickness τ (g/cm²) on the specified substrate. The standard for the coating
+is assumed to be of the same material as the coating.
+"""
+function kcoating(
+    ty::Type{<:MatrixCorrection},
+    subtrate::Material,
+    coating::Material,
+    cxr::CharXRay,
+    e0::Real,
+    toa::Real,
+    τ::Real,
+)
+    @assert element(cxr) in keys(coating) "$cxr must be produced by one of the elements in $(name(coating))"
+    @assert e0 > energy(inner(cxr)) "The beam energy must exceed the edge energy for $cxr."
+    submc, coatmc = matrixcorrection(ty, subtrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
+    return Fχp(submc, cxr, toa, τ) / Fχ(coatmc, cxr, toa)
+end
+
+""""
+    massthickness(
+      ty::Type{<:MatrixCorrection},
+      subtrate::Material,
+      coating::Material,
+      cxr::CharXRay,
+      e0::Real,
+      toa::Real,
+      k::Real)
+
+Estimate the mass-thickness of a ultra-thin layer of a 'coating' material on a 'substrate' from a measured k-ratio 'k'
+of a characteristic X-ray 'cxr'.  Works for k-ratios of the order of 1 %.  The standard for the coating is assumed
+to be of the same material as the coating.
+"""
+function massthickness(
+    ty::Type{<:MatrixCorrection},
+    substrate::Material,
+    coating::Material,
+    cxr::CharXRay,
+    e0::Real,
+    toa::Real,
+    k::Real
+)
+    submc, coatingmc = matrixcorrection(ty, substrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
+    f(τ) = k - Fχp(submc, cxr, toa, τ) / Fχ(coatingmc, cxr, toa)
+    return find_zero(f, 0.01*range(ty, substrate, e0), Roots.Order1())/coating[element(cxr)]
+end

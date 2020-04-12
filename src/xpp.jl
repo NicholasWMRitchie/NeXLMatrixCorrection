@@ -58,21 +58,11 @@ R0(J, D, P, M, Ekev) = #C1
     sum(J^(1.0 - P[k]) * D[k] * Ekev^(1.0 + P[k]) / (1.0 + P[k]) for k = 1:3) /
     M
 
-
 """
-    range(mat::MaterialLabel, e0keV)
-Total trajectory (range) of an electron with initial energy e0kev. (in cm/(g/cm^3))
-"""
-function Base.range(mat::Material, e0keV)
-    j = 0.001*J(mat) # XPP expects in keV
-    return R0(j, D(j), P(j), M(mat), e0keV)
-end
-
-"""
-    ϕ(ρz, A, a, B, b, ϕ0)
+    ϕxpp(ρz, A, a, B, b, ϕ0)
 Compute the shape of the ϕ(ρz) curve in the XPP model.
 """
-ϕ(ρz, A, a, B, b, ϕ0) = #C1
+ϕxpp(ρz, A, a, B, b, ϕ0) = #C1
     A * exp(-a * ρz) + (B * ρz + ϕ0 - A) * exp(-b * ρz)
 
 """
@@ -234,8 +224,18 @@ A(B, b, ϕ0, F, ϵ) = #C1
 
 function Fχ(χ, A, a, B, b, ϕ0)
     ϵ = (a - b) / b
-    (ϕ0 + B / (b + χ) - A * b * ϵ / (b * (1.0 + ϵ) + χ)) / (b + χ)
+    return (ϕ0 + B / (b + χ) - A * b * ϵ / (b * (1.0 + ϵ) + χ)) / (b + χ)
 end
+
+
+"""
+    Fχp(χ, A, a, B, b, ϕ0, τ)
+
+The integral of the ϕ(ρz) exp(-χ ρz) from 0 to τ.
+"""
+Fχp(χ, A, a, B, b, ϕ0, τ) =
+    (A*(1.0 - exp(-(τ*(a + χ)))))/(a + χ) + (A*(-1.0 + exp(-(τ*(b + χ)))))/(b + χ) +
+   ((1 - exp(-(τ*(b + χ))))*ϕ0)/(b + χ) + (B*(-1 + exp(τ*(b + χ)) - τ*(b + χ)))/(exp(τ*(b + χ))*((b + χ)^2))
 
 """
    XPP
@@ -307,8 +307,12 @@ Base.show(io::IO, xpp::XPP) =
         "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]",
     )
 
-Fχ(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) =
+Fχ(xpp::XPP, xray::CharXRay, θtoa::Real) =
     Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+
+
+Fχp(xpp::XPP, xray::CharXRay, θtoa::Real, τ::Real) =
+    Fχp(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
 
 F(xpp::XPP) = xpp.F
 NeXLCore.atomicsubshell(mc::XPP) = mc.subshell
@@ -319,15 +323,23 @@ beamEnergy(mc::XPP) = mc.E0 # in eV
     ϕ(ρz, xpp::XPP)
 Computes the ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕ(ρz, xpp::XPP) = ϕ(ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ϕ(xpp::XPP, ρz) = ϕxpp(ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 """
     ϕabs(ρz, xpp::XPP, xray::CharXRay, θtoa)
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(ρz, xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) =
-    ϕ(ρz, xpp) * exp(-χ(material(xpp), xray, θtoa) * ρz)
+ϕabs(xpp::XPP, ρz, xray::CharXRay, θtoa::AbstractFloat) =
+    ϕ(xpp, ρz) * exp(-χ(material(xpp), xray, θtoa) * ρz)
 
+"""
+    range(mat::MaterialLabel, e0)
+Total trajectory (range) of an electron with initial energy e0 (eV). (in cm/(g/cm^3))
+"""
+function Base.range(::Type{XPP}, mat::Material, e0::Real)
+    j = 0.001*J(mat) # XPP expects in keV
+    return R0(j, D(j), P(j), M(mat), 0.001*e0)
+end
 
 """
     matrixcorrection(
