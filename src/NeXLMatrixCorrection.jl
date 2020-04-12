@@ -65,9 +65,11 @@ export RMSBelowTolerance, AllBelowTolerance, IsApproximate # Difference implemen
 export Iteration # Defines the iteration procedure
 export IterationResult # The output from iterateks(...)
 export iterateks # Perform the iteration
+export quantify # Exported when NeXLSpectrum is loaded
 
 function __init__()
     @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")
+    @require NeXLSpectrum = "6c578565-ca7f-4012-afc4-b8412d85af92" include("spectrumsupport.jl")
 end
 
 end

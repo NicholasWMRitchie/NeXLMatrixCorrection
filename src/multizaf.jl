@@ -123,6 +123,11 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
     return a / n
 end
 
+function k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+    elm = element(unk)
+    return (nonneg(material(unk),elm)/nonneg(material(std),elm))*gZAFc(unk, std, θunk, θstd)
+end
+
 """
     tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
