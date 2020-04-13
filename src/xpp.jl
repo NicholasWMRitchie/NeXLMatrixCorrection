@@ -358,7 +358,8 @@ matrixcorrection(
     e0,
 ) = XPP(mat, ashell, e0)
 
-function tabulate( #
+function NeXLUncertainties.asa( #
+    ::Type{DataFrame},
     unk::Material,
     stds::Dict{Element,Material},
     e0::AbstractFloat,
@@ -372,7 +373,8 @@ function tabulate( #
         for ashell in atomicsubshells(elm, e0)
             append!(
                 df,
-                tabulate( #
+                asa( #
+                    DataFrame,
                     ZAF(mctype, fctype, unk, std, ashell, e0)...,
                     alltransitions,
                     θunk, θstd

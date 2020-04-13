@@ -270,21 +270,23 @@ function NeXLUncertainties.asa(#
     )
 end
 
-tabulate( #
+asa( #
+    ::Type{DataFrame},
     unk::ZAFCorrection,
     std::ZAFCorrection,
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-)::DataFrame = tabulate(unk, std, alltransitions, θunk, θstd)
+)::DataFrame = asa(DataFrame, unk, std, alltransitions, θunk, θstd)
 
-function tabulate( #
+function asa( #
+    ::Type{DataFrame},
     zafs::Dict{ZAFCorrection,ZAFCorrection},
     θunk::AbstractFloat,
     θstd::AbstractFloat,
 )::DataFrame
     df = DataFrame()
     for (unk, std) in zafs
-        append!(df, tabulate(unk, std, θunk, θstd))
+        append!(df, asa(DataFrame, unk, std, θunk, θstd))
     end
     return df
 end
@@ -451,4 +453,23 @@ function massthickness(
     submc, coatingmc = matrixcorrection(ty, substrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
     f(τ) = k - Fχp(submc, cxr, toa, τ) / Fχ(coatingmc, cxr, toa)
     return find_zero(f, 0.01*range(ty, substrate, e0), Roots.Order1())/coating[element(cxr)]
+end
+
+
+"""
+    correctkratios(krs::Vector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
+
+This function is mainly for pedagogical purposes.  Favor the coating correction built into MultiZAF.
+"""
+function correctkratios(krs::Vector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
+    res=KRatio[]
+    for kr in krs
+        if !(kr.element in keys(coating))
+            kratio = kr.kratio / exp(-χ(coating, brightest(kr.lines), θtoa)*ρz)
+            push!(res, KRatio(kr.lines, kr.unkProps, kr.stdProps, kr.standard, kratio))
+        else
+            push!(res, kr)
+        end
+    end
+    return res
 end

@@ -129,12 +129,11 @@ function k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFl
 end
 
 """
-    tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+    asa(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-Tabulate a matrix correction relative to the specified unknown and standard in
-a DataFrame.
+Tabulate a matrix correction relative to the specified unknown and standard in a DataFrame.
 """
-function tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+function NeXLUncertainties.asa(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
     tot = gZAFc(unk, std, θunk, θstd)
     @assert isequal(element(unk), element(std)) "The unknown and standard's elements must match."
     return DataFrame(
@@ -154,11 +153,11 @@ function tabulate(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abs
 end
 
 """
-    detail(unk::MultiZAF, std::MultiZAF)::DataFrame
+    detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF)::DataFrame
 
 Tabulate each term in the MultiZAF matrix correction in a DataFrame.
 """
-function detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
     stds, stdE0, unks = Vector{String}(), Vector{Float64}(), Vector{String}()
     unkE0, xray, g = Vector{Float64}(), Vector{CharXRay}(), Vector{Float64}()
     z, a, f = Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
@@ -205,25 +204,24 @@ function detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstr
 end
 
 """
-    detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrame
+    detail(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrame
 
-Tabulate a matrix correction relative to the specified unknown and standard in
-a DataFrame.
+Tabulate the details of a matrix correction relative to the specified unknown and standard in a DataFrame.
 """
-detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
+detail(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
     mapreduce(tmm -> detail(tmm[1], tmm[2], θunk, θstd), append!, mzs)
 
 """
-    tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+    asa(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-Tabulate a matrix correction relative to a specified Dict of unknowns and
-standards in a DataFrame.
+Tabulate a matrix correction relative to a specified Dict of unknowns and standards in a DataFrame.
 """
-tabulate(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
-    mapreduce(tmm -> tabulate(tmm[1], tmm[2], θunk, θstd), append!, mzs)
+NeXLUncertainties.asa(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
+    mapreduce(tmm -> asa(DataFrame, tmm[1], tmm[2], θunk, θstd), append!, mzs)
 
 
-function tabulate(unk::Material,
+function NeXLUncertainties.asa(::Type{DataFrame},
+                asunk::Material,
                 std::Material,
                 lines::Vector{CharXRay},
                 e0::Float64,
@@ -231,5 +229,5 @@ function tabulate(unk::Material,
                 zacorr::Type{<:MatrixCorrection} = XPP,
                 fcorr::Type{<:FluorescenceCorrection} = ReedFluorescence)
     zafs = ZAF(zacorr, fcorr, unk, std, lines, e0)
-    tabulate(zafs..., toa, toa)
+    asa(DataFrame, zafs..., toa, toa)
 end
