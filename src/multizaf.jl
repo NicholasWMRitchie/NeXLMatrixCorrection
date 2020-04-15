@@ -1,6 +1,10 @@
 # Implements ZAF matrix correction based on a k-ratio from multiple simultaneously
 # measured characteristic X-ray lines.  MultiZAF can hold the ZAF correction
-
+"""
+The `MultiZAF` structure holds the information necessary to perform matrix correction on a collection of
+characteristic X-rays that were measured simultaneously from the same element.  Use `ZAF(...)` to construct
+these rather than the internal constructor.
+"""
 struct MultiZAF
     xrays::Vector{CharXRay}
     zafs::Dict{AtomicSubShell,ZAFCorrection}
@@ -28,9 +32,18 @@ end
 A set of all sub-shells supported by this MultiZAF
 """
 NeXLCore.atomicsubshells(mz::MultiZAF) = keys(mz.zafs)
+"""
+    NeXLCore.element(mz::MultiZAF)
 
+The element associate with this `MultiZAF`
+"""
 NeXLCore.element(mz::MultiZAF) = element(mz.xrays[1])
 
+"""
+    NeXLCore.characteristic(mz::MultiZAF)
+
+The X-rays associated with this `MultiZAF`.
+"""
 NeXLCore.characteristic(mz::MultiZAF) = mz.xrays
 
 NeXLCore.material(mz::MultiZAF) = material(first(values(mz.zafs)))
@@ -43,6 +56,11 @@ NeXLCore.name(mz::MultiZAF) =
 commonXrays(unk::MultiZAF, std::MultiZAF) =
     union(characteristic(unk), characteristic(std))
 
+"""
+    Z(unk::MultiZAF, std::MultiZAF)
+
+The Z (atomic number) correction for `unk` relative to `std`.
+"""
 function Z(unk::MultiZAF, std::MultiZAF)
     z, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
@@ -53,6 +71,11 @@ function Z(unk::MultiZAF, std::MultiZAF)
     return z / n
 end
 
+"""
+    A(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+
+The A (absorption) correction for `unk` relative to `std`.
+"""
 function A(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     a, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
@@ -66,6 +89,11 @@ function A(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFl
     return a / n
 end
 
+"""
+    F(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+
+The F (fluoresence) correction for `unk` relative to `std`.
+"""
 function F(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     f, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
@@ -79,6 +107,12 @@ function F(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFl
     return f / n
 end
 
+"""
+    generation(unk::MultiZAF, std::MultiZAF)
+
+The generation correction for `unk` relative to `std`.  Usually, 1.0 unless the standard and unknown were collected
+at different beam energies.
+"""
 function generation(unk::MultiZAF, std::MultiZAF)
     g, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
@@ -94,6 +128,11 @@ function generation(unk::MultiZAF, std::MultiZAF)
     return g / n
 end
 
+"""
+    coating(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+
+The conductive (or other) coating correction factor.
+"""
 function coating(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     c, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
@@ -105,7 +144,11 @@ function coating(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abst
     end
     return c / n
 end
+"""
+    gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
 
+The combined generation, atomic number, absorption and generation corrections.
+"""
 function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     a, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
@@ -123,6 +166,12 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
     return a / n
 end
 
+
+"""
+    k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+
+The computed k-ratio for the unknown relative to standard.
+"""
 function k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     elm = element(unk)
     return (nonneg(material(unk),elm)/nonneg(material(std),elm))*gZAFc(unk, std, θunk, θstd)

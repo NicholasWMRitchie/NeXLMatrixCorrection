@@ -4,22 +4,26 @@ using DataFrames
 using PeriodicTable
 using Roots
 
+
 """
-MatrixCorrection structs should implement
+`MatrixCorrection` is an abstract type for computing ϕ(ρz)-type matrix correction algorithms.  Subclasses should
+implement
 
     F(mc::MatrixCorrection)
-    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat)
+    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
     atomicsubshell(mc::MatrixCorrection)
     material(mc::MatrixCorrection)
     beamEnergy(mc::MatrixCorrection)
     ϕ(mc::MatrixCorrection, ρz)
     ϕabs(mc::MatrixCorrection, ρz, θtoa)
+
+From these methods, other methods like `Z(...)`, `A(...)` are implemented.
 """
 abstract type MatrixCorrection end
 
 """
     NullCorrection
-Implements Castaing's First Approximation
+Implements Castaing's First Approximation (i.e. No correction Z⋅A = 1)
 """
 struct NullCorrection <: MatrixCorrection
     material::Material
@@ -81,7 +85,7 @@ function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::
 end
 
 """
-Implements
+An abstract type for implementing secondary-fluorescence corrections.
 
     F(unk::FluorescenceCorrection, xray::CharXRay, θtoa::AbstractFloat)
 """
@@ -90,7 +94,7 @@ abstract type FluorescenceCorrection end
 """
     NullFluorescence
 
-Implements Castaing's First Approximation
+Implements Castaing's First Approximation (i.e. No correction F=1)
 """
 struct NullFluorescence <: FluorescenceCorrection
 
@@ -110,8 +114,8 @@ fluorescencecorrection(
 ) = NullFluorescence(comp, secondary, e0)
 
 """
-    CoatingCorrection
-Implements
+An abstract type for implementing coating correction algorithms.
+
     NeXLCore.transmission(zaf::CoatingCorrection, xray::CharXRay)
 """
 abstract type CoatingCorrection end
@@ -123,7 +127,6 @@ Implements a simple single layer coating correction.
 struct Coating <: CoatingCorrection
     layer::Film
     Coating(mat::Material, thickness::AbstractFloat) = new(Film(mat, thickness))
-
 end
 
 """
@@ -135,6 +138,7 @@ carboncoating(nm) = Coating(pure(n"C"), nm * 1.0e-7)
 
 """
     NeXLCore.transmission(zaf::Coating, xray::CharXRay, toa)
+
 Calculate the transmission fraction for the specified X-ray through the coating
 in the direction of the detector.
 """
@@ -144,12 +148,14 @@ Base.show(io::IO, coating::Coating) = Base.show(io, coating.layer)
 
 """
     NullCoating
+
 No coating (100%) transmission.
 """
 struct NullCoating <: CoatingCorrection end
 
 """
     NeXLCore.transmission(zaf::NullCoating, xray::CharXRay, toa)
+
 Calculate the transmission fraction for the specified X-ray through no coating (1.0).
 """
 NeXLCore.transmission(nc::NullCoating, xray::CharXRay, θtoa::AbstractFloat) = 1.0
@@ -158,36 +164,74 @@ Base.show(io::IO, nc::NullCoating) = print(io, "no coating")
 
 """
     ZAFCorrection
+
 Pulls together the ZA, F and coating corrections into a single structure.
 """
 struct ZAFCorrection
     za::MatrixCorrection
     f::FluorescenceCorrection
     coating::CoatingCorrection
-
+"""
+    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating())
+"""
     ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
         new(za, f, coating)
 end
 
 NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
 
+"""
+    Z(unk::ZAFCorrection, std::ZAFCorrection)
+
+Computes the atomic number correction.
+"""
 Z(unk::ZAFCorrection, std::ZAFCorrection) = Z(unk.za, std.za)
 
+"""
+    A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Computes the absorption correction.
+"""
 A(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     A(unk.za, std.za, cxr, θunk, θstd)
 
+"""
+    ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Computes the combined atomic number and fluorescence correction.
+"""
 ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     ZA(unk.za, std.za, cxr, θunk, θstd)
 
+"""
+    coating(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Computes the coating correction.
+"""
 coating(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     transmission(unk.coating, cxr, θunk) / transmission(std.coating, cxr, θstd)
 
+"""
+    generation(unk::ZAFCorrection, std::ZAFCorrection, ass::AtomicSubShell)
+
+Computes a correction factor for differences X-ray generation due to differences in beam energy.
+"""
 generation(unk::ZAFCorrection, std::ZAFCorrection, ass::AtomicSubShell) =
     ionizationcrosssection(ass, beamEnergy(unk)) / ionizationcrosssection(ass, beamEnergy(std))
 
+"""
+    F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Computes the secondary fluorescence correction.
+"""
 F(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     F(unk.f, cxr, θunk) / F(std.f, cxr, θstd)
 
+"""
+    ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Computes the combined correction for atomic number, absorption, secondary fluorescence and generation.
+"""
 ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     Z(unk, std) * A(unk, std, cxr, θunk, θstd) * F(unk, std, cxr, θunk, θstd) * coating(unk, std, cxr, θunk, θstd)
 
@@ -197,22 +241,23 @@ Base.show(io::IO, cc::ZAFCorrection) = print(io, "ZAF[", cc.za, ", ", cc.f, ", "
 
 """
     zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating())
+
 Construct a ZAFCorrection object
 """
 zaf(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection = NullCoating()) =
     ZAFCorrection(za, f, coating)
 
 """
-    NeXLUncertainties.asa(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans)::DataFrame
+    NeXLUncertainties.asa(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans::AbstractVector{Transition},
+    θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
 
-Tabulate a matrix correction relative to the specified unknown and standard
-for the iterable of Transition, trans.
+Tabulate a matrix correction relative to the specified unknown and standard for the iterable of Transition, trans.
 """
 function NeXLUncertainties.asa(#
     ::Type{DataFrame},
     unk::ZAFCorrection,
     std::ZAFCorrection,
-    trans,
+    trans::AbstractVector{Transition},
     θunk::AbstractFloat,
     θstd::AbstractFloat,
 )::DataFrame
@@ -270,7 +315,7 @@ function NeXLUncertainties.asa(#
     )
 end
 
-asa( #
+NeXLUncertainties.asa( #
     ::Type{DataFrame},
     unk::ZAFCorrection,
     std::ZAFCorrection,
@@ -278,7 +323,7 @@ asa( #
     θstd::AbstractFloat,
 )::DataFrame = asa(DataFrame, unk, std, alltransitions, θunk, θstd)
 
-function asa( #
+function NeXLUncertainties.asa( #
     ::Type{DataFrame},
     zafs::Dict{ZAFCorrection,ZAFCorrection},
     θunk::AbstractFloat,
@@ -399,15 +444,7 @@ ZAF(
 
 
 """
-    function kcoating(
-        ty::Type{<:MatrixCorrection},
-        subtrate::Material,
-        coating::Material,
-        cxr::CharXRay,
-        e0::Real,
-        toa::Real,
-        τ::Real,
-    )
+    kcoating(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, τ::Real)
 
 Estimate the k-ratio for a coating of mass-thickness τ (g/cm²) on the specified substrate. The standard for the coating
 is assumed to be of the same material as the coating.
@@ -428,17 +465,10 @@ function kcoating(
 end
 
 """"
-    massthickness(
-      ty::Type{<:MatrixCorrection},
-      subtrate::Material,
-      coating::Material,
-      cxr::CharXRay,
-      e0::Real,
-      toa::Real,
-      k::Real)
+    massthickness(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, k::Real)
 
-Estimate the mass-thickness of a ultra-thin layer of a 'coating' material on a 'substrate' from a measured k-ratio 'k'
-of a characteristic X-ray 'cxr'.  Works for k-ratios of the order of 1 %.  The standard for the coating is assumed
+Estimate the mass-thickness of a ultra-thin layer of a `coating` material on a `substrate` from a measured k-ratio `k`
+of a characteristic X-ray `cxr`.  Works for k-ratios of the order of 1 %.  The standard for the coating is assumed
 to be of the same material as the coating.
 """
 function massthickness(
@@ -448,24 +478,26 @@ function massthickness(
     cxr::CharXRay,
     e0::Real,
     toa::Real,
-    k::Real
+    k::Real,
 )
     submc, coatingmc = matrixcorrection(ty, substrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
     f(τ) = k - Fχp(submc, cxr, toa, τ) / Fχ(coatingmc, cxr, toa)
-    return find_zero(f, 0.01*range(ty, substrate, e0), Roots.Order1())/coating[element(cxr)]
+    return find_zero(f, 0.01 * range(ty, substrate, e0), Roots.Order1()) / coating[element(cxr)]
 end
 
 
 """
-    correctkratios(krs::Vector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
+    correctkratios(krs::AbstractVector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
 
-This function is mainly for pedagogical purposes.  Favor the coating correction built into MultiZAF.
+This function is mainly for pedagogical purposes.  It takes a `KRatio[]`, a coating `Material`, a take-off angle
+and a mass-thickness (g/cm²) and creates a new `KRatio[]` that accounts for the intensity missing to absorption.
+Favor the coating correction built into `ZAFCorrection` or `MultiZAF`.
 """
-function correctkratios(krs::Vector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
-    res=KRatio[]
+function correctkratios(krs::AbstractVector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
+    res = KRatio[]
     for kr in krs
         if !(kr.element in keys(coating))
-            kratio = kr.kratio / exp(-χ(coating, brightest(kr.lines), θtoa)*ρz)
+            kratio = kr.kratio / exp(-χ(coating, brightest(kr.lines), θtoa) * ρz)
             push!(res, KRatio(kr.lines, kr.unkProps, kr.stdProps, kr.standard, kratio))
         else
             push!(res, kr)

@@ -5,6 +5,7 @@ using DataFrames
 
 """
     M(mat::Material)
+
 P&P's M from top line in page 35
 """
 M(mat::Material) = #C1
@@ -12,6 +13,7 @@ M(mat::Material) = #C1
 
 """
     J(elm)
+
 Mean ionization potential for the specified element in eV. (PAP Eqn 7)
 """
 J(elm::Element) = #C1
@@ -19,6 +21,7 @@ J(elm::Element) = #C1
 
 """
     J(mat::Material)
+
 Mean ionization potential for the specified material in eV. (PAP Eqn 6)
 """
 J(mat::Material) = #C1
@@ -36,6 +39,7 @@ T(P, m) = collect(1.0 + P[k] - m for k = 1:3) #C1
 
 """
     dEdρs(args::Dict{Label,AbstractFloat}, mat::MaterialLabel, Ekev::AbstractFloat, elms)
+
 The function P&P uses to describe the deceleration of an electron in a material.
 Output units are (keV/cm)/(g/cm^3) = keV cm^2/g. (PAP eqn 5)
 """
@@ -52,6 +56,7 @@ end
 
 """
     R0(J, D, P, M, Ekev)
+
 Total trajectory (range) of an electron with initial energy Ekev. (in cm/(g/cm^3))
 """
 R0(J, D, P, M, Ekev) = #C1
@@ -60,6 +65,7 @@ R0(J, D, P, M, Ekev) = #C1
 
 """
     ϕxpp(ρz, A, a, B, b, ϕ0)
+
 Compute the shape of the ϕ(ρz) curve in the XPP model.
 """
 ϕxpp(ρz, A, a, B, b, ϕ0) = #C1
@@ -67,6 +73,7 @@ Compute the shape of the ϕ(ρz) curve in the XPP model.
 
 """
     invS(U0, V0, M, D, P, T)
+
 Computes 1/S where S is the stopping power.
 """
 invS(U0, V0, M, D, P, T) = #C1
@@ -76,6 +83,7 @@ invS(U0, V0, M, D, P, T) = #C1
 
 """
     S(mat, ashell, E)
+
 Computes S, the stopping power at the specified energy (in keV)
 """
 function S(mat::Material, ashell::AtomicSubShell, Ekev)
@@ -94,6 +102,7 @@ end
 
 """
     QlA(U,El,m)
+
 Computes the relative ionization cross-section.
 """
 QlA(U, El, m) = log(U) / ((U^m) * (El^2)) #C1
@@ -101,6 +110,7 @@ QlA(U, El, m) = log(U) / ((U^m) * (El^2)) #C1
 
 """
     m(ashell::AtomicSubShell)
+
 Returns the ionization cross-section exponent for QlA(U,El,m(ashell))
 """
 function m(ashell::AtomicSubShell) #C1
@@ -140,6 +150,7 @@ R(ηbar, Wbar, U0) = #C2
 
 """
     R(mat::Material, u0)
+
 Backscatter factor as a function of material and overvoltage.
 Compares well to PAP Figure 23.
 """
@@ -152,6 +163,7 @@ end
 
 """
    ϕ0(U0, ηbar)
+
 The value of the ϕ(ρz) curve at ρz=0.0.
 """
 ϕ0(U0, ηbar) = #C1
@@ -184,6 +196,7 @@ h(Zbarb, U0) = #C1
 
 """
     b(Rbar, ϕ0, F)
+
 XPP ϕ(ρz) model parameter b
 """ # PAP Appendix 4
 b(Rbar, ϕ0, F) = #C1
@@ -203,6 +216,7 @@ end
 
 """
     a(b, ϵ)
+
 XPP ϕ(ρz) model parameter a
 """
 NeXLCore.a(b, ϵ) = #C1
@@ -210,6 +224,7 @@ NeXLCore.a(b, ϵ) = #C1
 
 """
     B(b, F, P, ϕ0, ϵ)
+
 XPP ϕ(ρz) model parameter B
 """
 B(b, F, P, ϕ0, ϵ) = #C1
@@ -217,6 +232,7 @@ B(b, F, P, ϕ0, ϵ) = #C1
 
 """
     A(B, b, ϕ0, F, ϵ)
+
 XPP ϕ(ρz) model parameter A
 """
 A(B, b, ϕ0, F, ϵ) = #C1
@@ -238,8 +254,6 @@ Fχp(χ, A, a, B, b, ϕ0, τ) =
    ((1 - exp(-(τ*(b + χ))))*ϕ0)/(b + χ) + (B*(-1 + exp(τ*(b + χ)) - τ*(b + χ)))/(exp(τ*(b + χ))*((b + χ)^2))
 
 """
-   XPP
-
 Represents the essential intermediary values for an XPP matrix correction of
 characteristic X-rays from a particular atomic sub-shell in a particular material.
 """
@@ -321,12 +335,14 @@ beamEnergy(mc::XPP) = mc.E0 # in eV
 
 """
     ϕ(ρz, xpp::XPP)
+
 Computes the ϕ(ρz) curve according to the XPP algorithm.
 """
 ϕ(xpp::XPP, ρz) = ϕxpp(ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 """
     ϕabs(ρz, xpp::XPP, xray::CharXRay, θtoa)
+
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
 ϕabs(xpp::XPP, ρz, xray::CharXRay, θtoa::AbstractFloat) =
@@ -334,6 +350,7 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 
 """
     range(mat::MaterialLabel, e0)
+
 Total trajectory (range) of an electron with initial energy e0 (eV). (in cm/(g/cm^3))
 """
 function Base.range(::Type{XPP}, mat::Material, e0::Real)
@@ -342,14 +359,9 @@ function Base.range(::Type{XPP}, mat::Material, e0::Real)
 end
 
 """
-    matrixcorrection(
-      ::Type{XPP},
-      mat::Material,
-      ashell::AtomicSubShell,
-      e0,
-    )
+    matrixcorrection(::Type{XPP}, mat::Material, ashell::AtomicSubShell,e0)
 
-Constructs an XPP algorithm.
+Constructs an instance of the XPP algorithm.
 """
 matrixcorrection(
     ::Type{XPP},

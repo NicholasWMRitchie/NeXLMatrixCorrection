@@ -20,6 +20,7 @@ end
 
 """
     familyfactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
+
 Accounts for the differences in ionization cross section between K , L and M shells
 """
 function familyfactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
@@ -51,6 +52,9 @@ function ionizationfraction(shell::AtomicSubShell)
    return r >= 1.0 ? (r - 1.0) / r : 0.0
 end
 
+"""
+The `ReedInternal` structure optimizes the calculation of the Reed correction algorithm.
+"""
 struct ReedInternal
    primary::CharXRay
    kk::Float64
@@ -76,6 +80,9 @@ end
 Base.show(io::IO, ri::ReedInternal) =
    print(io,repr(ri.primary))
 
+"""
+The `ReedFluorescence` structure implements `FluorescenceCorrection` for the Reed fluorescence model.
+"""
 struct ReedFluorescence <: FluorescenceCorrection
    comp::Material
    secondary::AtomicSubShell # Emitter
