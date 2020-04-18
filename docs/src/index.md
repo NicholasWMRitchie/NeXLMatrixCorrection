@@ -46,7 +46,9 @@ KRatio(
     kratio::AbstractFloat,
 )
 ```
-Usually it is sufficient to define the `unkProps` and `stdProps` corresponding to the `:BeamEnergy`, the `:TakeOffAngle`.
+Usually it is sufficient to define the `unkProps` and `stdProps` corresponding to the `:BeamEnergy`, the `:TakeOffAngle`
+which are, of course, in eV and radians.
+
 ```julia
 KRatio(
   characteristic(n"F",ktransitions), # Builds a vector containing all the K shell characteristic x-rays for F

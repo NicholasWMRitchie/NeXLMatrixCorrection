@@ -401,7 +401,7 @@ ZAF(
       coating=NeXLCore.NullCoating()
     )
 
-Constructs a MultiZAF around the mctype and fctype algorithms for a collection of CharXRay <code>cxrs</code>.
+Constructs a MultiZAF around the mctype and fctype algorithms for a collection of CharXRay `cxrs`.
 """
 function ZAF(
     mctype::Type{<:MatrixCorrection},
@@ -429,7 +429,7 @@ end
     )
 
 Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard for a
-collection of CharXRay <code>cxrs</code>.
+collection of CharXRay `cxrs`.
 """
 ZAF(
     mctype::Type{<:MatrixCorrection},

@@ -114,10 +114,10 @@ QlA(U, El, m) = log(U) / ((U^m) * (El^2)) #C1
 Returns the ionization cross-section exponent for QlA(U,El,m(ashell))
 """
 function m(ashell::AtomicSubShell) #C1
-    if isequal(shell(ashell), 'K')
+    if isequal(n(ashell), 1)
         return 0.86 + 0.12 * exp(-(ashell.z / 5.0)^2)
     else
-        return isequal(shell(ashell), 'L') ? 0.82 : 0.78
+        return n(ashell)==2 ? 0.82 : 0.78
     end
 end
 

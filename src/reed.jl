@@ -28,11 +28,11 @@ function familyfactor(shellA::AtomicSubShell, shellB::AtomicSubShell)::Float64
    if fA == fB
       res = 1.0 # fA==fB
    else
-      if (fA == 'K') && (fB == 'L')
+      if (n(fA) == 1) && (n(fB) == 2)
          res = 1.0 / 0.24
-      elseif (fA == 'L') && (fB == 'K')
+     elseif (n(fA) == 2) && (n(fB) == 1)
          res = 0.24
-      elseif (fA == 'M') && ((fB == 'K') || (fB == 'L'))
+     elseif (n(fA) == 3) && ((n(fB) == 1) || (n(fB) == 2))
          res = 0.02
       else
          res = 0.0
@@ -68,7 +68,7 @@ struct ReedInternal
       cB = comp[bElm]
       muB_A, muB = mac(aElm, primary), mac(comp, primary)
       ionizeF = ionizationfraction(secondary)
-      fluorB = meanfluorescenceyield(inner(primary))
+      fluorB = meanfluorescenceyield(element(primary), shell(inner(primary)))
       v = lenardcoefficient(e0, secondary) / muB # keV
       ss = ionizationdepthratio(inner(primary), secondary, e0)
       f = familyfactor(secondary, inner(primary));

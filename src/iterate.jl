@@ -411,5 +411,5 @@ function iterateks(
     return IterationResult(label, bestComp, measured, bestKrs, false, bestIter)
 end
 
-quantify(sampleName::String, measured::Vector{KRatio}, mc::MatrixCorrection=XPP, fc::FluoresenceCorrection=ReedFluorescence) =
-    iterateks(Iteration(XPP,ReedFluorescence), label(sampleName), measured)
+quantify(sampleName::String, measured::Vector{KRatio}, mc::MatrixCorrection=XPP, fc::FluorescenceCorrection=ReedFluorescence) =
+    iterateks(Iteration(mc,fc), label(sampleName), measured)

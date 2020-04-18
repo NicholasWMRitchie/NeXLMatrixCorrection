@@ -25,7 +25,7 @@ function optimizeks(skro::SimpleKRatioOptimizer, krs::Vector{KRatio})::Vector{KR
         if sc==-1.0
             br = brightest(kr.lines)
             ov = min(kr.stdProps[:BeamEnergy], kr.unkProps[:BeamEnergy]) / edgeenergy(br)
-            sc = convert(Float64, 'O'-shell(br)) - # Line K->4, L->3, M->2, N->1
+            sc = convert(Float64, 5 - n(shell(br))) - # Line K->4, L->3, M->2, N->1
                 skro.overvoltage / ov + # Overvoltage (<1 if ov > over)
                 0.1*sum(weight.(kr.lines)) # line weight (favor brighter)
             skro.scores[kr.lines]=sc
