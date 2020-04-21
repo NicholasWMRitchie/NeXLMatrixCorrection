@@ -5,7 +5,7 @@ using Test
     @testset "K240" begin # Test XPP against DTSA-II using K240
 
         toa = deg2rad(40.0)
-        k240 = NeXLCore.material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+        k240 = NeXLCore.material("K240",n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689)
 
         cxr = n"O K-L3"
         xpp = NeXLMatrixCorrection.XPP(k240,inner(cxr),20.0e3)
@@ -55,11 +55,11 @@ using Test
 
     @testset "K240 ZAF" begin
 
-        k240 = NeXLCore.material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+        k240 = NeXLCore.material("K240",n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689)
 
-        sio2 = atomicfraction("Quartz",Dict(n"Si"=>1,n"O"=>2))
-        mgo = atomicfraction("MgO",Dict(n"Mg"=>1,n"O"=>1))
-        baf2 = atomicfraction("Barium Fluoride",Dict(n"Ba"=>1,n"F"=>2))
+        sio2 = atomicfraction("Quartz",n"Si"=>1,n"O"=>2)
+        mgo = atomicfraction("MgO",n"Mg"=>1,n"O"=>1)
+        baf2 = atomicfraction("Barium Fluoride",n"Ba"=>1,n"F"=>2)
         ti, zn, zr = pure(n"Ti"), pure(n"Zn"), pure(n"Zr")
 
         e0, θ = 17.0e3, deg2rad(40.0)
@@ -110,8 +110,8 @@ using Test
     @testset "U3O8 at 25 keV" begin
 
         e0, toa = 25.0e3, deg2rad(40.0)
-        u3o8 = atomicfraction("U3O8",Dict(n"U"=>3,n"O"=>8))
-        k227 = material("K227",Dict(n"O"=>0.1639,n"Si"=>0.0935,n"Pb"=>0.7427))
+        u3o8 = atomicfraction("U3O8",n"U"=>3,n"O"=>8)
+        k227 = material("K227",n"O"=>0.1639,n"Si"=>0.0935,n"Pb"=>0.7427)
         u = pure(n"U")
 
         zafO = ZAF(XPP, ReedFluorescence, u3o8, k227, n"O K", e0)
@@ -135,11 +135,11 @@ using Test
 
     @testset "K240 multiZAF" begin
 
-        k240 = NeXLCore.material("K240",Dict(n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689),missing)
+        k240 = NeXLCore.material("K240",n"O"=>0.340023, n"Mg"=>0.030154, n"Si"=>0.186986, n"Ti"=>0.059950, n"Zn"=>0.040168, n"Zr"=>0.074030, n"Ba"=>0.268689)
 
-        sio2 = atomicfraction("Quartz",Dict(n"Si"=>1,n"O"=>2))
-        mgo = atomicfraction("MgO",Dict(n"Mg"=>1,n"O"=>1))
-        baf2 = atomicfraction("Barium Fluoride",Dict(n"Ba"=>1,n"F"=>2))
+        sio2 = atomicfraction("Quartz",n"Si"=>1,n"O"=>2)
+        mgo = atomicfraction("MgO",n"Mg"=>1,n"O"=>1)
+        baf2 = atomicfraction("Barium Fluoride",n"Ba"=>1,n"F"=>2)
         ti, zn, zr = pure(n"Ti"), pure(n"Zn"), pure(n"Zr")
 
         e0, θ = 17.0e3, deg2rad(40.0)
