@@ -105,7 +105,7 @@ function F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64)
       @assert ri.kk >= 0.0 "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)"
       u = mac(comp, secondary) / (sin(toa) * ri.muB)
       # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
-      return normWeight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
+      return normweight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
    end
    return isempty(reed.exciters) ? 1.0 :
       1.0 + mapreduce(ex -> finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
@@ -156,3 +156,6 @@ function fluorescencecorrection(
    primaries = mapreduce(elm->char4elm(elm, wThresh), append!, keys(comp))
    return fluorescencecorrection(fltype, comp, primaries, secondary, e0)
 end
+
+hasproperties(::Type{ReedFluorescence}, props::Dict{Symbol,Any}) =
+    haskey(props, :BeamEnergy)  && haskey(props, :TakeOffAngle)

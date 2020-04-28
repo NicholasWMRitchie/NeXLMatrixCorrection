@@ -24,6 +24,7 @@ export Fχ # Absorbed intensity function
 export matrixcorrection
 export kcoating # Calculate the k for an ultra-thin coating on a substrate
 export massthickness # Estimate the mass-thickness of a coating on a substrate
+export hasproperties # Has the necessary properties for a MatrixCorrection or FluorescenceCorrection
 
 include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction.
@@ -36,6 +37,7 @@ export ϕabs # ϕ(ρz) function (absorbed)
 export xpp # Build an XPP correction
 export ZAF # Build a full ZAF correction based on XPP
 export XPP # XPP structure
+export hasproperties # Has the necessary properties for a MatrixCorrection or FluorescenceCorrection
 
 include("xppu.jl")
 export JzLabel

@@ -333,6 +333,9 @@ NeXLCore.atomicsubshell(mc::XPP) = mc.subshell
 NeXLCore.material(mc::XPP) = mc.material
 beamEnergy(mc::XPP) = mc.E0 # in eV
 
+hasproperties(::Type{XPP}, props::Dict{Symbol,Any}) =
+    haskey(props, :BeamEnergy)  && haskey(props, :TakeOffAngle)
+
 """
     ϕ(ρz, xpp::XPP)
 

@@ -166,6 +166,12 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
     return a / n
 end
 
+function gZAFc(kr::KRatio, unkComp::Material, mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection} = ReedFluorescence)
+    elm = kr.element
+    zu = ZAF(mc, fc, unkComp, kr.lines, kr.unkProps[:BeamEnergy])
+    zs = ZAF(mc, fc, kr.standard, kr.lines, kr.stdProps[:BeamEnergy])
+    return gZAFc(zu, zs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
+end
 
 """
     k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
