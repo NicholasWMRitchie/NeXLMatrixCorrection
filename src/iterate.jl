@@ -108,11 +108,11 @@ struct RecordingUpdateRule <: UpdateRule
     comps::Vector{Dict{Element,Float64}}
     prev::Vector{Material}
     meas::Dict{Element,KRatio}
-"""
-    RecordingUpdateRule(ur::UpdateRule)
+    """
+        RecordingUpdateRule(ur::UpdateRule)
 
-Wrap an UpdateRule instance with diagnostic recorders.
-"""
+    Wrap an UpdateRule instance with diagnostic recorders.
+    """
     RecordingUpdateRule(ur::UpdateRule) = new(
         ur,
         Vector{Dict{Element,Float64}}(),
@@ -129,12 +129,7 @@ Tabulate the iteration steps in a DataFrame.
 function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
     dzafs, dcs = Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
     prev, meas = Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
-    allelms = union(
-        keys(rur.zafs[1]),
-        keys(rur.comps[1]),
-        keys(rur.prev[1]),
-        keys(rur.meas),
-    )
+    allelms = union(keys(rur.zafs[1]), keys(rur.comps[1]), keys(rur.prev[1]), keys(rur.meas))
     for elm in allelms
         dzafs[elm], dcs[elm], prev[elm], meas[elm] = [], [], [], []
     end
@@ -221,9 +216,10 @@ struct IsApproximate <: ConvergenceTest
     rtol::Float64
 end
 
-converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,Float64}) =
-    all((abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < rtol) || (abs(value(nonnegk(kr)) -
-                                                                              computed[kr.element]) < atol) for kr in meas)
+converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,Float64}) = all(
+    (abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < rtol) ||
+    (abs(value(nonnegk(kr)) - computed[kr.element]) < atol) for kr in meas
+)
 """
 Collects the information necessary to define the iteration process including the `MatrixCorrection` and
 `FLuorescenceCorrection` algorithms, the iteration `UpdateRule`, the `ConvergenceTest`, and an
@@ -260,6 +256,7 @@ struct IterationResult
     computed::Dict{Element,Float64}
     converged::Bool
     iterations::Int
+    iterate::Iteration
 end
 
 """
@@ -267,53 +264,84 @@ The source of the k-ratio data as a Label (often a CharXRayLabel).
 """
 source(ir::IterationResult)::Label = ir.label
 
-function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult)
-    elms, mfs, ks, cks, labels = Element[],
-        Float64[],
-        Union{Missing,Float64}[],
-        Union{Missing,Float64}[], Label[]
+function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::Bool = true)
+    elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], Label[]
+    g, z, a, f = Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[]
+    c, gzafc, stds, dmfs = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[]
     for elm in keys(ir.comp)
-        push!(labels,ir.label)
-        push!(elms, elm)
-        push!(mfs, ir.comp[elm])
+        push!(labels, ir.label)
+        push!(elms, elm.symbol)
+        rc = round(ir.comp[elm])
+        push!(mfs, value(rc))
+        push!(dmfs, σ(rc))
         added = false
         for kr in ir.kratios
             if elm == kr.element
                 push!(ks, value(kr.kratio))
-                push!(cks, ir.computed[elm])
+                if withZAF
+                    zafs = _ZAF(ir.iterate, kr.standard, kr.stdProps, kr.lines)
+                    zafu = _ZAF(ir.iterate, ir.comp, kr.unkProps, kr.lines)
+                    push!(cks, σ(kr.kratio))
+                    push!(stds, name(kr.standard))
+                    push!(c, coating(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
+                    push!(z, Z(zafu, zafs))
+                    push!(a, A(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
+                    push!(f, F(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
+                    push!(g, generation(zafu, zafs))
+                    push!(gzafc, g[end] * z[end] * a[end] * f[end])
+                else
+                    push!(cks, ir.computed[elm])
+                end
                 added = true
                 break
             end
         end
         if !added
-            push!(ks, missing)
-            push!(cks, missing)
+            push!(ks, missing), push!(cks, missing), push!(stds, missing), push!(c, missing), push!(z, missing),
+            push!(a, missing), push!(f, missing), push!(g, missing), push!(gzafc, missing)
         end
     end
-    return DataFrame(
+    return withZAF ?
+           DataFrame(
+        :Label => labels,
+        :Element => elms,
+        :Standard => stds,
+        #:Converged => [ir.converged for elm in keys(ir.comp)],
+        #:Iterations => [ir.iterations for elm in keys(ir.comp)],
+        Symbol("Mass Frac.") => mfs,
+        Symbol("Δ[Mass Frac.]") => dmfs,
+        Symbol("k[Meas]") => ks,
+        Symbol("Δk[Meas]") => cks,
+        :Generation => g,
+        :Z => z,
+        :A => a,
+        :F => f,
+        :Coating => c,
+        :gZAFc => gzafc,
+    ) :
+           DataFrame(
         :Label => labels,
         :Element => elms,
         :Converged => [ir.converged for elm in keys(ir.comp)],
         :Iterations => [ir.iterations for elm in keys(ir.comp)],
-        :Composition => mfs,
-        :Measured => ks,
-        :Computed => cks,
+        Symbol("Mass Frac.") => mfs,
+        Symbol("Δ[Mass Frac.]") => dmfs,
+        Symbol("k[Meas]") => ks,
+        Symbol("k[Comp]") => cks,
     )
+    return res
 end
 
-NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult})::DataFrame =
-    asa(DataFrame,[ ir.comp for ir in irs])
+NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; withZAF::Bool = true)::DataFrame =
+    mapreduce(ir->asa(DataFrame,ir,withZAF=withZAF), vcat, irs)
 
-function Base.show(io::IO, itres::IterationResult)
-    print(
-        io,
-        itres.converged ? "$(itres.label) converged in $(itres.iterations) to $(itres.comp)\n" :
-        "$(itres.label) failed to converge after $(itres.iterations) as $(itres.comp).",
-    )
-end
+Base.show(io::IO, itres::IterationResult) = print(
+    io,
+    itres.converged ? "Converged to $(itres.comp) in $(itres.iterations) steps\n" :
+        "Failed to converge after $(itres.iterations): Best estimate = $(itres.comp).",
+)
 
-NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame =
-    compare(itres.comp, known)
+NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(itres.comp, known)
 
 NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
     mapreduce(itres -> compare(itres, known), append!, itress)
@@ -323,15 +351,7 @@ NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::Data
 NeXLCore.material(itres::IterationResult) = itres.comp
 
 _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{CharXRay})::MultiZAF =
-    zafcorrection(
-        iter.mctype,
-        iter.fctype,
-        iter.cctype,
-        mat,
-        lines,
-        props[:BeamEnergy],
-        get(props, :Coating, missing),
-    )
+    zafcorrection(iter.mctype, iter.fctype, iter.cctype, mat, lines, props[:BeamEnergy], get(props, :Coating, missing))
 
 """
     computeZAFs(
@@ -342,16 +362,9 @@ _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{Char
 
 Given an estimate of the composition compute the corresponding k-ratios.
 """
-function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZAF})::Dict{
-    Element,
-    Float64,
-}
-    zaf(kr, zafs) = gZAFc(
-        _ZAF(iter, est, kr.unkProps, kr.lines),
-        zafs,
-        kr.unkProps[:TakeOffAngle],
-        kr.stdProps[:TakeOffAngle],
-    )
+function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZAF})::Dict{Element,Float64}
+    zaf(kr, zafs) =
+        gZAFc(_ZAF(iter, est, kr.unkProps, kr.lines), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
 """
@@ -363,24 +376,23 @@ Perform the iteration procedurer as described in `iter` using the `measured` k-r
 estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the
 k-ratios from filter fit spectra.
 """
-quantify(iter::Iteration, name::String, measured::Vector{KRatio}) =
-    quantify(iter, label(name), measured)
+quantify(iter::Iteration, name::String, measured::Vector{KRatio}) = quantify(iter, label(name), measured)
 
-function quantify(
-    iter::Iteration,
-    label::Label,
-    measured::Vector{KRatio},
-    maxIter::Int = 100,
-)::IterationResult
+function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
     # Compute the C = k*C_std estimate
-    firstEstimate(meas::Vector{KRatio})::Dict{Element, Float64} =
+    firstEstimate(meas::Vector{KRatio})::Dict{Element,Float64} =
         Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
     # Compute the estimated k-ratios
-    computeKs(
-        estComp::Material,
-        zafs::Dict{Element,Float64},
-        stdComps::Dict{Element,Float64},
-    )::Dict{Element, Float64} = Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    computeKs(estComp::Material, zafs::Dict{Element,Float64}, stdComps::Dict{Element,Float64})::Dict{Element,Float64} =
+        Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    function computefinal(estcomp, measured)
+        final = Dict{Element,UncertainValue}(elm=>convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
+        for kr in measured
+            elm = element(kr)
+            final[elm] = uv(value(final[elm]), (value(final[elm])/value(kr.kratio))*σ(kr.kratio))
+        end
+        return material(name(estcomp), final)
+    end
     # Compute the k-ratio difference metric
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
     # Compute the standard matrix correction factors
@@ -400,7 +412,9 @@ function quantify(
             # If no convergence report it but return closest result...
             bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
             if converged(iter.converged, measured, bestKrs)
-                return IterationResult(label, estcomp, measured, bestKrs, true, bestIter)
+                fc = computefinal(estcomp, measured)
+                @show fc
+                return IterationResult(label, fc, measured, bestKrs, true, bestIter, iter)
             end
         end
         # Compute the next estimated mass fractions
@@ -412,8 +426,20 @@ function quantify(
     end
     @warn "$label did not converge in $(maxIter)."
     @warn "   Using best non-converged result from step $(bestIter)."
-    return IterationResult(label, bestComp, measured, bestKrs, false, bestIter)
+    return IterationResult(label, bestComp, measured, bestKrs, false, bestIter, iter)
 end
 
-quantify(sampleName::String, measured::Vector{KRatio}, mc::Type{<:MatrixCorrection}=XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence, cc::Type{<:CoatingCorrection}=Coating) =
-    quantify(Iteration(mc,fc,cc), label(sampleName), measured)
+quantify(
+    sampleName::String,
+    measured::Vector{KRatio};
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    cc::Type{<:CoatingCorrection} = Coating,
+) = quantify(Iteration(mc, fc, cc), label(sampleName), measured)
+quantify(
+    lbl::Label,
+    measured::Vector{KRatio};
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    cc::Type{<:CoatingCorrection} = Coating,
+) = quantify(Iteration(mc, fc, cc), lbl, measured)

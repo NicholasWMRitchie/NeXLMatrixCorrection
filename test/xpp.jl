@@ -210,4 +210,39 @@ using Test
         @test isapprox(F(zafO..., θ, θ), 0.9996, atol = 0.001)  # 1.0006
         #    print(asa(DataFrame, Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
     end
+
+    @testset "Quantify K458" begin
+        # Material	K458 = [O(0.3193 mass frac),Si(0.2308 mass frac),Zn(0.0307 mass frac),Ba(0.4192 mass frac),Σ=1.0000,3.5 g/cc]
+        # Detector	Bruker 5 eV/ch - FWHM[Mn Kα]=128.6 eV - 2019-02-27 00:00
+        # Algorithm	XPP - Pouchou & Pichoir Simplified
+        # MAC	NIST-Chantler 2005
+        # E0	15 keV
+        # Take-off	40°
+
+        # IUPAC	Seigbahn	Standard	Energy	 ZAF	  Z	  A	  F	k-ratio
+        # O K-L3	O Kα1	SiO2	0.5249	1.2446	1.1591	1.0743	0.9996	0.746227
+        # Si K-L3	Si Kα1	SiO2	1.7397	0.8937	1.1635	0.7672	1.0012	0.441263
+        # Si K-M3	Si Kβ1	SiO2	1.8290	0.9150	1.1635	0.7854	1.0012	0.451796
+        # Zn K-L3	Zn Kα1	Pure Zn	8.6389	0.9048	0.9201	0.9833	1.0000	0.027776
+        # Zn K-M3	Zn Kβ1	Pure Zn	9.5720	0.9083	0.9201	0.9872	1.0000	0.027884
+        # Zn L3-M5	Zn Lα1	Pure Zn	1.0116	0.4506	0.9261	0.4860	1.0011	0.013833
+        # Ba L3-M5	Ba Lα1	BaCl	4.4663	0.8490	0.8175	1.0384	1.0001	0.447794
+        lbl = label("K458")
+        unkProps = Dict(:BeamEnergy=>15.0e3, :TakeOffAngle=>deg2rad(40.0))
+        stdProps = unkProps # Same for both (in this case...)
+        krs = [
+            KRatio([n"O K-L3"], unkProps, stdProps, mat"SiO2", 0.746227 ),
+            KRatio([n"Si K-L3"], unkProps, stdProps, mat"SiO2", 0.441263 ),
+            KRatio([n"Zn K-L3"], unkProps, stdProps, mat"Zn", 0.027776 ),
+            KRatio([n"Ba L3-M5"], unkProps, stdProps, mat"BaCl", 0.447794 )
+        ]
+        res = quantify(lbl, krs)
+        @test res.converged
+        @test isapprox(res.comp[n"Si"],0.2308, atol=0.0004)
+        @test isapprox(res.comp[n"Ba"],0.4192,atol=0.0021)
+        @test isapprox(res.comp[n"O"],0.3193,atol=0.0001)
+        @test isapprox(res.comp[n"Zn"],0.0307,atol=0.0001)
+    end
+
+
 end
