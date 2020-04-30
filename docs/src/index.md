@@ -22,7 +22,7 @@ Primarily the algorithms in `NeXLMatrixCorrection` are designed to take a `Vecto
 
 The primary method is
 ```julia
-function iterateks(
+function quantify(
     iter::Iteration,  # The Iteration object providing algorithmic details
     label::Label,     # A label for the unknown
     measured::Vector{KRatio}, # A complete set of k-ratios (one per element)
@@ -31,8 +31,11 @@ function iterateks(
 ```
 which is wrapped as
 ```julia
-quantify(sampleName::String, measured::Vector{KRatio})
+quantify(iter::Iteration, sampleName::String, measured::Vector{KRatio})
 ```
+and
+```julia
+quantify(ffr::FilterFitResult,...)
 to simplify usage.
 
 

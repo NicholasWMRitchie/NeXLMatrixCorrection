@@ -1,9 +1,7 @@
-# Implements ZAF matrix correction based on a k-ratio from multiple simultaneously
-# measured characteristic X-ray lines.  MultiZAF can hold the ZAF correction
 """
 The `MultiZAF` structure holds the information necessary to perform matrix correction on a collection of
-characteristic X-rays that were measured simultaneously from the same element.  Use `ZAF(...)` to construct
-these rather than the internal constructor.
+characteristic X-rays that were measured simultaneously from the same element.
+Use `zafcorrection(...)` to construct these rather than the internal constructor.
 """
 struct MultiZAF
     xrays::Vector{CharXRay}
@@ -13,15 +11,15 @@ struct MultiZAF
         mat = material(first(values(zafs)))
         e0 = beamEnergy(first(values(zafs)))
         @assert all(f -> isequal(element(f), elm), xrays)
-            "MultiZAF constructor: All the characteristic X-rays must be from the same element."
+        "MultiZAF constructor: All the characteristic X-rays must be from the same element."
         @assert all(f -> isequal(element(f), elm), keys(zafs))
-            "MultiZAF constructor: All the shells must be from the same element as the X-rays."
+        "MultiZAF constructor: All the shells must be from the same element as the X-rays."
         @assert all(f -> haskey(zafs, inner(f)), xrays)
-            "MultiZAF constructor: There must be a ZAF correction for each characteristic X-ray.",
+        "MultiZAF constructor: There must be a ZAF correction for each characteristic X-ray.",
         @assert all(f -> isequal(material(f), mat), values(zafs))
-            "MultiZAF constructor: All the materials must match."
+        "MultiZAF constructor: All the materials must match."
         @assert all(f -> isequal(beamEnergy(f), e0), values(zafs))
-            "MultiZAF constructor: All the beam energies must match."
+        "MultiZAF constructor: All the beam energies must match."
         return new(xrays, zafs)
     end
 end
@@ -50,11 +48,9 @@ NeXLCore.material(mz::MultiZAF) = material(first(values(mz.zafs)))
 
 beamEnergy(mz::MultiZAF) = beamEnergy(first(values(mz.zafs)))
 
-NeXLCore.name(mz::MultiZAF) =
-    repr(brightest(mz.xrays)) * "+" * string(length(mz.xrays) - 1) * " others"
+NeXLCore.name(mz::MultiZAF) = repr(brightest(mz.xrays)) * "+" * string(length(mz.xrays) - 1) * " others"
 
-commonXrays(unk::MultiZAF, std::MultiZAF) =
-    union(characteristic(unk), characteristic(std))
+commonXrays(unk::MultiZAF, std::MultiZAF) = union(characteristic(unk), characteristic(std))
 
 """
     Z(unk::MultiZAF, std::MultiZAF)
@@ -66,7 +62,7 @@ function Z(unk::MultiZAF, std::MultiZAF)
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         norm = sum(weight.(cxrs2))
         n += norm
-        z += Z(unk.zafs[sh], std.zafs[sh])*norm
+        z += Z(unk.zafs[sh], std.zafs[sh]) * norm
     end
     return z / n
 end
@@ -146,6 +142,7 @@ function coating(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abst
 end
 """
     gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+    gZAFc(kr::KRatio, unkComp::Material; mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection} = ReedFluorescence, cc::Type{<:CoatingCorrection} = Coating)
 
 The combined generation, atomic number, absorption and generation corrections.
 """
@@ -157,18 +154,28 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
         icxS = ionizationcrosssection(sh, beamEnergy(zafS))
         for cxr in cxrs2
             w = weight(cxr)
-            a += w * (icxU / icxS) * ZA(zafU, zafS, cxr, θunk, θstd) *
-                F(zafU, zafS, cxr, θunk, θstd) * coating(zafU, zafS, cxr, θunk, θstd)
+            a +=
+                w *
+                (icxU / icxS) *
+                ZA(zafU, zafS, cxr, θunk, θstd) *
+                F(zafU, zafS, cxr, θunk, θstd) *
+                coating(zafU, zafS, cxr, θunk, θstd)
             n += w
         end
     end
     return a / n
 end
 
-function gZAFc(kr::KRatio, unkComp::Material, mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection} = ReedFluorescence)
+function gZAFc(
+    kr::KRatio,
+    unkComp::Material;
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    cc::Type{<:CoatingCorrection} = Coating,
+)
     elm = kr.element
-    zu = ZAF(mc, fc, unkComp, kr.lines, kr.unkProps[:BeamEnergy])
-    zs = ZAF(mc, fc, kr.standard, kr.lines, kr.stdProps[:BeamEnergy])
+    zu = zafcorrection(mc, fc, cc, unkComp, kr.lines, kr.unkProps[:BeamEnergy])
+    zs = zafcorrection(mc, fc, cc, kr.standard, kr.lines, kr.stdProps[:BeamEnergy])
     return gZAFc(zu, zs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
 end
 
@@ -179,7 +186,7 @@ The computed k-ratio for the unknown relative to standard.
 """
 function k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     elm = element(unk)
-    return (nonneg(material(unk),elm)/nonneg(material(std),elm))*gZAFc(unk, std, θunk, θstd)
+    return (nonneg(material(unk), elm) / nonneg(material(std), elm)) * gZAFc(unk, std, θunk, θstd)
 end
 
 """
@@ -187,7 +194,13 @@ end
 
 Tabulate a matrix correction relative to the specified unknown and standard in a DataFrame.
 """
-function NeXLUncertainties.asa(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+function NeXLUncertainties.asa(
+    ::Type{DataFrame},
+    unk::MultiZAF,
+    std::MultiZAF,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat,
+)::DataFrame
     tot = gZAFc(unk, std, θunk, θstd)
     @assert isequal(element(unk), element(std)) "The unknown and standard's elements must match."
     return DataFrame(
@@ -215,10 +228,7 @@ function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::Abstract
     stds, stdE0, unks = Vector{String}(), Vector{Float64}(), Vector{String}()
     unkE0, xray, g = Vector{Float64}(), Vector{CharXRay}(), Vector{Float64}()
     z, a, f = Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
-    c, wgt, zaf, k = Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}(),
-        Vector{Float64}()
+    c, wgt, zaf, k = Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         matU, matS = material(zafU), material(zafS)
@@ -242,9 +252,9 @@ function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::Abstract
     end
     return DataFrame(
         Unknown = unks,
-        E0unk = 0.001*unkE0,
+        E0unk = 0.001 * unkE0,
         Standard = stds,
-        E0std = 0.001*stdE0,
+        E0std = 0.001 * stdE0,
         Xray = xray,
         Weight = wgt,
         Generation = g,
@@ -253,7 +263,7 @@ function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::Abstract
         F = f,
         c = c,
         ZAF = zaf,
-        k = k
+        k = k,
     )
 end
 
@@ -270,18 +280,25 @@ detail(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::A
 
 Tabulate a matrix correction relative to a specified Dict of unknowns and standards in a DataFrame.
 """
-NeXLUncertainties.asa(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
-    mapreduce(tmm -> asa(DataFrame, tmm[1], tmm[2], θunk, θstd), append!, mzs)
+NeXLUncertainties.asa(
+    ::Type{DataFrame},
+    mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}},
+    θunk::AbstractFloat,
+    θstd::AbstractFloat,
+) = mapreduce(tmm -> asa(DataFrame, tmm[1], tmm[2], θunk, θstd), append!, mzs)
 
 
-function NeXLUncertainties.asa(::Type{DataFrame},
-                asunk::Material,
-                std::Material,
-                lines::Vector{CharXRay},
-                e0::Float64,
-                toa::Float64;
-                zacorr::Type{<:MatrixCorrection} = XPP,
-                fcorr::Type{<:FluorescenceCorrection} = ReedFluorescence)
-    zafs = ZAF(zacorr, fcorr, unk, std, lines, e0)
+function NeXLUncertainties.asa(
+    ::Type{DataFrame},
+    asunk::Material,
+    std::Material,
+    lines::Vector{CharXRay},
+    e0::Float64,
+    toa::Float64;
+    zacorr::Type{<:MatrixCorrection} = XPP,
+    fcorr::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    ccorr::Type{<:CoatingCorrection} = Coating,
+)
+    zafs = zafcorrection(zacorr, fcorr, ccorr, unk, std, lines, e0)
     asa(DataFrame, zafs..., toa, toa)
 end

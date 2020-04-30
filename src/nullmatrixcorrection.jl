@@ -18,4 +18,4 @@ NeXLCore.atomicsubshell(mc::NullCorrection) = mc.subshell
 NeXLCore.material(mc::NullCorrection) = mc.material
 beamEnergy(mc::NullCorrection) = mc.E0 # in eV
 ϕ(mc::NullCorrection, ρz) = @assert "Does not make sense for the null correction."
-ϕabs(mc::MatrixCorrection, ρz, θtoa)  = @assert "Does not make sense for the null correction."
+ϕabs(mc::MatrixCorrection, ρz, θtoa) = @assert "Does not make sense for the null correction."

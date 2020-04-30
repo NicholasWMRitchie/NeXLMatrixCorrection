@@ -323,14 +323,14 @@ NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::Data
 NeXLCore.material(itres::IterationResult) = itres.comp
 
 _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{CharXRay})::MultiZAF =
-    ZAF(
+    zafcorrection(
         iter.mctype,
         iter.fctype,
         iter.cctype,
         mat,
         lines,
         props[:BeamEnergy],
-        get(props, :Coating, Film()),
+        get(props, :Coating, missing),
     )
 
 """
@@ -355,17 +355,18 @@ function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZ
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
 """
-    iterateks(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
-    iterateks(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
-    iterateks(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
+    quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
+    quantify(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
+    quantify(ffr::FilterFitResult; strip::AbstractVector{Element} = Element[], mc::Type{<:MatrixCorrection} = XPP, fl::Type{<:FluorescenceCorrection} = ReedFluorescence, cc::Type{<:CoatingCorrection} = Coating)::IterationResult
 
 Perform the iteration procedurer as described in `iter` using the `measured` k-ratios to produce the best
-estimate `Material` in an `IterationResult` object.
+estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the
+k-ratios from filter fit spectra.
 """
-iterateks(iter::Iteration, name::String, measured::Vector{KRatio}) =
-    iterateks(iter, label(name), measured)
+quantify(iter::Iteration, name::String, measured::Vector{KRatio}) =
+    quantify(iter, label(name), measured)
 
-function iterateks(
+function quantify(
     iter::Iteration,
     label::Label,
     measured::Vector{KRatio},
@@ -415,4 +416,4 @@ function iterateks(
 end
 
 quantify(sampleName::String, measured::Vector{KRatio}, mc::Type{<:MatrixCorrection}=XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence, cc::Type{<:CoatingCorrection}=Coating) =
-    iterateks(Iteration(mc,fc,cc), label(sampleName), measured)
+    quantify(Iteration(mc,fc,cc), label(sampleName), measured)

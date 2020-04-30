@@ -25,8 +25,7 @@ J(elm::Element) = #C1
 Mean ionization potential for the specified material in eV. (PAP Eqn 6)
 """
 J(mat::Material) = #C1
-    exp(sum(NeXLCore.nonneg(mat, elm) * (z(elm) / a(elm, mat)) * log(J(elm)) for elm in keys(mat)) /
-        M(mat))
+    exp(sum(NeXLCore.nonneg(mat, elm) * (z(elm) / a(elm, mat)) * log(J(elm)) for elm in keys(mat)) / M(mat))
 
 # From PAP eqn 8
 D(J) = (6.6e-6, 1.12e-5 * (1.35 - 0.45 * J^2), 2.2e-6 / J) #C1
@@ -44,8 +43,8 @@ The function P&P uses to describe the deceleration of an electron in a material.
 Output units are (keV/cm)/(g/cm^3) = keV cm^2/g. (PAP eqn 5)
 """
 function dEdρs(mat::Material, Ekev::AbstractFloat) #C1
-    @assert Ekev<50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
-    Jkev = 0.001*J(mat) # XPP expects in keV
+    @assert Ekev < 50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
+    Jkev = 0.001 * J(mat) # XPP expects in keV
     # PAP Eqn 8
     function f(mat, Ekev, Jkev)
         d, p, v = D(j), P(j), Ekev / Jkev
@@ -60,8 +59,7 @@ end
 Total trajectory (range) of an electron with initial energy Ekev. (in cm/(g/cm^3))
 """
 R0(J, D, P, M, Ekev) = #C1
-    sum(J^(1.0 - P[k]) * D[k] * Ekev^(1.0 + P[k]) / (1.0 + P[k]) for k = 1:3) /
-    M
+    sum(J^(1.0 - P[k]) * D[k] * Ekev^(1.0 + P[k]) / (1.0 + P[k]) for k = 1:3) / M
 
 """
     ϕxpp(ρz, A, a, B, b, ϕ0)
@@ -77,9 +75,7 @@ Compute the shape of the ϕ(ρz) curve in the XPP model.
 Computes 1/S where S is the stopping power.
 """
 invS(U0, V0, M, D, P, T) = #C1
-    U0 / (V0 * M) *
-    sum(D[k] * ((V0 / U0)^P[k]) * (T[k] * U0^T[k] * log(U0) - U0^T[k] + 1.0) /
-        (T[k]^2) for k = 1:3)
+    U0 / (V0 * M) * sum(D[k] * ((V0 / U0)^P[k]) * (T[k] * U0^T[k] * log(U0) - U0^T[k] + 1.0) / (T[k]^2) for k = 1:3)
 
 """
     S(mat, ashell, E)
@@ -87,17 +83,9 @@ invS(U0, V0, M, D, P, T) = #C1
 Computes S, the stopping power at the specified energy (in keV)
 """
 function S(mat::Material, ashell::AtomicSubShell, Ekev)
-    @assert Ekev<50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
-    jkev = 0.001*J(mat) # XPP expects in keV
-    return 1.0 /
-           invS(
-        Ekev / (0.001*energy(ashell)),
-        Ekev / jkev,
-        M(mat),
-        D(jkev),
-        P(jkev),
-        T(P(jkev), m(ashell)),
-    )
+    @assert Ekev < 50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
+    jkev = 0.001 * J(mat) # XPP expects in keV
+    return 1.0 / invS(Ekev / (0.001 * energy(ashell)), Ekev / jkev, M(mat), D(jkev), P(jkev), T(P(jkev), m(ashell)))
 end
 
 """
@@ -117,7 +105,7 @@ function m(ashell::AtomicSubShell) #C1
     if isequal(n(ashell), 1)
         return 0.86 + 0.12 * exp(-(ashell.z / 5.0)^2)
     else
-        return n(ashell)==2 ? 0.82 : 0.78
+        return n(ashell) == 2 ? 0.82 : 0.78
     end
 end
 
@@ -204,8 +192,7 @@ b(Rbar, ϕ0, F) = #C1
 
 # PAP eqn 29
 P(Zbarb, U0, F, Rbar, ϕ0, b) = #C1
-    min(g(Zbarb, U0) * h(Zbarb, U0)^4, 0.9 * b * Rbar^2 * (b - 2.0 * ϕ0 / F)) *
-    F / (Rbar^2)
+    min(g(Zbarb, U0) * h(Zbarb, U0)^4, 0.9 * b * Rbar^2 * (b - 2.0 * ϕ0 / F)) * F / (Rbar^2)
 
 function ϵ(P, b, ϕ0, F, Rbar) #C1
     a = (P + b * (2.0 * ϕ0 - b * F)) / (b * F * (2.0 - b * Rbar) - ϕ0)
@@ -250,8 +237,10 @@ end
 The integral of the ϕ(ρz) exp(-χ ρz) from 0 to τ.
 """
 Fχp(χ, A, a, B, b, ϕ0, τ) =
-    (A*(1.0 - exp(-(τ*(a + χ)))))/(a + χ) + (A*(-1.0 + exp(-(τ*(b + χ)))))/(b + χ) +
-   ((1 - exp(-(τ*(b + χ))))*ϕ0)/(b + χ) + (B*(-1 + exp(τ*(b + χ)) - τ*(b + χ)))/(exp(τ*(b + χ))*((b + χ)^2))
+    (A * (1.0 - exp(-(τ * (a + χ))))) / (a + χ) +
+    (A * (-1.0 + exp(-(τ * (b + χ))))) / (b + χ) +
+    ((1 - exp(-(τ * (b + χ)))) * ϕ0) / (b + χ) +
+    (B * (-1 + exp(τ * (b + χ)) - τ * (b + χ))) / (exp(τ * (b + χ)) * ((b + χ)^2))
 
 """
 Represents the essential intermediary values for an XPP matrix correction of
@@ -270,25 +259,22 @@ struct XPP <: MatrixCorrection
     b # Width factor
     F # Integral under the ϕ(ρz) curve
 
-"""
-    XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
+    """
+        XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
 
-Construct an XPP object for the specified material, atomicsubshell,
-beam energy (in eV).
-"""
+    Construct an XPP object for the specified material, atomicsubshell,
+    beam energy (in eV).
+    """
     function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
         # XPP calculations expect E0, eLv, J in keV
-        e0, Mv, Jv, = 0.001 * E0, M(mat), 0.001*J(mat)
+        e0, Mv, Jv, = 0.001 * E0, M(mat), 0.001 * J(mat)
         Zbarbv, eLv = Zbarb(mat), 0.001 * energy(ashell)
         U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(Zbarbv)
-        @assert U0v > 1.0  "The beam energy must be larger than the subshell edge energy."
-        @assert V0v > 1.0  "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))"
+        @assert U0v > 1.0 "The beam energy must be larger than the subshell edge energy."
+        @assert V0v > 1.0 "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))"
         Dv, Pjv, mv, Wbarv = D(Jv), P(Jv), m(ashell), Wbar(ηbarv)
         invSv = invS(U0v, V0v, Mv, Dv, Pjv, T(Pjv, mv))
-        qv, Rv, ϕ0v, QlAv = q(Wbarv),
-            R(ηbarv, Wbarv, U0v),
-            ϕ0(U0v, ηbarv),
-            QlA(U0v, eLv, mv)
+        qv, Rv, ϕ0v, QlAv = q(Wbarv), R(ηbarv, Wbarv, U0v), ϕ0(U0v, ηbarv), QlA(U0v, eLv, mv)
         Fv, FoverRbarv = F(Rv, invSv, QlAv), FoverRbar(X(Zbarbv), Y(Zbarbv), U0v)
         Rbarv = Rbar(Fv, FoverRbarv, ϕ0v)
         bv = b(Rbarv, ϕ0v, Fv)
@@ -315,14 +301,9 @@ function NeXLUncertainties.asa(::Type{DataFrame}, xpps::XPP...)
 end
 
 
-Base.show(io::IO, xpp::XPP) =
-    print(
-        io,
-        "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]",
-    )
+Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
-Fχ(xpp::XPP, xray::CharXRay, θtoa::Real) =
-    Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+Fχ(xpp::XPP, xray::CharXRay, θtoa::Real) = Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 
 Fχp(xpp::XPP, xray::CharXRay, θtoa::Real, τ::Real) =
@@ -333,7 +314,7 @@ NeXLCore.atomicsubshell(mc::XPP) = mc.subshell
 NeXLCore.material(mc::XPP) = mc.material
 beamEnergy(mc::XPP) = mc.E0 # in eV
 
-NeXLCore.minproperties(::Type{XPP}) = ( :BeamEnergy, :TakeOffAngle )
+NeXLCore.minproperties(::Type{XPP}) = (:BeamEnergy, :TakeOffAngle)
 
 """
     ϕ(ρz, xpp::XPP)
@@ -347,8 +328,7 @@ Computes the ϕ(ρz) curve according to the XPP algorithm.
 
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(xpp::XPP, ρz, xray::CharXRay, θtoa::AbstractFloat) =
-    ϕ(xpp, ρz) * exp(-χ(material(xpp), xray, θtoa) * ρz)
+ϕabs(xpp::XPP, ρz, xray::CharXRay, θtoa::AbstractFloat) = ϕ(xpp, ρz) * exp(-χ(material(xpp), xray, θtoa) * ρz)
 
 """
     range(mat::MaterialLabel, e0)
@@ -356,8 +336,8 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 Total trajectory (range) of an electron with initial energy e0 (eV). (in cm/(g/cm^3))
 """
 function Base.range(::Type{XPP}, mat::Material, e0::Real)
-    j = 0.001*J(mat) # XPP expects in keV
-    return R0(j, D(j), P(j), M(mat), 0.001*e0)
+    j = 0.001 * J(mat) # XPP expects in keV
+    return R0(j, D(j), P(j), M(mat), 0.001 * e0)
 end
 
 """
@@ -365,36 +345,4 @@ end
 
 Constructs an instance of the XPP algorithm.
 """
-matrixcorrection(
-    ::Type{XPP},
-    mat::Material,
-    ashell::AtomicSubShell,
-    e0,
-) = XPP(mat, ashell, e0)
-
-function NeXLUncertainties.asa( #
-    ::Type{DataFrame},
-    unk::Material,
-    stds::Dict{Element,Material},
-    e0::AbstractFloat,
-    θunk::AbstractFloat,
-    θstd::AbstractFloat,
-    mctype::Type{<:MatrixCorrection}=XPP,
-    fctype::Type{<:FluorescenceCorrection}=ReedFluorescence
-)
-    df = DataFrame()
-    for (elm, std) in stds
-        for ashell in atomicsubshells(elm, e0)
-            append!(
-                df,
-                asa( #
-                    DataFrame,
-                    ZAF(mctype, fctype, unk, std, ashell, e0)...,
-                    alltransitions,
-                    θunk, θstd
-                ),
-            )
-        end
-    end
-    return df
-end
+matrixcorrection(::Type{XPP}, mat::Material, ashell::AtomicSubShell, e0) = XPP(mat, ashell, e0)

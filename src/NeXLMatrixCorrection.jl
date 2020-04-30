@@ -15,12 +15,14 @@ export ϕ # ϕ(ρz) function
 export ϕabs # ϕ(ρz) function (absorbed)
 export F  # Generated intensity function
 export Fχ # Absorbed intensity function
+export matrixcorrection # Factory method for MatrixCorrection algorithms (XPP and NullCorrection)
 
 # Abstract class for a base fluorescence correction
 include("fluorescencecorrection.jl")
 export FluorescenceCorrection # Abstract class for the algorithm implementing the F-term
 export NullFluorescence
 export F # Compute the flurorescence correction
+export fluorescencecorrection # Factory method for FluorescenceCorrection algorithms (Reed and NullFluorescence)
 
 # Abstract class for a base coating correction algorithm
 include("coating.jl")
@@ -29,16 +31,17 @@ export NullCoating  # 100% transmission (no correction)
 export Coating      # A basic multi-layer coating for ultra-thin coatings
 export transmission # Coating transmission
 export carboncoating # Build a carbon coating
-export coatingcorrection # Builds a coating correction for the specified algorithm (Null or Coating)
+export coatingcorrection # Factory method for CoatingCorrection algorithms (Null or Coating)
 
-# Pulls together the MatrixCorrection, FluorescenceCorrection and CoatingCorrection
+# Pulls together the MatrixCorrection, FluorescenceCorrection and CoatingCorrection into a single object
 include("zafcorrection.jl")
 export ZAFCorrection
-export ZAF # Build a full ZAFCorrection based on your choice of algorithms
+export zafcorrection # Factory method for ZAFCorrection
 export ZAFc # Combined correction factor ZAF + coating
-export matrixcorrection # Builds a
-export kcoating # Calculate the k for an ultra-thin coating on a substrate
+
+# Use massthickness to estimate the thickness of an ultra-thin coating on a substrate.
 export massthickness # Estimate the mass-thickness of a coating on a substrate
+export kcoating # Calculate the measured k for an ultra-thin coating on a substrate
 
 # Wraps multiple ZAFCorrection objects to calculate the full matrix correction for one or more characteristic x-rays
 # This addresses the need to
@@ -71,18 +74,23 @@ export optimizeks
 
 # Performs iteration to estimate the composition from measured k-ratios
 include("iterate.jl")
-export UnmeasuredElementRule # Calculation elements by difference or stoichiometry or ???
+# Abstract class for calculating elements by difference or stoichiometry or ???
+export UnmeasuredElementRule
 export NullUnmeasuredRule # Don't do anything..
+
+# Abstract class for updating between iteration steps
 export UpdateRule # A rule implementing update(...)
 export NaiveUpdateRule # Simple iteration
 export WegsteinUpdateRule # Wegstein iteration (gradient)
 export RecordingUpdateRule
+
 export ConvergenceTest # Test for convergence using converged(...)
 export RMSBelowTolerance, AllBelowTolerance, IsApproximate # Difference implementations of ConvergenceTest
+
 export Iteration # Defines the iteration procedure
-export IterationResult # The output from iterateks(...)
-export iterateks # Perform the iteration
-export quantify # Exported when NeXLSpectrum is loaded
+export IterationResult # The output from quantify(...)
+
+export quantify # Perform the iteration on KRatio(s) or FilterFitResult
 
 function __init__()
     @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")

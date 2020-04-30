@@ -7,11 +7,10 @@ struct ZAFCorrection
     za::MatrixCorrection
     f::FluorescenceCorrection
     coating::CoatingCorrection
-"""
-    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection)
-"""
-    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection) =
-        new(za, f, coating)
+    """
+        ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection)
+    """
+    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection) = new(za, f, coating)
 end
 
 NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
@@ -165,38 +164,38 @@ function NeXLUncertainties.asa( #
 end
 
 """
-    ZAF(
+    zafcorrection(
       mctype::Type{<:MatrixCorrection},
       fctype::Type{<:FluorescenceCorrection},
       cctype::Type{<:CoatingCorrection},
       mat::Material,
       ashell::AtomicSubShell,
       e0,
-      coating::Film
+      coating::Union{Film,AbstractVector{Film},Missing}
     )
 
 Constructs an ZAFCorrection object using the mctype correction model with
 the fluorescence model for the specified parameters.
 """
-function ZAF(
+function zafcorrection(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     cctype::Type{<:CoatingCorrection},
     mat::Material,
     ashell::AtomicSubShell,
     e0::AbstractFloat,
-    coating::Film
+    coating::Union{Film,AbstractVector{Film},Missing},
 )
     norm = asnormalized(mat)  # Ensures convergence of the interation algorithms...
     return ZAFCorrection(
         matrixcorrection(mctype, norm, ashell, e0),
         fluorescencecorrection(fctype, norm, ashell, e0),
-        coatingcorrection(cctype, coating)
+        coatingcorrection(cctype, coating),
     )
 end
 
 """
-    ZAF(
+    zafcorrection(
        mctype::Type{<:MatrixCorrection},
        fctype::Type{<:FluorescenceCorrection},
        cctype::Type{<:CoatingCorrection},
@@ -204,14 +203,14 @@ end
        std::Material,
        ashell::AtomicSubShell,
        e0::AbstractFloat;
-       unkCoating::Film = Film(),
-       stdCoating::Film = Film(),
+       unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+       stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     )
 
 Creates a matched pair of ZAFCorrection objects using the matrix correction algorithm
 for the specified unknown and standard.
 """
-ZAF(
+zafcorrection(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     cctype::Type{<:CoatingCorrection},
@@ -219,39 +218,42 @@ ZAF(
     std::Material,
     ashell::AtomicSubShell,
     e0::AbstractFloat;
-    unkCoating::Film = Film(),
-    stdCoating::Film = Film(),
-) = (ZAF(mctype, fctype, cctype, unk, ashell, e0, unkCoating), ZAF(mctype, fctype, cctype, std, ashell, e0, stdCoating))
+    unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+    stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+) = (
+    zafcorrection(mctype, fctype, cctype, unk, ashell, e0, unkCoating),
+    zafcorrection(mctype, fctype, cctype, std, ashell, e0, stdCoating),
+)
 
 """
-    ZAF(
+    zafcorrection(
       mctype::Type{<:MatrixCorrection},
       fctype::Type{<:FluorescenceCorrection},
       cctype::Type{<:CoatingCorrection},
       mat::Material,
       cxrs,
       e0,
-      coating=Film()
+      coating=missing
     )
 
 Constructs a MultiZAF around the mctype and fctype algorithms for a collection of CharXRay `cxrs`.
 """
-function ZAF(
+function zafcorrection(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     cctype::Type{<:CoatingCorrection},
     mat::Material,
     cxrs,
     e0::AbstractFloat,
-    coating::Film = Film()
+    coating::Union{Film,AbstractVector{Film},Missing} = missing,
 )
     mat = asnormalized(mat)
-    zafs = Dict((sh, ZAF(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in union(inner.(cxrs)))
+    zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in union(inner.(cxrs)))
     return MultiZAF(cxrs, zafs)
 end
 
 """
-    ZAF(
+    zafcorrection(
       mctype::Type{<:MatrixCorrection},
       fctype::Type{<:FluorescenceCorrection},
       cctype::Type{<:CoatingCorrection},
@@ -259,14 +261,14 @@ end
       std::Material,
       cxrs,
       e0;
-      unkCoating::Film = Film(),
-      stdCoating::Film = Film()
+      unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+      stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     )
 
 Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard for a
 collection of CharXRay `cxrs`.
 """
-ZAF(
+zafcorrection(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     cctype::Type{<:CoatingCorrection},
@@ -274,6 +276,38 @@ ZAF(
     std::Material,
     cxrs,
     e0::AbstractFloat;
-    unkCoating::Film = Film(),
-    stdCoating::Film = Film(),
-) = (ZAF(mctype, fctype, cctype, unk, cxrs, e0, unkCoating), ZAF(mctype, fctype, cctype, std, cxrs, e0, stdCoating))
+    unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+    stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+) = (
+    zafcorrection(mctype, fctype, cctype, unk, cxrs, e0, unkCoating),
+    zafcorrection(mctype, fctype, cctype, std, cxrs, e0, stdCoating),
+)
+
+function NeXLUncertainties.asa( #
+    ::Type{DataFrame},
+    unk::Material,
+    stds::Dict{Element,Material},
+    e0::AbstractFloat,
+    θunk::AbstractFloat,
+    θstd::AbstractFloat;
+    mctype::Type{<:MatrixCorrection} = XPP,
+    fctype::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    cctype::Type{<:CoatingCorrection} = Coating,
+)
+    df = DataFrame()
+    for (elm, std) in stds
+        for ashell in atomicsubshells(elm, e0)
+            append!(
+                df,
+                asa( #
+                    DataFrame,
+                    zafcorrection(mctype, fctype, cctype, unk, std, ashell, e0)...,
+                    alltransitions,
+                    θunk,
+                    θstd,
+                ),
+            )
+        end
+    end
+    return df
+end

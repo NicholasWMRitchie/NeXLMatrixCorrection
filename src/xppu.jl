@@ -1,12 +1,14 @@
 using NeXLUncertainties
 
-asserting() = true
+asserting() = false
 
 # Removeable asserts
 macro Assert(test)
-    esc(:(if $(@__MODULE__).asserting()
-        @assert($test)
-    end))
+    esc(:(
+        if $(@__MODULE__).asserting()
+            @assert($test)
+        end
+    ))
 end
 
 # Note:: XPP is detailed in the "Green Book" Electron Probe Quantiication in terms using keV for energy.  Since
@@ -237,12 +239,14 @@ function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, with
         for k in eachindex(h)
             jacob[2, indexin(Dls[k], inputs)] = f * (h[k] / D[k])
             jacob[2, indexin(Pls[k], inputs)] = f * log(Ea / J) * h[k]
-            jacob[2, indexin(Tls[k], inputs)] = f * (1 / T[k]) * #
-                                                (D[k] * (U0^T[k]) * (Ea / J)^P[k] * log(U0)^2 - 2.0 * h[k])
+            jacob[2, indexin(Tls[k], inputs)] =
+                f *
+                (1 / T[k]) * #
+                (D[k] * (U0^T[k]) * (Ea / J)^P[k] * log(U0)^2 - 2.0 * h[k])
         end
         jacob[2, indexin(Ml, inputs)] = -OoS / M
-        jacob[2, indexin(e0l, inputs)] = (f / E0) * log(U0) *
-                                         sum(D[k] * ((Ea / J)^P[k]) * (U0^T[k]) for k in eachindex(h))
+        jacob[2, indexin(e0l, inputs)] =
+            (f / E0) * log(U0) * sum(D[k] * ((Ea / J)^P[k]) * (U0^T[k]) for k in eachindex(h))
         jacob[2, indexin(Jl, inputs)] = (-1.0 / (M * Ea)) * sum(P[k] * h[k] for k in eachindex(h))
         # η (ok!)
         @Assert indexin(ηl, vals) == 3
@@ -355,8 +359,9 @@ function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac
     if withJac
         δXδZb, δYδZb, = 1.3 / Zb, 1.0 / 200.0
         δFoRbδX = log(1.0 + Y * (1.0 - 1.0 / u42)) / log(1.0 + Y)
-        δFoRbδY = X * (((u42 - 1.0) * log(1.0 + Y)) / (u42 + Y * (u42 - 1.0)) - log(1.0 + Y - Y / u42) / (1.0 + Y)) /
-                  (log(1 + Y)^2)
+        δFoRbδY =
+            X * (((u42 - 1.0) * log(1.0 + Y)) / (u42 + Y * (u42 - 1.0)) - log(1.0 + Y - Y / u42) / (1.0 + Y)) /
+            (log(1 + Y)^2)
 
         δFoRbδZb = δFoRbδX * δXδZb + δFoRbδY * δYδZb
         δFoRbδU0 = (0.42 * X * Y) / (U0 * u42 * (1.0 + Y * (1.0 - 1.0 / u42)) * log(1.0 + Y))
@@ -676,7 +681,7 @@ function NeXLUncertainties.compute(st::StepFrc, inputs::LabeledValues, withJac::
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
         Frci = indexin(Frcl, vals)
-        @Assert Frci==1
+        @Assert Frci == 1
         jac[Frci, indexin(tcl, inputs)] = -Frc * μoρc * csc(θ)
         jac[Frci, indexin(θl, inputs)] = Frc * μoρc * tc * csc(θ) * cot(θ)
         jac[Frci, indexin(μoρcl, inputs)] = -Frc * tc * csc(θ)
@@ -721,7 +726,7 @@ Base.show(io::IO, l::ZALabel) = print(io, "ZA[$(l.unknown),$(l.standard),$(l.xra
 function NeXLUncertainties.compute(st::StepZA, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build input variable labels
     shell = inner(st.xray)
-    Ful, Frcul = FLabel(st.unknown, shell), FrcLabel(st.unknown, st.coatingU, st.xray )
+    Ful, Frcul = FLabel(st.unknown, shell), FrcLabel(st.unknown, st.coatingU, st.xray)
     Fsl, Frcsl = FLabel(st.standard, shell), FrcLabel(st.standard, st.coatingS, st.xray)
     # Extract input variables
     Fu, Frcu, Fs, Frcs = inputs[Ful], inputs[Frcul], inputs[Fsl], inputs[Frcsl]
@@ -748,12 +753,12 @@ function NeXLUncertainties.compute(st::StepZA, inputs::LabeledValues, withJac::B
     return (vals, jac)
 end
 
-mjz(sample, elms, all) = StepMJZbarb(sample, elms ) | MaintainLabels( mLabel(sample) )
+mjz(sample, elms, all) = StepMJZbarb(sample, elms) | MaintainLabels(mLabel(sample))
 dpt(sample, all) = StepDPT(sample, inner(cxr)) | allinp
-qla(sample, all) = StepQlaOoS(sample, inner(cxr)) | MaintainLabels([ E0keVLabel(sample), ZbarbLabel(sample) ])
+qla(sample, all) = StepQlaOoS(sample, inner(cxr)) | MaintainLabels([E0keVLabel(sample), ZbarbLabel(sample)])
 rp(sample, shell, all) =
     StepRPhi0(sample, shell) |
-    MaintainLabels([ E0keVLabel(sample), ZbarbLabel(sample), OoSLabel(sample, shell), QlaLabel(sample, shell) ], all)
+    MaintainLabels([E0keVLabel(sample), ZbarbLabel(sample), OoSLabel(sample, shell), QlaLabel(sample, shell)], all)
 frbar(sample, shell, all) =
     StepFRBar(sample, inner(cxr)) |
     MaintainLabels([ZbarbLabel(sample), ϕ0Label(sample, shell), E0keVLabel(sample)], all)
@@ -765,57 +770,55 @@ aϵ(sample, shell, all) =
     MaintainLabels([ϕ0Label(sample, shell), FLabel(sample, shell), PLabel(sample, shell), bLabel(sample, shell)], all)
 AB(sample, shell, all) =
     NeXLMatrixCorrection.StepAB(unknown, inner(cxr)) |
-    MaintainLabels( [bLabel(sample, shell), ϕ0Label(sample, shell), ϵLabel(sample, shell), FLabel(sample, shell) ], all)
+    MaintainLabels([bLabel(sample, shell), ϕ0Label(sample, shell), ϵLabel(sample, shell), FLabel(sample, shell)], all)
 
 """
     steps1(sample, elms, shell, all)
 
 steps1 requires as data MassFractionLabel, AtomicWeightLabel, JzLabel, E0Label, mLabel in an UncertainValues
 """
-steps1(sample, elms, shell, all=false) =
+steps1(sample, elms, shell, all = false) =
     AB(sample, shell, all) ∘ aϵ(sample, shell, all) ∘ pb(sample, shell, all) ∘ frbar(sample, shell, all) ∘
-    rp(sample, shell, all) ∘ qla(sample,all) ∘ dpt(sample,all) ∘ mjz(sample, elms, all)
+    rp(sample, shell, all) ∘ qla(sample, all) ∘ dpt(sample, all) ∘ mjz(sample, elms, all)
 
 
 χFr(sample, shell, all) =
-    NeXLMatrixCorrection.StepχFr(sample, shell) | MaintainLabels([ θLabel(sample), FLabel(sample, shell)], all)
+    NeXLMatrixCorrection.StepχFr(sample, shell) | MaintainLabels([θLabel(sample), FLabel(sample, shell)], all)
 
 """
     steps2(sample, shell, all)
 
 steps2 requires as data μoρLabel, dzLabel in an UncertainValues
 """
-steps2(sample, shell, all=false) = χFr(sample, shell, all)
+steps2(sample, shell, all = false) = χFr(sample, shell, all)
 
-Frc(sample, xray, coating, all) =
-    StepFrc(sample, coating, xray) | MaintainLabels([ FLabel(sample, inner(xray))], all)
+Frc(sample, xray, coating, all) = StepFrc(sample, coating, xray) | MaintainLabels([FLabel(sample, inner(xray))], all)
 
 """
     steps3(sample, xray, layer, all)
 
 steps3 requires as data tcLabel, μoρLabel for the coating in an UncertainValues
 """
-steps3(sample, xray, layer, all=false) =
-    Frc(sample, xray, layer) | MaintainLabels(FLabel(sample, inner(xray)), all)
+steps3(sample, xray, layer, all = false) = Frc(sample, xray, layer) | MaintainLabels(FLabel(sample, inner(xray)), all)
 
 
 
-function xppu(sample::Material, cxr::CharXRay, coating::Film, e0::UncertainValue, all=false)
+function xppu(sample::Material, cxr::CharXRay, coating::Film, e0::UncertainValue, all = false)
     shell = inner(cxr)
-    m=m(shell)
+    m = m(shell)
     input1 = uvs(
-        ( MassFractionLabel(sample.name, elm)=>uv(sample[elm],0.01*sample[elm]) for elm in keys(sample))...,
-        ( AtomicWeightLabel(sample.name, elm)=>uv(a(elm, sample),0.001*a(elm,sample)) for elm in keys(sample))...,
-        ( JzLabel(elm)=> Ju(elm) for elm in keys(sample) )...,
-        NeXLMatrixCorrection.E0Label(unknown)=>e0,
-        NeXLMatrixCorrection.mLabel(shell)=>uv(m,0.01*m)
+        (MassFractionLabel(sample.name, elm) => uv(sample[elm], 0.01 * sample[elm]) for elm in keys(sample))...,
+        (AtomicWeightLabel(sample.name, elm) => uv(a(elm, sample), 0.001 * a(elm, sample)) for elm in keys(sample))...,
+        (JzLabel(elm) => Ju(elm) for elm in keys(sample))...,
+        NeXLMatrixCorrection.E0Label(unknown) => e0,
+        NeXLMatrixCorrection.mLabel(shell) => uv(m, 0.01 * m),
     )
-    s1 = steps1(sample.name, [ keys(sample)...], shell, all)
+    s1 = steps1(sample.name, [keys(sample)...], shell, all)
     r1 = s1(inputs)
 
     input2 = uvs(
-        μoρLabel(coating.material.name)=>mac(coating),
-        dzLabel(coating.material.name)=>convert(UncertainValue, coating.thickness)
+        μoρLabel(coating.material.name) => mac(coating),
+        dzLabel(coating.material.name) => convert(UncertainValue, coating.thickness),
     )
     s2 = steps2(sample.name, shell, coating.material.name, all)
     r2 = s2(cat(r1, input2))

@@ -43,7 +43,7 @@ using Gadfly  # To plot the fit residual
 ```
 
 Then read in the spectra - SiO₂ as the measured material, Si, Al₂O₃ and C as the references.
-```julia; fig_width=8; fig_weight=4; fig_ext=".svg";
+```julia; fig_width=10; fig_height=3; fig_ext=".svg";
 path="C:\\Users\\nritchie\\Documents\\FY2020\\NIST K-ratio Project\\SRM-1871\\20 keV\\Standards"
 sio2=readEMSA("$path\\SiO2_StdC_20kV5nA130kHz_300s.msa")
 si =readEMSA("$path\\Si_StdC_20kV5nA130kHz_125kHz23DT_100s.msa")
@@ -56,21 +56,22 @@ Build a detector model with details from the spectrum and an estimate of the res
 channel.
 ```julia
 det = BasicEDS(length(sio2), energy(1, sio2), channelwidth(1, sio2), 128.0, 120)
-ff = buildfilter(det)
+filt = buildfilter(det)
 ```
 
 Create fitting filters for each element we require from the references.
 ```julia
-f_al2o3=tophatfilter(charXRayLabels(al2o3, n"O", [n"Al",n"O"], det, al2o3[:BeamEnergy]), ff, 1.0 / dose(al2o3))
-f_si=tophatfilter(charXRayLabels(si, n"Si", [n"Si"], det, si[:BeamEnergy]), ff, 1.0 / dose(si))
-f_c=tophatfilter(charXRayLabels(c, n"C", [n"C"], det, c[:BeamEnergy]), ff, 1.0 / dose(c))
-
-frs = collect(Iterators.flatten([ f_al2o3, f_si, f_c ]))
+refdata = (
+  ( al2o3, n"O", mat"Al2O3" ),
+  ( si, n"Si", mat"Si" ),
+  ( c, n"C", mat"C" ),
+)
+frs = mapreduce(ref->filterreference(filt, ref...), append!, refdata)
 ```
 
 Now with the fitting filters and the measured SiO₂ spectrum we can perform the fit of Si, O and C to SiO₂.
-```julia; fig_width=8; fig_weight=4; fig_ext=".svg";
-res = fit(sio2, ff, frs)
+```julia; fig_width=10; fig_height=3; fig_ext=".svg";
+res = fit(sio2, filt, frs)
 display(plot(res))
 NeXLUncertainties.asa(DataFrame, kratios(res))
 ```
@@ -79,12 +80,12 @@ From the k-ratios, we can determine the mass-thickness of the carbon layer on th
 ```julia
 k = value(findlabel(res, n"C K-L2"),res)
 ρz = massthickness(XPP, mat"SiO2", mat"C", n"C K-L2", sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
-print("The thickness is $(ρz*1.0e7/1.9) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
+print("The thickness is $(round(ρz*1.0e7/density(pure(n"C")); sigdigits=3)) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
 ```
 
 Finally, we correct the measured k-ratios for Si and O to account for the carbon coating.
 ```julia
-krs = NeXLMatrixCorrection.correctkratios(kratios(res), mat"C", sio2[:TakeOffAngle], ρz)
+krs = NeXLMatrixCorrection.correctkratios(kratios(res), mat"C", ρz)
 NeXLUncertainties.asa(DataFrame, krs)
 ```
 Usually, the coating compensation is handled in the matrix correction algorithm through providing coating data.
