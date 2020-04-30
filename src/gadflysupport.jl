@@ -68,31 +68,13 @@ function Gadfly.plot(tmc::Type{<:MatrixCorrection}, mat::Material, cxrs::Vector{
         Guide.title("$(name(mat)) at $(0.001*beamEnergy) keV"))
 end
 
-
-function plot(krs::AbstractArray{KRatio}, unkComp::Material)
-    mfs, kok, dkok, color = Float64[], Float64[], Float64[], Color[]
-    for kr in krs
-        if hasproperties(XPP, kr.unkProps) && hasproperties(ReedFluorescence, kr.unkProps) && #
-            hasproperties(XPP, kr.stdProps) && hasproperties(ReedFluorescence, kr.stdProps) && #
-            (value(unkComp[kr.element]) > 0.0) && (value(kr.standard[kr.element]) > 0.0)
-            # Compute the k-ratio
-            kc = gZAFc(kr, unkComp) * (value(unkComp[kr.element]) / value(kr.standard[kr.element]))
-            push!(mfs, unkComp[kr.element])
-            push!(kok, value(kr.kratio) / kc)
-            push!(dkok, σ(kr.kratio) / kc)
-            push!(color, NeXLPalette[shell(brightest(kr.lines)).n])
-        end
-    end
-    plot(x=mfs, y=kok, ymin=kok .- dkok, ymax=kok .+ dkok, Geom.point, Geom.errorbar, Stat.x_jitter(range=0.01))
-end
-
-function Gadfly.plot(dbkrs::AbstractArray{DBKRatio})
+function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material)
     mfs, kok, dkok, color = String[], Float64[], Float64[], Color[]
     next=1
     matcolors=Dict{String,RGB{Float64}}()
     for kr in krs
-        if hasproperties(XPP, kr.unkProps) && hasproperties(ReedFluorescence, kr.unkProps) && #
-            hasproperties(XPP, kr.stdProps) && hasproperties(ReedFluorescence, kr.stdProps) && #
+        if hasminrequired(XPP, kr.unkProps) && hasminrequired(ReedFluorescence, kr.unkProps) && #
+            hasminrequired(XPP, kr.stdProps) && hasminrequired(ReedFluorescence, kr.stdProps) && #
             (!isnothing(unkComp)) && (value(unkComp[kr.element]) > 0.0) && (value(kr.standard[kr.element]) > 0.0)
             # Compute the k-ratio
             kc = gZAFc(kr, unkComp) * (value(unkComp[kr.element]) / value(kr.standard[kr.element]))
@@ -111,3 +93,6 @@ function Gadfly.plot(dbkrs::AbstractArray{DBKRatio})
         Guide.manual_color_key("Material", [ keys(matcolors)...], [ values(matcolors)...]), # Guide.yrug,
         Guide.xlabel("Shell"), Guide.ylabel("k[Measured]/k[Calculated]"))
 end
+
+Gadfly.plot(irs::AbstractArray{IterationResult}; known::Union{Material,Missing}=missing, delta::Bool = false) =
+    plot( [ ir.comp for ir in irs], known=known, delta=delta, label="Measurement")

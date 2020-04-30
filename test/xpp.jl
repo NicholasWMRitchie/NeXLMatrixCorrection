@@ -64,13 +64,13 @@ using Test
 
         e0, θ = 17.0e3, deg2rad(40.0)
 
-        zafSi = ZAF(XPP, ReedFluorescence, k240, sio2, n"Si K", e0)
-        zafMg = ZAF(XPP, ReedFluorescence, k240, mgo, n"Mg K", e0)
-        zafBa = ZAF(XPP, ReedFluorescence, k240, baf2, n"Ba L3", e0)
-        zafTi = ZAF(XPP, ReedFluorescence, k240, ti, n"Ti K", e0)
-        zafZn = ZAF(XPP, ReedFluorescence, k240, zn, n"Zn K", e0)
-        zafZr = ZAF(XPP, ReedFluorescence, k240, zr, n"Zr L3", e0)
-        zafO = ZAF(XPP, ReedFluorescence, k240, sio2, n"O K", e0)
+        zafSi = ZAF(XPP, ReedFluorescence, NullCoating, k240, sio2, n"Si K", e0)
+        zafMg = ZAF(XPP, ReedFluorescence, NullCoating, k240, mgo, n"Mg K", e0)
+        zafBa = ZAF(XPP, ReedFluorescence, NullCoating, k240, baf2, n"Ba L3", e0)
+        zafTi = ZAF(XPP, ReedFluorescence, NullCoating, k240, ti, n"Ti K", e0)
+        zafZn = ZAF(XPP, ReedFluorescence, NullCoating, k240, zn, n"Zn K", e0)
+        zafZr = ZAF(XPP, ReedFluorescence, NullCoating, k240, zr, n"Zr L3", e0)
+        zafO = ZAF(XPP, ReedFluorescence, NullCoating, k240, sio2, n"O K", e0)
 
         @test isapprox(ZA(zafSi...,n"Si K-L3",θ,θ), 1.1345*0.7652,atol=0.001)
         @test isapprox(ZA(zafMg...,n"Mg K-L3",θ,θ), 1.1280*0.5996,atol=0.001)
@@ -96,10 +96,10 @@ using Test
         @test isapprox(A(zafZr...,n"Zr L3-M5",θ,θ), 0.7929,atol=0.001)
         @test isapprox(A(zafO...,n"O K-L3",θ,θ), 0.7750,atol=0.001)
 
-        @test_broken isapprox(F(zafSi...,n"Si K-L3",θ,θ), 1.0030,atol=0.001)
+        @test isapprox(F(zafSi...,n"Si K-L3",θ,θ), 1.0030,atol=0.001)
         @test isapprox(F(zafMg...,n"Mg K-L3",θ,θ), 1.0041,atol=0.001)
-        @test isapprox(F(zafBa...,n"Ba L3-M5",θ,θ), 0.9998,atol=0.001)
-        @test_broken isapprox(F(zafTi...,n"Ti K-L3",θ,θ), 1.0071,atol=0.002)
+        @test_broken isapprox(F(zafBa...,n"Ba L3-M5",θ,θ), 0.9998,atol=0.001)
+        @test isapprox(F(zafTi...,n"Ti K-L3",θ,θ), 1.0071,atol=0.002)
         @test isapprox(F(zafZn...,n"Zn K-L3",θ,θ), 1.000,atol=0.001)
         @test isapprox(F(zafZr...,n"Zr L3-M5",θ,θ), 1.0020,atol=0.001)
         @test isapprox(F(zafO...,n"O K-L3",θ,θ), 0.9996,atol=0.001)
@@ -114,9 +114,9 @@ using Test
         k227 = material("K227",n"O"=>0.1639,n"Si"=>0.0935,n"Pb"=>0.7427)
         u = pure(n"U")
 
-        zafO = ZAF(XPP, ReedFluorescence, u3o8, k227, n"O K", e0)
-        zafU_L = ZAF(XPP, ReedFluorescence, u3o8, u, n"U L3", e0)
-        zafU_M = ZAF(XPP, ReedFluorescence, u3o8, u, n"U M5", e0)
+        zafO = ZAF(XPP, ReedFluorescence, NullCoating, u3o8, k227, n"O K", e0)
+        zafU_L = ZAF(XPP, ReedFluorescence, NullCoating, u3o8, u, n"U L3", e0)
+        zafU_M = ZAF(XPP, ReedFluorescence, NullCoating, u3o8, u, n"U M5", e0)
 
         @test isapprox(Z(zafO...), 1.0735,atol=0.001)
         @test isapprox(Z(zafU_L...), 0.8965,atol=0.001)
@@ -145,19 +145,19 @@ using Test
         e0, θ = 17.0e3, deg2rad(40.0)
 
         cxrSi = characteristic(n"Si", ktransitions, 0.001, e0)
-        zafSi = ZAF(XPP, ReedFluorescence, k240, sio2, cxrSi, e0)
+        zafSi = ZAF(XPP, ReedFluorescence, NullCoating, k240, sio2, cxrSi, e0)
         cxrMg = characteristic(n"Mg", ktransitions, 0.001, e0)
-        zafMg = ZAF(XPP, ReedFluorescence, k240, mgo, cxrMg, e0)
+        zafMg = ZAF(XPP, ReedFluorescence, NullCoating, k240, mgo, cxrMg, e0)
         cxrBa = characteristic(n"Ba", ltransitions, 0.001, e0)
-        zafBa = ZAF(XPP, ReedFluorescence, k240, baf2, cxrBa, e0)
+        zafBa = ZAF(XPP, ReedFluorescence, NullCoating, k240, baf2, cxrBa, e0)
         cxrTi = characteristic(n"Ti", ktransitions, 0.001, e0)
-        zafTi = ZAF(XPP, ReedFluorescence, k240, ti, cxrTi, e0)
+        zafTi = ZAF(XPP, ReedFluorescence, NullCoating, k240, ti, cxrTi, e0)
         cxrZn = characteristic(n"Zn", kalpha, 0.001, e0)
-        zafZn = ZAF(XPP, ReedFluorescence, k240, zn, cxrZn, e0)
+        zafZn = ZAF(XPP, ReedFluorescence, NullCoating, k240, zn, cxrZn, e0)
         cxrZr = characteristic(n"Zr", ltransitions, 0.001, e0)
-        zafZr = ZAF(XPP, ReedFluorescence, k240, zr, cxrZr, e0)
+        zafZr = ZAF(XPP, ReedFluorescence, NullCoating, k240, zr, cxrZr, e0)
         cxrO = characteristic(n"O", ktransitions, 0.001, e0)
-        zafO = ZAF(XPP, ReedFluorescence, k240, sio2, cxrO, e0)
+        zafO = ZAF(XPP, ReedFluorescence, NullCoating, k240, sio2, cxrO, e0)
 
         @test isapprox(Z(zafSi...), 1.1345,atol=0.001)
         @test isapprox(Z(zafMg...), 1.1280,atol=0.001)
@@ -174,10 +174,10 @@ using Test
         @test_broken isapprox(A(zafZr...,θ,θ), 0.7596,atol=0.001)
         @test isapprox(A(zafO...,θ,θ), 0.7750,atol=0.001)
 
-        @test_broken isapprox(F(zafSi...,θ,θ), 1.0030,atol=0.001) # 1.0026
+        @test isapprox(F(zafSi...,θ,θ), 1.0030,atol=0.001) # 1.0026
         @test isapprox(F(zafMg...,θ,θ), 1.0041,atol=0.001) # 1.0033
-        @test isapprox(F(zafBa...,θ,θ), 0.9999,atol=0.001) # 1.0043
-        @test_broken isapprox(F(zafTi...,θ,θ), 1.0072,atol=0.002) # 1.0009
+        @test_broken isapprox(F(zafBa...,θ,θ), 0.9999,atol=0.001) # 1.0043
+        @test isapprox(F(zafTi...,θ,θ), 1.0072,atol=0.002) # 1.0009
         @test isapprox(F(zafZn...,θ,θ), 1.000,atol=0.001)  # 1.000
         @test isapprox(F(zafZr...,θ,θ), 1.0015,atol=0.001) # 1.0106
         @test isapprox(F(zafO...,θ,θ), 0.9996,atol=0.001)  # 1.0006

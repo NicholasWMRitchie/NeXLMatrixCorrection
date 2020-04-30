@@ -8,13 +8,13 @@ function testIterate(unk, stds, e0, θ)
     krs = KRatio[]
     for (lines, std) in stds
         elm = element(lines[1])
-        zu = ZAF(XPP, ReedFluorescence, unk, lines, e0)
-        zs = ZAF(XPP, ReedFluorescence, std, lines, e0)
+        zu = ZAF(XPP, ReedFluorescence, NullCoating, unk, lines, e0)
+        zs = ZAF(XPP, ReedFluorescence, NullCoating, std, lines, e0)
         k = gZAFc(zu, zs, toa, toa) * unk[elm] / std[elm]
         push!(krs, KRatio(lines, props, props, std, k))
     end
     up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
-    iter = Iteration(XPP, ReedFluorescence, updater = up)
+    iter = Iteration(XPP, ReedFluorescence, NullCoating, updater = up)
     return iterateks(iter, "Result", krs)
 end
 

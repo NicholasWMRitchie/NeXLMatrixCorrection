@@ -114,11 +114,11 @@ struct RecordingUpdateRule <: UpdateRule
 Wrap an UpdateRule instance with diagnostic recorders.
 """
     RecordingUpdateRule(ur::UpdateRule) = new(
-    ur,
-    Vector{Dict{Element,Float64}}(),
-    Vector{Dict{Element,Float64}}(),
-    Vector{Material}(),
-    Dict{Element,KRatio}(),
+        ur,
+        Vector{Dict{Element,Float64}}(),
+        Vector{Dict{Element,Float64}}(),
+        Vector{Material}(),
+        Dict{Element,KRatio}(),
     )
 end
 """
@@ -232,17 +232,19 @@ Collects the information necessary to define the iteration process including the
 struct Iteration
     mctype::Type{<:MatrixCorrection}
     fctype::Type{<:FluorescenceCorrection}
+    cctype::Type{<:CoatingCorrection}
     updater::UpdateRule
     converged::ConvergenceTest
     unmeasured::UnmeasuredElementRule
 
     Iteration(
         mct::Type{<:MatrixCorrection},
-        fct::Type{<:FluorescenceCorrection};
+        fct::Type{<:FluorescenceCorrection},
+        cct::Type{<:CoatingCorrection};
         updater = WegsteinUpdateRule(),
         converged = RMSBelowTolerance(0.00001),
         unmeasured = NullUnmeasuredRule(),
-    ) = new(mct, fct, updater, converged, unmeasured)
+    ) = new(mct, fct, cct, updater, converged, unmeasured)
 end
 
 
@@ -324,10 +326,11 @@ _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{Char
     ZAF(
         iter.mctype,
         iter.fctype,
+        iter.cctype,
         mat,
         lines,
         props[:BeamEnergy],
-        get(props, :Coating, NullCoating()),
+        get(props, :Coating, Film()),
     )
 
 """
@@ -344,10 +347,10 @@ function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZ
     Float64,
 }
     zaf(kr, zafs) = gZAFc(
-    _ZAF(iter, est, kr.unkProps, kr.lines),
-    zafs,
-    kr.unkProps[:TakeOffAngle],
-    kr.stdProps[:TakeOffAngle],
+        _ZAF(iter, est, kr.unkProps, kr.lines),
+        zafs,
+        kr.unkProps[:TakeOffAngle],
+        kr.stdProps[:TakeOffAngle],
     )
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
@@ -411,5 +414,5 @@ function iterateks(
     return IterationResult(label, bestComp, measured, bestKrs, false, bestIter)
 end
 
-quantify(sampleName::String, measured::Vector{KRatio}, mc::MatrixCorrection=XPP, fc::FluorescenceCorrection=ReedFluorescence) =
-    iterateks(Iteration(mc,fc), label(sampleName), measured)
+quantify(sampleName::String, measured::Vector{KRatio}, mc::Type{<:MatrixCorrection}=XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence, cc::Type{<:CoatingCorrection}=Coating) =
+    iterateks(Iteration(mc,fc,cc), label(sampleName), measured)

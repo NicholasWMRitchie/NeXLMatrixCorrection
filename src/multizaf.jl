@@ -155,10 +155,9 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         icxU = ionizationcrosssection(sh, beamEnergy(zafU))
         icxS = ionizationcrosssection(sh, beamEnergy(zafS))
-        z = Z(zafU, zafS)
         for cxr in cxrs2
             w = weight(cxr)
-            a += w * (icxU / icxS) * z * A(zafU, zafS, cxr, θunk, θstd) *
+            a += w * (icxU / icxS) * ZA(zafU, zafS, cxr, θunk, θstd) *
                 F(zafU, zafS, cxr, θunk, θstd) * coating(zafU, zafS, cxr, θunk, θstd)
             n += w
         end

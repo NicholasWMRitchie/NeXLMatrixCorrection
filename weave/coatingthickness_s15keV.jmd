@@ -62,9 +62,9 @@ ff = buildfilter(det)
 
 Create fitting filters for each element we require from the references.
 ```julia
-f_al2o3=filter(charXRayLabels(al2o3, n"O", [n"Al",n"O"], det, e0), ff, 1.0 / dose(al2o3))
-f_si=filter(charXRayLabels(si, n"Si", [n"Si"], det, e0), ff, 1.0 / dose(si))
-f_c=filter(charXRayLabels(c, n"C", [n"C"], det, e0), ff, 1.0 / dose(c))
+f_al2o3=tophatfilter(charXRayLabels(al2o3, n"O", [n"Al",n"O"], det, e0), ff, 1.0 / dose(al2o3))
+f_si=tophatfilter(charXRayLabels(si, n"Si", [n"Si"], det, e0), ff, 1.0 / dose(si))
+f_c=tophatfilter(charXRayLabels(c, n"C", [n"C"], det, e0), ff, 1.0 / dose(c))
 
 frs = collect(Iterators.flatten([ f_al2o3, f_si, f_c ]))
 ```

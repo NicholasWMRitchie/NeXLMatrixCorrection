@@ -13,7 +13,7 @@ using Test
     std_mat = parse(Material, "SiO2")
 
     # For comparison with direct calculation...
-    zaf = ZAF(XPP, NullFluorescence, unk_mat, std_mat, inner(cxr), e0, unkCoating=carboncoating(10.0), stdCoating=carboncoating(11.0))
+    zaf = ZAF(XPP, NullFluorescence, NullCoating, unk_mat, std_mat, inner(cxr), e0, unkCoating=carboncoating(10.0), stdCoating=carboncoating(11.0))
 
     m=NeXLMatrixCorrection.m(inner(cxr))
 

@@ -157,5 +157,4 @@ function fluorescencecorrection(
    return fluorescencecorrection(fltype, comp, primaries, secondary, e0)
 end
 
-hasproperties(::Type{ReedFluorescence}, props::Dict{Symbol,Any}) =
-    haskey(props, :BeamEnergy)  && haskey(props, :TakeOffAngle)
+NeXLCore.minproperties(::Type{ReedFluorescence}) = ( :BeamEnergy, :TakeOffAngle)
