@@ -98,6 +98,45 @@ function Gadfly.plot(
     )
 end
 
+function Gadfly.plot(
+    tmcs::AbstractVector{DataType},
+    mat::Material,
+    cxr::CharXRay,
+    beamEnergy::Float64,
+    takeOffAngle,
+)
+    zz, sh, prz, lsty = Float64[], String[], Float64[], Int[]
+    r = range(tmcs[1], mat, beamEnergy)
+    shell = inner(cxr)
+    for z in range(0.0, stop = r, length = 100)
+        for tmc in tmcs
+            mc = matrixcorrection(tmc, mat, shell, beamEnergy)
+            push!(zz, z)
+            push!(sh, "$(typeof(mc))")
+            push!(prz, ϕ(mc, z))
+            push!(lsty, 1)
+            push!(zz, z)
+            push!(sh, "$(typeof(mc))")
+            push!(prz, ϕabs(mc, z, cxr, takeOffAngle))
+            push!(lsty, 2)
+        end
+    end
+    df = DataFrame(ρz = zz, Line = sh, LineStyle = lsty, ϕρz = prz)
+    plot(
+        df,
+        x = :ρz,
+        y = :ϕρz,
+        color = :Line,
+        linestyle = :LineStyle,
+        Geom.line,
+        Scale.linestyle_discrete(),
+        Coord.Cartesian(xmin = 0.0, xmax = r),
+        Guide.xlabel("ρz [g/cm²]"),
+        Guide.ylabel("ϕ(ρz)"),
+        Guide.title("$(repr(cxr)) in $(name(mat)) at $(0.001*beamEnergy) keV"),
+    )
+end
+
 function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material)
     mfs, kok, dkok, color = String[], Float64[], Float64[], Color[]
     next = 1

@@ -210,7 +210,7 @@ end
 Creates a matched pair of ZAFCorrection objects using the matrix correction algorithm
 for the specified unknown and standard.
 """
-zafcorrection(
+function zafcorrection(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     cctype::Type{<:CoatingCorrection},
@@ -220,10 +220,13 @@ zafcorrection(
     e0::AbstractFloat;
     unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
-) = (
-    zafcorrection(mctype, fctype, cctype, unk, ashell, e0, unkCoating),
-    zafcorrection(mctype, fctype, cctype, std, ashell, e0, stdCoating),
 )
+    @assert energy(ashell) < e0 "The shell energy must be less than the beam energy."
+    return (
+        zafcorrection(mctype, fctype, cctype, unk, ashell, e0, unkCoating),
+        zafcorrection(mctype, fctype, cctype, std, ashell, e0, stdCoating),
+    )
+end
 
 """
     zafcorrection(
@@ -248,7 +251,8 @@ function zafcorrection(
     coating::Union{Film,AbstractVector{Film},Missing} = missing,
 )
     mat = asnormalized(mat)
-    zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in union(inner.(cxrs)))
+    shells = union(filter(sh->energy(sh)<e0, inner.(cxrs)))
+    zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in shells)
     return MultiZAF(cxrs, zafs)
 end
 
@@ -268,7 +272,7 @@ end
 Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard for a
 collection of CharXRay `cxrs`.
 """
-zafcorrection(
+function zafcorrection(
     mctype::Type{<:MatrixCorrection},
     fctype::Type{<:FluorescenceCorrection},
     cctype::Type{<:CoatingCorrection},
@@ -278,10 +282,13 @@ zafcorrection(
     e0::AbstractFloat;
     unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
-) = (
-    zafcorrection(mctype, fctype, cctype, unk, cxrs, e0, unkCoating),
-    zafcorrection(mctype, fctype, cctype, std, cxrs, e0, stdCoating),
 )
+    lines = filter(cxr->energy(inner(cxr))<e0, cxrs)
+    return (
+        zafcorrection(mctype, fctype, cctype, unk, lines, e0, unkCoating),
+        zafcorrection(mctype, fctype, cctype, std, lines, e0, stdCoating),
+    )
+end
 
 function NeXLUncertainties.asa( #
     ::Type{DataFrame},

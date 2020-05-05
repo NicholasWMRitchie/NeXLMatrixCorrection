@@ -11,21 +11,29 @@ implement
 
     F(mc::MatrixCorrection)
     Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
-    atomicsubshell(mc::MatrixCorrection)
-    material(mc::MatrixCorrection)
-    beamEnergy(mc::MatrixCorrection)
     ϕ(mc::MatrixCorrection, ρz)
-    ϕabs(mc::MatrixCorrection, ρz, θtoa)
 
 From these methods, other methods like `Z(...)`, `A(...)` are implemented.
 """
 abstract type MatrixCorrection end
+
+
+NeXLCore.atomicsubshell(mc::MatrixCorrection) = mc.subshell
+NeXLCore.material(mc::MatrixCorrection) = mc.material
+beamEnergy(mc::MatrixCorrection) = mc.E0
 
 """
     χ(mat::Material, xray::CharXRay, θtoa)
 Angle adjusted mass absorption coefficient.
 """
 χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) = mac(mat, xray) * csc(θtoa)
+
+"""
+    ϕabs(mc::MatrixCorection, ρz, xray::CharXRay, θtoa::AbstractFloat)
+
+Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
+"""
+ϕabs(mc::MatrixCorrection, ρz, xray::CharXRay, θtoa::AbstractFloat) = ϕ(mc, ρz) * exp(-χ(material(mc), xray, θtoa) * ρz)
 
 """
     ZA(

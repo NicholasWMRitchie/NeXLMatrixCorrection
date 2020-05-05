@@ -436,6 +436,7 @@ quantify(
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
 ) = quantify(Iteration(mc, fc, cc), label(sampleName), measured)
+
 quantify(
     lbl::Label,
     measured::Vector{KRatio};

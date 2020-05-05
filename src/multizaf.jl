@@ -174,8 +174,9 @@ function gZAFc(
     cc::Type{<:CoatingCorrection} = Coating,
 )
     elm = kr.element
-    zu = zafcorrection(mc, fc, cc, unkComp, kr.lines, kr.unkProps[:BeamEnergy])
-    zs = zafcorrection(mc, fc, cc, kr.standard, kr.lines, kr.stdProps[:BeamEnergy])
+    lines = filter(cxr->energy(inner(cxr))<min(kr.unkProps[:BeamEnergy],kr.stdProps[:BeamEnergy]), kr.lines)
+    zu = zafcorrection(mc, fc, cc, unkComp, lines, kr.unkProps[:BeamEnergy])
+    zs = zafcorrection(mc, fc, cc, kr.standard, lines, kr.stdProps[:BeamEnergy])
     return gZAFc(zu, zs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
 end
 
@@ -299,6 +300,7 @@ function NeXLUncertainties.asa(
     fcorr::Type{<:FluorescenceCorrection} = ReedFluorescence,
     ccorr::Type{<:CoatingCorrection} = Coating,
 )
-    zafs = zafcorrection(zacorr, fcorr, ccorr, unk, std, lines, e0)
+    flines = filter(cxr->energy(inner(cxr)) < e0, lines)
+    zafs = zafcorrection(zacorr, fcorr, ccorr, unk, std, flines, e0)
     asa(DataFrame, zafs..., toa, toa)
 end

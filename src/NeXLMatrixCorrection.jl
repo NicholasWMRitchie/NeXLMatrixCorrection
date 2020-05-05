@@ -55,6 +55,9 @@ include("xpp.jl")
 export XPP # XPP structure
 export xpp # Build an XPP correction
 
+include("citzaf.jl")
+export CitZAF
+
 # Implements Pouchou & Pichoir's XPP  ϕ(ρz) model with full uncertainty calculation
 include("xppu.jl")
 export JzLabel
