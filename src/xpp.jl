@@ -298,11 +298,11 @@ end
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
-Fχ(xpp::XPP, xray::CharXRay, θtoa::Real) = Fχ(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+Fχ(xpp::XPP, xray::CharXRay, θtoa::Real) = Fχ(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 
 Fχp(xpp::XPP, xray::CharXRay, θtoa::Real, τ::Real) =
-    Fχp(χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
+    Fχp(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
 
 F(xpp::XPP) = xpp.F
 

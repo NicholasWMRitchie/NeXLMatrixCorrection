@@ -238,10 +238,10 @@ using Test
         ]
         res = quantify(lbl, krs)
         @test res.converged
-        @test isapprox(res.comp[n"Si"],0.2308, atol=0.0004)
-        @test isapprox(res.comp[n"Ba"],0.4192,atol=0.0021)
-        @test isapprox(res.comp[n"O"],0.3193,atol=0.0001)
-        @test isapprox(res.comp[n"Zn"],0.0307,atol=0.0001)
+        @test isapprox(value(res.comp[n"Si"]), 0.2308, atol=0.0004)
+        @test isapprox(value(res.comp[n"Ba"]), 0.4192, atol=0.0021)
+        @test isapprox(value(res.comp[n"O"]), 0.3193, atol=0.0001)
+        @test isapprox(value(res.comp[n"Zn"]), 0.0307, atol=0.0001)
     end
 
 

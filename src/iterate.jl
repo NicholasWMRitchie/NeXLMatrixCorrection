@@ -335,6 +335,9 @@ end
 NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; withZAF::Bool = true)::DataFrame =
     mapreduce(ir->asa(DataFrame,ir,withZAF=withZAF), vcat, irs)
 
+DataFrames.describe(irs::AbstractVector{IterationResult}) =
+    describe(asa(DataFrame, collect(map(ir->ir.comp, irs)))[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
+
 Base.show(io::IO, itres::IterationResult) = print(
     io,
     itres.converged ? "Converged to $(itres.comp) in $(itres.iterations) steps\n" :
@@ -413,7 +416,6 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIt
             bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
             if converged(iter.converged, measured, bestKrs)
                 fc = computefinal(estcomp, measured)
-                @show fc
                 return IterationResult(label, fc, measured, bestKrs, true, bestIter, iter)
             end
         end

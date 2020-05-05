@@ -23,9 +23,16 @@ randomize(mat::Material, qty::Float64)::Material =
 
 function evaluate(mat, stds, e0, θ, tol = 0.0001)
     res = testIterate(mat, stds, e0, θ)
-    return res.converged && all(abs(res.comp[elm] - mat[elm]) < tol for elm in keys(mat))
+    return res.converged && all(abs(value(res.comp[elm]) - value(mat[elm])) < tol for elm in keys(mat))
 end
 
+Base.eps(::Type{UncertainValue}) = eps(Float64)
+Base.isapprox(uv1::UncertainValue, uv2::UncertainValue; atol::Real=0.0) =
+    isapprox(value(uv1),value(uv2),atol=atol)
+Base.isapprox(uv1::UncertainValue, v2::Real; atol::Real=0.0) =
+    isapprox(value(uv1), v2, atol=atol)
+Base.isapprox(v1::Real, uv2::UncertainValue; atol::Real=0.0) =
+    isapprox(v1, value(uv2), atol=atol)
 
 @testset "Iteration tests" begin
     @testset "FeCr series at 15 keV (normalized inputs)" begin

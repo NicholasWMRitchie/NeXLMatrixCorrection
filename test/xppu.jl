@@ -32,7 +32,7 @@ using Test
         stdCoating = carboncoating(11.0),
     )
 
-    m = NeXLMatrixCorrection.m(inner(cxr))
+    m = NeXLMatrixCorrection.m(XPP, inner(cxr))
 
     input_uvs = uvs(
         (MassFractionLabel(unknown, elm) => uv(unk_mat[elm], 0.01 * unk_mat[elm]) for elm in keys(unk_mat))...,

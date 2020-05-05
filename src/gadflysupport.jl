@@ -178,3 +178,6 @@ end
 
 Gadfly.plot(irs::AbstractArray{IterationResult}; known::Union{Material,Missing} = missing, delta::Bool = false) =
     plot([ir.comp for ir in irs], known = known, delta = delta, label = "Measurement")
+
+plot2(irs::AbstractVector{IterationResult}; known::Union{Material, Missing}=missing) =
+    NeXLCore.plot2([ir.comp for ir in irs], known=known, label="Measurement")
