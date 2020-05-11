@@ -57,7 +57,7 @@ M(::Type{XPP}, mat::Material) = #C1
 Mean ionization potential for the specified material in eV. (PAP1991 Eqn 6)
 """
 NeXLCore.J(::Type{XPP}, mat::Material) = #C1
-    exp(sum(NeXLCore.nonneg(mat, elm) * (z(elm) / a(elm, mat)) * log(J(elm)) for elm in keys(mat)) / M(XPP, mat))
+    exp(sum(NeXLCore.nonneg(mat, elm) * (z(elm) / a(elm, mat)) * log(J(Zeller1973, elm)) for elm in keys(mat)) / M(XPP, mat))
 
 
 # From PAP eqn 8
