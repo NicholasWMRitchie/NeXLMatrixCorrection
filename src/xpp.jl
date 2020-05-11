@@ -269,7 +269,7 @@ end
 
 The integral of the ϕ(ρz) exp(-χ ρz) from 0 to τ.
 """
-Fχp(χ, A, a, B, b, ϕ0, τ) =
+Fχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ) =
     (A * (1.0 - exp(-(τ * (a + χ))))) / (a + χ) +
     (A * (-1.0 + exp(-(τ * (b + χ))))) / (b + χ) +
     ((1 - exp(-(τ * (b + χ)))) * ϕ0) / (b + χ) +
