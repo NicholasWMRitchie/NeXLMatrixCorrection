@@ -1,0 +1,53 @@
+### Testing Matrix Correction Algorithms
+Testing matrix correction algorithms XPP and CitZAF against the Pouchou and Pichoir k-ratio database.
+
+```julia
+using CSV
+using DataFrames
+using NeXLMatrixCorrection
+
+function mapline(elm, index)
+  sss = Dict(0=>n"K1", 12=>n"L3", 72=>n"M5", 69=>n"M4")
+  ss=sss[index]
+  trs = tuple(filter(tr -> inner(tr) == ss, collect(alltransitions))...)
+  return [ brightest(characteristic(elm, trs)) ]
+end
+
+pap = CSV.read("C:\\Users\\nritchie\\.julia\\dev\\NeXLMatrixCorrection\\weave\\papkratios.csv", header=3, skipto=4) |> DataFrame
+xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
+for (i, r) in enumerate(eachrow(pap))
+  try
+    a, b = elements[r.A], elements[r.B]
+    e0, θ  = 1.0e3*r.E0, deg2rad(r.TOA)
+    std, unk = pure(a), material("Row $i",Dict(a=>r.WgtFracA, b=>1.0-r.WgtFracA))
+    kk, lines = r.kA, mapline(a, r.Line)
+    algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
+    push!(xppres, k(algs..., θ, θ)/kk)
+    algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
+    push!(czres, k(algs..., θ, θ)/kk)
+  catch
+    push!(xppres, missing)
+    push!(czres, missing)
+  end
+end
+insertcols!(pap, ncol(pap)+1, XPP=xppres)
+insertcols!(pap, ncol(pap)+1, CitZAF=czres)
+display(pap)
+```
+
+##### XPP
+Let's visualize this.
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+using Gadfly
+plot(pap, x=:XPP, y=:XPP, Stat.histogram(bincount=50), Geom.bar, Guide.title("XPP"))
+```
+
+##### CitZAF
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+plot(pap, x=:CitZAF, y=:CitZAF, Stat.histogram(bincount=50), Geom.bar, Guide.title("CitZAF"))
+```
+
+##### Summary Statistics
+```julia
+describe(pap[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
+```

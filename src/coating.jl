@@ -52,7 +52,7 @@ struct NullCoating <: CoatingCorrection
     NullCoating() = new()
 end
 
-coatingcorrection(::Type{Coating}, mss::Missing) = NullCoating()
+coatingcorrection(::Type{<:CoatingCorrection}, mss::Missing) = NullCoating()
 coatingcorrection(::Type{NullCoating}, film::Film) = NullCoating()
 coatingcorrection(::Type{NullCoating}, film::AbstractVector{Film}) = NullCoating()
 

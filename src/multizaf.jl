@@ -25,6 +25,69 @@ struct MultiZAF
 end
 
 """
+    zafcorrection(
+      mctype::Type{<:MatrixCorrection},
+      fctype::Type{<:FluorescenceCorrection},
+      cctype::Type{<:CoatingCorrection},
+      mat::Material,
+      cxrs,
+      e0,
+      coating=missing
+    )
+
+Constructs a MultiZAF around the mctype and fctype algorithms for a collection of CharXRay `cxrs`.
+"""
+function zafcorrection(
+    mctype::Type{<:MatrixCorrection},
+    fctype::Type{<:FluorescenceCorrection},
+    cctype::Type{<:CoatingCorrection},
+    mat::Material,
+    cxrs,
+    e0::AbstractFloat,
+    coating::Union{Film,AbstractVector{Film},Missing} = missing,
+)
+    mat = asnormalized(mat)
+    shells = union(filter(sh->energy(sh)<e0, inner.(cxrs)))
+    zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in shells)
+    return MultiZAF(cxrs, zafs)
+end
+
+"""
+    zafcorrection(
+      mctype::Type{<:MatrixCorrection},
+      fctype::Type{<:FluorescenceCorrection},
+      cctype::Type{<:CoatingCorrection},
+      unk::Material,
+      std::Material,
+      cxrs,
+      e0;
+      unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+      stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+    )
+
+Constructs a tuple of MultiZAF around the mctype and fctype correction algorithms for the unknown and standard for a
+collection of CharXRay `cxrs`.
+"""
+function zafcorrection(
+    mctype::Type{<:MatrixCorrection},
+    fctype::Type{<:FluorescenceCorrection},
+    cctype::Type{<:CoatingCorrection},
+    unk::Material,
+    std::Material,
+    cxrs,
+    e0::AbstractFloat;
+    unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+    stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+)
+    lines = filter(cxr->energy(inner(cxr))<e0, cxrs)
+    return (
+        zafcorrection(mctype, fctype, cctype, unk, lines, e0, unkCoating),
+        zafcorrection(mctype, fctype, cctype, std, lines, e0, stdCoating),
+    )
+end
+
+
+"""
     shells(mz::MultiZAF)
 
 A set of all sub-shells supported by this MultiZAF
