@@ -7,19 +7,18 @@ using DataFrames
 using NeXLMatrixCorrection
 
 function mapline(elm, index)
-  sss = Dict(0=>n"K1", 12=>n"L3", 72=>n"M5", 69=>n"M4")
-  ss=sss[index]
-  trs = tuple(filter(tr -> inner(tr) == ss, collect(alltransitions))...)
+  trss = Dict(0=>kalpha, 2=>kbeta, 12=>lalpha, 31=>lbeta, 72=>malpha, 69=>mbeta)
+  trs=trss[index]
   return [ brightest(characteristic(elm, trs)) ]
 end
 
 pap = CSV.read("C:\\Users\\nritchie\\.julia\\dev\\NeXLMatrixCorrection\\weave\\papkratios.csv", header=3, skipto=4) |> DataFrame
 xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
-for (i, r) in enumerate(eachrow(pap))
+for r in eachrow(pap)
   try
     a, b = elements[r.A], elements[r.B]
     e0, θ  = 1.0e3*r.E0, deg2rad(r.TOA)
-    std, unk = pure(a), material("Row $i",Dict(a=>r.WgtFracA, b=>1.0-r.WgtFracA))
+    std, unk = pure(a), material("Unknown",Dict(a=>r.WgtFracA, b=>1.0-r.WgtFracA))
     kk, lines = r.kA, mapline(a, r.Line)
     algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
     push!(xppres, k(algs..., θ, θ)/kk)

@@ -11,7 +11,7 @@ let start_dir = pwd()
 
     weave("coatingthickness.jmd", out_path=joinpath(outpath,"coatingthickness.html"))
     weave("example.jmd", out_path=joinpath(outpath,"example.html"))
-    weave("testingagainstpap.jmd", out_path=joinpath(outpath,"testingagainstpap.html"))
+    weave("testagainstpap.jmd", out_path=joinpath(outpath,"testagainstpap.html"))
 
     cd(start_dir)
 end
