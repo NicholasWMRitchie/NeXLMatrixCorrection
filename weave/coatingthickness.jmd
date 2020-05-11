@@ -83,6 +83,10 @@ k = value(findlabel(res, n"C K-L2"),res)
 ρz = massthickness(XPP, mat"SiO2", mat"C", n"C K-L2", sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
 print("The thickness is $(round(ρz*1.0e7/density(pure(n"C")); sigdigits=3)) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
 ```
+```julia
+ρz = massthickness(CitZAF, mat"SiO2", mat"C", n"C K-L2", sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
+print("The thickness is $(round(ρz*1.0e7/density(pure(n"C")); sigdigits=3)) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
+```
 
 Finally, we correct the measured k-ratios for Si and O to account for the carbon coating.
 ```julia

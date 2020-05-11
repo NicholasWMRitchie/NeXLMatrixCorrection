@@ -4,14 +4,14 @@ using DataFrames
 using PeriodicTable
 using Roots
 
-
 """
 `MatrixCorrection` is an abstract type for computing ϕ(ρz)-type matrix correction algorithms.  Subclasses should
 implement
 
-    F(mc::MatrixCorrection)
-    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
-    ϕ(mc::MatrixCorrection, ρz)
+    F(mc::MatrixCorrection) # Integral of the area under the ϕ(ρz)-curve
+    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real) # Integral of the transmitted area under the ϕ(ρz)-curve
+    Fχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real) # Area under 0 to τ under the transmitted ϕ(ρz)-curve
+    ϕ(mc::MatrixCorrection, ρz) # The ϕ(ρz)-curve
 
 From these methods, other methods like `Z(...)`, `A(...)` are implemented.
 """

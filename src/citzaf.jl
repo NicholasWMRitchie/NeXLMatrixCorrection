@@ -21,13 +21,11 @@ struct CitZAF <: MatrixCorrection
         end
         e0k, eck, u0 = 0.001 * e0, 0.001 * energy(ashell), e0 / energy(ashell)
         zbar =
-            mapreduce(elm -> value(mat[elm]) * z(elm) / a(elm, mat), +, keys(mat)) /
-            mapreduce(elm -> value(mat[elm]) / a(elm, mat), +, keys(mat))
-        abar =
-            mapreduce(elm -> value(mat[elm]), +, keys(mat)) /
-            mapreduce(elm -> value(mat[elm]) / a(elm, mat), +, keys(mat))
+            sum(value(mat[elm]) * z(elm) / a(elm, mat) for elm in keys(mat)) /
+            sum(value(mat[elm]) / a(elm, mat) for elm in keys(mat))
+        abar = sum(value(mat[elm]) for elm in keys(mat)) / sum(value(mat[elm]) / a(elm, mat) for elm in keys(mat))
         γ0 = (5π * u0) / ((u0 - 1.0) * log(u0)) * (log(u0) - 5.0 + 5.0 * u0^-0.2)
-        ηbar = mapreduce(elm -> mat[elm]*ηbarLS(z(elm), e0k), +, keys(mat))
+        ηbar = mapreduce(elm -> mat[elm] * ηbarLS(z(elm), e0k), +, keys(mat))
         ϕ0 = ϕ0L(u0, ηbar) # 1.0 + 2.8*(1.0 -  0.9/u0)*ηbar
         q = (γ0 - ϕ0) / γ0
         α = 2.97e5 * (zbar^1.05 / (abar * e0k^1.25)) * sqrt(log(1.166 * e0 / J(XPP, mat)) / (e0k - eck))
@@ -44,6 +42,13 @@ function Fχ(cz::CitZAF, xray::CharXRay, θtoa::Real)
     @assert inner(xray) == cz.subshell
     χm = χ(material(cz), xray, θtoa)
     return cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
+end
+
+function Fχp(cz::CitZAF, xray::CharXRay, θtoa::Real, τ::Real)
+    @assert inner(xray) == cz.subshell
+    χm = χ(material(cz), xray, θtoa)
+    return ((1.0 - exp(-τ * (cz.α + χm))) * cz.γ0) / (cz.α + χm) +
+           ((-1.0 + exp(-τ * (cz.α + cz.β + χm))) * cz.q * cz.γ0) / (cz.α + cz.β + χm)
 end
 
 matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::Float64) = CitZAF(mat, ashell, e0)
