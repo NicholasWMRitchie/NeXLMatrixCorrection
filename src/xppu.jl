@@ -54,7 +54,7 @@ end
 Base.show(io::IO, zb::ZbarbLabel) = print(io, "Zbarb[", zb.material, "]")
 
 function Ju(elm::Element, f = 0.01) #C1
-    j = NeXLMatrixCorrection.J(elm) # from xpp.jl (in eV)
+    j = NeXLMatrixCorrection.J(Zeller1973, elm) # from xpp.jl (in eV)
     return uv(j, f * j)
 end
 
