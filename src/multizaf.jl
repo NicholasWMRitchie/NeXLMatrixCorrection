@@ -43,7 +43,7 @@ function zafcorrection(
     cctype::Type{<:CoatingCorrection},
     mat::Material,
     cxrs,
-    e0::AbstractFloat,
+    e0::Real,
     coating::Union{Film,AbstractVector{Film},Missing} = missing,
 )
     mat = asnormalized(mat)
@@ -75,7 +75,7 @@ function zafcorrection(
     unk::Material,
     std::Material,
     cxrs,
-    e0::AbstractFloat;
+    e0::Real;
     unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
 )

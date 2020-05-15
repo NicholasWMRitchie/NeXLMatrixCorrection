@@ -170,7 +170,7 @@ end
       cctype::Type{<:CoatingCorrection},
       mat::Material,
       ashell::AtomicSubShell,
-      e0,
+      e0::Real,
       coating::Union{Film,AbstractVector{Film},Missing}
     )
 
@@ -183,7 +183,7 @@ function zafcorrection(
     cctype::Type{<:CoatingCorrection},
     mat::Material,
     ashell::AtomicSubShell,
-    e0::AbstractFloat,
+    e0::Real,
     coating::Union{Film,AbstractVector{Film},Missing},
 )
     norm = asnormalized(mat)  # Ensures convergence of the interation algorithms...
@@ -202,7 +202,7 @@ end
        unk::Material,
        std::Material,
        ashell::AtomicSubShell,
-       e0::AbstractFloat;
+       e0::Real;
        unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
        stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     )
@@ -217,7 +217,7 @@ function zafcorrection(
     unk::Material,
     std::Material,
     ashell::AtomicSubShell,
-    e0::AbstractFloat;
+    e0::Real;
     unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
 )
@@ -232,7 +232,7 @@ function NeXLUncertainties.asa( #
     ::Type{DataFrame},
     unk::Material,
     stds::Dict{Element,Material},
-    e0::AbstractFloat,
+    e0::Real,
     θunk::AbstractFloat,
     θstd::AbstractFloat;
     mctype::Type{<:MatrixCorrection} = XPP,

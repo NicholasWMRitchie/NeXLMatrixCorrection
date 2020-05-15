@@ -1,0 +1,145 @@
+### Comparing Matrix Correction Algorithms
+Nicholas W. M. Ritchie 15-May-2020
+
+Testing matrix correction algorithms XPP and CitZAF against the k-ratio database published by Heinrich in
+"X-Ray Spectroscopy in Electron Beam Instruments" (1995)
+
+Look to the end of the document for various interesting plots.
+
+```julia
+using CSV
+using DataFrames
+using NeXLMatrixCorrection
+
+heinrich = CSV.read("Heinrich1995kratios.csv", header=18, skipto=19) |> DataFrame
+xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
+trss = Dict(1=>kalpha, 2=>kbeta, 3=>lalpha, 4=>lbeta, 8=>malpha, 9=>mbeta)
+for r in eachrow(heinrich)
+  try
+    a, b = elements[r.Z1], elements[r.Z2]
+    e0, θ  = convert(Float64,r.E0), deg2rad(r.TOA)
+    std, unk = pure(a), material("Unknown",Dict(a=>r.C1, b=>1.0-r.C1))
+    kk, lines = r.Kexp, [ brightest(characteristic(a, trss[r.Line])), ]
+    algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
+    push!(xppres, k(algs..., θ, θ)/kk)
+    algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
+    push!(czres, k(algs..., θ, θ)/kk)
+  catch c
+    push!(xppres, missing)
+    push!(czres, missing)
+  end
+end
+insertcols!(heinrich, ncol(heinrich)+1, XPP=xppres)
+insertcols!(heinrich, ncol(heinrich)+1, CitZAF=czres)
+# Items 857 to 860 see to be in error.
+filter!(r->!(r.Item in 857:860), sort!(dropmissing!(heinrich),:XPP))
+# The columns XPP and CitZAF represent the measured k-ratio over the computed k-ratio for these algorithms.
+# Display the table sorted by XPP
+display(heinrich)
+```
+
+##### XPP
+Let's visualize this.
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+using Gadfly
+plotargs = (  Stat.histogram(bincount=50), Geom.bar,  Guide.xlabel("kMeas/kCalc"), Guide.ylabel("Count"), Coord.cartesian(xmin=0.0, xmax=2.0) )
+
+plot(heinrich, x=:XPP, plotargs..., Guide.title("XPP"))
+```
+
+##### CitZAF
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+plot(heinrich, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
+```
+
+##### Summary Statistics
+```julia
+describe(heinrich[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
+```
+
+##### Low Z Performance
+Let's look at the relative performance for low Z elements (z<8).  Sadly, there is no O data :-(
+```julia
+lowZ = filter(r->r.Z1<8, heinrich)
+describe(lowZ[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
+```
+
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+display(plot(lowZ, x=:CitZAF, plotargs..., Guide.title("CitZAF")))
+display(plot(lowZ, x=:XPP, plotargs..., Guide.title("XPP")))
+```
+Let's find out which are the "problem children".
+```julia
+display(sort!(filter(r->abs(1.0-r.XPP)>0.2, lowZ),:XPP))
+```
+
+##### Performance by Data Source
+Let's look at the relative performance by data source
+
+```julia
+vcat(map(org->describe(filter(r->r.Origin==org, heinrich)[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max), 1:11)...)
+```
+
+```julia; fig_width=10; fig_height=4; fig_ext=".svg";
+using Compose
+origins = Dict(
+  1 =>"Bastin’s measurements of borides",
+  2 => "Goldstein et al. measurements",
+  3 => "J. Colby and D. K. Conley’s measurements",
+  4 => "NBS 1 measurements",
+  5 => "Pouchou’s compilation",
+  6 => "Sewell et al. compilation",
+  7 => "Bastin Data Basis",
+  8 => "NBS 2 measurements",
+  9 => "P. F. Hlava’s (Sandia) measurements",
+  10 => "Schreiber’s measurements",
+  11 => "Bastin compilation" )
+set_default_graphic_size(10inch,6inch)
+for origin in 1:11
+    df = filter(r->r.Origin==origin, heinrich)
+    if nrow(df)>0
+      display(vstack(
+        compose(context(), text(0.5, 0.5, origins[origin], hcenter, vcenter), font("Arial"), fontsize(20pt)),
+        hstack(
+          plot(df, x=:XPP, plotargs..., Guide.title("XPP")),
+          plot(df, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
+          )))
+    end
+end
+```
+
+Let's look more closely at Paul's data as XPP shows an anomylous dual hump behavior while CitZAF doesn't.  Puzzling????
+```julia; fig_width=10; fig_height=4; fig_ext=".svg";
+hlava = filter(r->r.Origin==9, heinrich)
+weird = sort!(filter(r->r.XPP>1.05, hlava), :XPP)
+notweird = sort!(filter(r->r.XPP<=1.05, hlava), :XPP)
+hstack(
+  plot(weird, x=:XPP, plotargs..., Guide.title("Weird")),
+  plot(notweird, x=:XPP, plotargs..., Guide.title("Less So"))
+)
+```
+
+Compare with CitZAF
+```julia; fig_width=10; fig_height=4; fig_ext=".svg";
+hstack(
+  plot(weird, x=:CitZAF, plotargs..., Guide.title("Weird")),
+  plot(notweird, x=:CitZAF, plotargs..., Guide.title("Less So"))
+)
+```
+
+They are all z=41 (Nb) in z=92 (U) at moderate to high E0
+```julia
+display(weird)
+```
+They are either z=41 (Nb) in z=92 (U) at low E0 or U in Nb.  What is up with Nb in XPP????
+```julia
+display(notweird)
+```
+What about other U?
+```julia; fig_width=10; fig_height=4; fig_ext=".svg";
+uranium = filter(r->(r.Z1==92) ||( r.Z2==92), heinrich)
+hstack(
+  plot(uranium, x=:XPP, plotargs..., Guide.title("XPP")),
+  plot(uranium, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
+)
+```
