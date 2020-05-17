@@ -367,3 +367,8 @@ function NeXLUncertainties.asa(
     zafs = zafcorrection(zacorr, fcorr, ccorr, unk, std, flines, e0)
     asa(DataFrame, zafs..., toa, toa)
 end
+
+function aspure(c::Material, cxr::CharXRay, e0::Float64, toa::Float64)
+    zs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, pure(element(cxr)), [cxr], e0)
+    return k(zs..., toa, toa)
+end
