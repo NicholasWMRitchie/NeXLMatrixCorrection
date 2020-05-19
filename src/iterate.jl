@@ -373,7 +373,7 @@ end
 """
     quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
     quantify(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
-    quantify(ffr::FilterFitResult; strip::AbstractVector{Element} = Element[], mc::Type{<:MatrixCorrection} = XPP, fl::Type{<:FluorescenceCorrection} = ReedFluorescence, cc::Type{<:CoatingCorrection} = Coating)::IterationResult
+    quantify(ffr::FitResult; strip::AbstractVector{Element} = Element[], mc::Type{<:MatrixCorrection} = XPP, fl::Type{<:FluorescenceCorrection} = ReedFluorescence, cc::Type{<:CoatingCorrection} = Coating)::IterationResult
 
 Perform the iteration procedurer as described in `iter` using the `measured` k-ratios to produce the best
 estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the

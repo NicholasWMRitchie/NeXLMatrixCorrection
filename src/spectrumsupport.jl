@@ -1,11 +1,11 @@
 using .NeXLSpectrum
 """
-   quantify(ffr::FilterFitResult, strip::AbstractVector{Element} = [], mc::Type{<:MatrixCorrection} = XPP, fl::Type{<:FluorescenceCorrection} = ReedFluorescence)::IterationResult
+   quantify(ffr::FitResult, strip::AbstractVector{Element} = [], mc::Type{<:MatrixCorrection} = XPP, fl::Type{<:FluorescenceCorrection} = ReedFluorescence)::IterationResult
 
-Facilitates quantifying `FilterFitResult` objects from extracting k-ratios from measured spectra.
+Facilitates quantifying `FilterFitResult` or `BasicFitResult` objects from extracting k-ratios from measured spectra.
 """
 function quantify(
-    ffr::FilterFitResult;
+    ffr::FitResult;
     strip::AbstractVector{Element} = Element[],
     mc::Type{<:MatrixCorrection} = XPP,
     fl::Type{<:FluorescenceCorrection} = ReedFluorescence,
