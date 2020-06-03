@@ -45,10 +45,10 @@ using Gadfly  # To plot the fit residual
 Then read in the spectra - SiO₂ as the measured material, Si, Al₂O₃ and C as the references.
 ```julia; fig_width=10; fig_height=3; fig_ext=".svg";
 path="C:\\Users\\nritchie\\.julia\\dev\\NeXLMatrixCorrection\\weave"
-sio2=readEMSA("$path\\spectra\\SiO2_15keV.1.msa")
-si =readEMSA("$path\\spectra\\Si_15keV.1.msa")
-al2o3 = readEMSA("$path\\spectra\\Al2O3_15keV.1.msa")
-c = readEMSA("$path\\spectra\\C_15keV.1.msa")
+sio2=loadspectrum("$path\\spectra\\SiO2_15keV.1.msa")
+si =loadspectrum("$path\\spectra\\Si_15keV.1.msa")
+al2o3 = loadspectrum("$path\\spectra\\Al2O3_15keV.1.msa")
+c = loadspectrum("$path\\spectra\\C_15keV.1.msa")
 e0, toa = sameproperty([sio2,si,al2o3,c], :BeamEnergy), sameproperty([sio2,si,al2o3,c], :TakeOffAngle)
 plot(sio2, si, al2o3, c, klms=[n"Si", n"Al", n"O", n"C" ], xmax=3.0e3)
 ```

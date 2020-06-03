@@ -45,10 +45,10 @@ using Gadfly  # To plot the fit residual
 Then read in the spectra - SiO₂ as the measured material, Si, Al₂O₃ and C as the references.
 ```julia; fig_width=10; fig_height=3; fig_ext=".svg";
 path="C:\\Users\\nritchie\\Documents\\FY2020\\NIST K-ratio Project\\SRM-1872\\10 keV\\Standards"
-sio2=readEMSA("$path\\SiO2_StdC_10keV10nA130kHz5eV_300s.msa")
-si =readEMSA("$path\\Si_StdC_10kV10nA130kHz_96kHz18DT_100s.msa")
-al2o3 = readEMSA("$path\\Al2O3_StdC_10kV10nA130kHz_300s.msa")
-c = readEMSA("$path\\C_StdC_10kV10nA130kHz_53kHz10DT_100s.msa")
+sio2=loadspectrum("$path\\SiO2_StdC_10keV10nA130kHz5eV_300s.msa")
+si =loadspectrum("$path\\Si_StdC_10kV10nA130kHz_96kHz18DT_100s.msa")
+al2o3 = loadspectrum("$path\\Al2O3_StdC_10kV10nA130kHz_300s.msa")
+c = loadspectrum("$path\\C_StdC_10kV10nA130kHz_53kHz10DT_100s.msa")
 plot(sio2, si, al2o3, c, klms=[n"Si", n"Al", n"O", n"C" ], xmax=3.0e3)
 ```
 
