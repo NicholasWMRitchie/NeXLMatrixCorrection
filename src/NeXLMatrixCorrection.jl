@@ -16,6 +16,8 @@ export ϕabs # ϕ(ρz) function (absorbed)
 export F  # Generated intensity function
 export Fχ # Absorbed intensity function
 export matrixcorrection # Factory method for MatrixCorrection algorithms (XPP and NullCorrection)
+export continuumcorrection # Factory method for creating matrix correction algorithms for continuum correction
+export correctcontinuum # The method to calculate the continuum correction
 
 # Abstract class for a base fluorescence correction
 include("fluorescencecorrection.jl")
@@ -53,11 +55,11 @@ export aspure # The k-ratio for this X-ray relative to a pure element (use with 
 
 # Implements Pouchou & Pichoir's XPP  ϕ(ρz) model
 include("xpp.jl")
-export XPP # XPP structure
+export XPP # <: MatrixCorrection
 export xpp # Build an XPP correction
 
 include("citzaf.jl")
-export CitZAF
+export CitZAF # <: MatrixCorrection
 
 # Implements Pouchou & Pichoir's XPP  ϕ(ρz) model with full uncertainty calculation
 include("xppu.jl")

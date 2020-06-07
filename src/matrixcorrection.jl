@@ -27,6 +27,7 @@ beamEnergy(mc::MatrixCorrection) = mc.E0
 Angle adjusted mass absorption coefficient.
 """
 χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) = mac(mat, xray) * csc(θtoa)
+χ(mat::Material, ea::Float64, θtoa::AbstractFloat) = mac(mat, ea) * csc(θtoa)
 
 """
     ϕabs(mc::MatrixCorection, ρz, xray::CharXRay, θtoa::AbstractFloat)
@@ -72,7 +73,7 @@ function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
 end
 
-
+correctcontinuum(mc::MatrixCorrection, ea::Float64, θtoa::Real) = Fχ(mc, ea, θtoa) / F(mc)
 
 """
     kcoating(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, τ::Real)
