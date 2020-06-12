@@ -61,6 +61,9 @@ export xpp # Build an XPP correction
 include("citzaf.jl")
 export CitZAF # <: MatrixCorrection
 
+include("riveros.jl")
+export Riveros1993 # <: MatrixCorrection
+
 # Implements Pouchou & Pichoir's XPP  ϕ(ρz) model with full uncertainty calculation
 include("xppu.jl")
 export JzLabel

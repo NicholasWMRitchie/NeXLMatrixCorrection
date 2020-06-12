@@ -1,5 +1,5 @@
 ### Comparing Matrix Correction Algorithms
-Nicholas W. M. Ritchie 15-May-2020
+Nicholas W. M. Ritchie 15-May-2020 Added Riveros 12-Jun-2020
 
 Testing matrix correction algorithms XPP and CitZAF against the k-ratio database published by Heinrich in
 "X-Ray Spectroscopy in Electron Beam Instruments" (1995)
@@ -12,25 +12,39 @@ using DataFrames
 using NeXLMatrixCorrection
 
 heinrich = CSV.read("Heinrich1995kratios.csv", header=18, skipto=19) |> DataFrame
-xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
-trss = Dict(1=>kalpha, 2=>kbeta, 3=>lalpha, 4=>lbeta, 8=>malpha, 9=>mbeta)
+trss = Dict("Kα"=>kalpha, "Kβ"=>kbeta, "Lα"=>lalpha, "Lβ"=>lbeta, "Mα"=>malpha, "Mβ"=>mbeta)
+trsnames = Dict(1=>"Kα", 2=>"Kβ", 3=>"Lα", 4=>"Lβ", 8=>"Mα", 9=>"Mβ")
+heinrich.Z1 = map(z->elements[z].symbol, heinrich.Z1)
+heinrich.Z2 = map(z->elements[z].symbol, heinrich.Z2)
+heinrich.Line = map(l->trsnames[l], heinrich.Line)
+xppres, czres, rivres = Union{Float64,Missing}[], Union{Float64,Missing}[], Union{Float64,Missing}[]
 for r in eachrow(heinrich)
-  try
-    a, b = elements[r.Z1], elements[r.Z2]
+    a, b = parse(Element,r.Z1), parse(Element,r.Z2)
     e0, θ  = convert(Float64,r.E0), deg2rad(r.TOA)
     std, unk = pure(a), material("Unknown",Dict(a=>r.C1, b=>1.0-r.C1))
     kk, lines = r.Kexp, [ brightest(characteristic(a, trss[r.Line])), ]
-    algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
-    push!(xppres, k(algs..., θ, θ)/kk)
-    algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
-    push!(czres, k(algs..., θ, θ)/kk)
-  catch c
-    push!(xppres, missing)
-    push!(czres, missing)
-  end
+    try
+      algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      push!(xppres, k(algs..., θ, θ)/kk)
+    catch c
+      push!(xppres, missing)
+    end
+    try
+      algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      push!(czres, k(algs..., θ, θ)/kk)
+    catch c
+      push!(czres, missing)
+    end
+    try
+      algs = zafcorrection(Riveros1993, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      push!(rivres, k(algs..., θ, θ)/kk)
+    catch c
+      push!(rivres, missing)
+    end
 end
 insertcols!(heinrich, ncol(heinrich)+1, XPP=xppres)
 insertcols!(heinrich, ncol(heinrich)+1, CitZAF=czres)
+insertcols!(heinrich, ncol(heinrich)+1, Riveros=rivres)
 # Items 857 to 860 see to be in error.
 filter!(r->!(r.Item in 857:860), sort!(dropmissing!(heinrich),:XPP))
 # The columns XPP and CitZAF represent the measured k-ratio over the computed k-ratio for these algorithms.
@@ -52,6 +66,12 @@ plot(heinrich, x=:XPP, plotargs..., Guide.title("XPP"))
 plot(heinrich, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
 ```
 
+
+##### Riveros
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+plot(heinrich, x=:Riveros, plotargs..., Guide.title("Riveros"))
+```
+
 ##### Summary Statistics
 ```julia
 describe(heinrich[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
@@ -60,13 +80,14 @@ describe(heinrich[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
 ##### Low Z Performance
 Let's look at the relative performance for low Z elements (z<8).  Sadly, there is no O data :-(
 ```julia
-lowZ = filter(r->r.Z1<8, heinrich)
+lowZ = filter(r->z(parse(Element,r.Z1))<8, heinrich)
 describe(lowZ[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
 ```
 
 ```julia; fig_width=8; fig_height=4; fig_ext=".svg";
 display(plot(lowZ, x=:CitZAF, plotargs..., Guide.title("CitZAF")))
 display(plot(lowZ, x=:XPP, plotargs..., Guide.title("XPP")))
+display(plot(lowZ, x=:Riveros, plotargs..., Guide.title("Riveros")))
 ```
 Let's find out which are the "problem children".
 ```julia
@@ -102,7 +123,8 @@ for origin in 1:11
         compose(context(), text(0.5, 0.5, origins[origin], hcenter, vcenter), font("Arial"), fontsize(20pt)),
         hstack(
           plot(df, x=:XPP, plotargs..., Guide.title("XPP")),
-          plot(df, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
+          plot(df, x=:CitZAF, plotargs..., Guide.title("CitZAF")),
+          plot(df, x=:Riveros, plotargs..., Guide.title("Riveros"))
           )))
     end
 end
@@ -127,6 +149,15 @@ hstack(
 )
 ```
 
+Compare with Riveros
+```julia; fig_width=10; fig_height=4; fig_ext=".svg";
+hstack(
+  plot(weird, x=:Riveros, plotargs..., Guide.title("Weird")),
+  plot(notweird, x=:Riveros, plotargs..., Guide.title("Less So"))
+)
+```
+
+
 They are all z=41 (Nb) in z=92 (U) at moderate to high E0
 ```julia
 display(weird)
@@ -137,9 +168,16 @@ display(notweird)
 ```
 What about other U?
 ```julia; fig_width=10; fig_height=4; fig_ext=".svg";
-uranium = filter(r->(r.Z1==92) ||( r.Z2==92), heinrich)
+uranium = filter(r->(r.Z1=="U") || (r.Z2=="U"), heinrich)
 hstack(
   plot(uranium, x=:XPP, plotargs..., Guide.title("XPP")),
-  plot(uranium, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
+  plot(uranium, x=:CitZAF, plotargs..., Guide.title("CitZAF")),
+  plot(uranium, x=:Riveros, plotargs..., Guide.title("Riveros"))
 )
+```
+
+Which rows are zero (close to zero) for the Riveros model?
+```julia
+zr= filter(r->r.Riveros<0.01, heinrich)
+display(select(zr, Not([:XPP, :CitZAF, :Origin])))
 ```
