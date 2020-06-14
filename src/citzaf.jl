@@ -41,20 +41,20 @@ end
 
 F(cz::CitZAF) = ((cz.α - cz.q * cz.α + cz.β) * cz.γ0) / (cz.α * (cz.α + cz.β))
 
-function Fχ(cz::CitZAF, ea::Float64, θtoa::Real)
+function Fχ(cz::CitZAF, θtoa::Float64)
     @assert isnothing(cz.subshell)  "Use only for continuum correction"
-    χm = χ(material(cz), ea, θtoa)
+    χm = χ(material(cz), cz.Ea, θtoa)
     return cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
 end
 
-function Fχ(cz::CitZAF, xray::CharXRay, θtoa::Real)
+function Fχ(cz::CitZAF, xray::CharXRay, θtoa::Float64)
     @assert !isnothing(cz.subshell) "Use only for characteristic correction"
     @assert inner(xray) == cz.subshell
     χm = χ(material(cz), xray, θtoa)
     return cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
 end
 
-function Fχp(cz::CitZAF, xray::CharXRay, θtoa::Real, τ::Real)
+function Fχp(cz::CitZAF, xray::CharXRay, θtoa::Float64, τ::Float64)
     @assert isnothing(cz.subshell) || (inner(xray) == cz.subshell)
     χm = χ(material(cz), xray, θtoa)
     return ((1.0 - exp(-τ * (cz.α + χm))) * cz.γ0) / (cz.α + χm) +

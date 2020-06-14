@@ -73,7 +73,7 @@ function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
 end
 
-correctcontinuum(mc::MatrixCorrection, ea::Float64, θtoa::Real) = Fχ(mc, ea, θtoa) / F(mc)
+correctcontinuum(mc::MatrixCorrection, θtoa::Real) = Fχ(mc, θtoa) / F(mc)
 
 """
     kcoating(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, τ::Real)

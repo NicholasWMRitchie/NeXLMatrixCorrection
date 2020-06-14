@@ -74,14 +74,14 @@ plot(heinrich, x=:Riveros, plotargs..., Guide.title("Riveros"))
 
 ##### Summary Statistics
 ```julia
-describe(heinrich[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
+describe(heinrich[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)
 ```
 
 ##### Low Z Performance
 Let's look at the relative performance for low Z elements (z<8).  Sadly, there is no O data :-(
 ```julia
 lowZ = filter(r->z(parse(Element,r.Z1))<8, heinrich)
-describe(lowZ[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
+describe(lowZ[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)
 ```
 
 ```julia; fig_width=8; fig_height=4; fig_ext=".svg";

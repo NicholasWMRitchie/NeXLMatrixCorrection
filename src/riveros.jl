@@ -44,35 +44,42 @@ end
 
 ϕ(rv::Riveros1993, ρz) = exp(-(rv.α*ρz)^2)*(rv.γ - (rv.γ-rv.ϕ0)*exp(-rv.β*ρz))
 
-F(rv::Riveros1993) = (sqrt(π)*(rv.γ - exp(rv.β^2/(4.0*rv.α^2))*(rv.γ - rv.ϕ0)*erfc(rv.β/(2.0*rv.α))))/(2.0*rv.α)
-
-function Fχ(rv::Riveros1993, ea::Float64, θtoa::Real)
-    @assert isnothing(rv.subshell)  "Use only for continuum correction"
-    χm = χ(material(rv), ea, θtoa)
-    @assert rv.α > 0.0
-    return (sqrt(π)*(exp(χm^2/(4.0*rv.α^2))*rv.γ*rv.α*(1.0 - erf(χm/(2.0*rv.α))) -
-           exp((rv.β + χm)^2/(4.0*rv.α^2))*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf((rv.β + χm)/(2.0*rv.α)))))/(2.0*rv.α^2)
+function F(rv::Riveros1993)
+    gg = rv.β/(2.0*rv.α)
+    return gg < 22.3 ? (sqrt(π)*(rv.γ - exp(gg^2)*(rv.γ - rv.ϕ0)*erfc(gg)))/(2.0*rv.α) : 1.0
 end
 
-function Fχ(rv::Riveros1993, xray::CharXRay, θtoa::Real)
+function Fχ(rv::Riveros1993, θtoa::Float64)
+    @assert isnothing(rv.subshell)  "Use only for continuum correction"
+    χm = χ(material(rv), rv.Ea, θtoa)
+    ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
+    return gg < 22.3 ? (sqrt(π)*(exp(ff^2)*rv.γ*rv.α*(1.0 - erf(ff)) -
+            exp(gg^2)*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf(gg))))/(2.0*rv.α^2) :
+            0.0
+end
+
+function Fχ(rv::Riveros1993, xray::CharXRay, θtoa::Float64)
     @assert !isnothing(rv.subshell) "Use only for characteristic correction"
     @assert inner(xray) == rv.subshell
     χm = χ(material(rv), xray, θtoa)
-    return (sqrt(π)*(exp(χm^2/(4.0*rv.α^2))*rv.γ*rv.α*(1.0 - erf(χm/(2.0*rv.α))) -
-           exp((rv.β + χm)^2/(4.0*rv.α^2))*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf((rv.β + χm)/(2.0*rv.α)))))/(2.0*rv.α^2)
+    ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
+    return gg < 22.3 ? (sqrt(π)*(exp(ff^2)*rv.γ*rv.α*(1.0 - erf(ff)) -
+           exp(gg^2)*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf(gg))))/(2.0*rv.α^2) :
+           0.0
 end
 
-function Fχp(rv::Riveros1993, xray::CharXRay, θtoa::Real, τ::Real)
+function Fχp(rv::Riveros1993, xray::CharXRay, θtoa::Float64, τ::Float64)
     @assert isnothing(rv.subshell) || (inner(xray) == rv.subshell)
     χm = χ(material(rv), xray, θtoa)
     @assert rv.α > 0.0 && χm > 0.0
-    return (sqrt(π)*rv.α*(exp(χm^2/(4.0*rv.α^2))*rv.γ*
-            (-((χm*erf(χm/(2.0*rv.α)))/χm) +
+    ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
+    return gg < 22.3 ? (sqrt(π)*rv.α*(exp(ff^2)*rv.γ*
+            (-((χm*erf(ff^2))/χm) +
             ((2*rv.α^2*τ + χm)*erf((2.0*rv.α^2*τ + χm)/(2.0*rv.α)))/ (2*rv.α^2*τ + χm)) -
-           exp((rv.β + χm)^2/(4.0*rv.α^2))*rv.γ*
-            (-(((rv.β + χm)*erf(abs(rv.β + χm)/(2.0*rv.α)))/abs(rv.β + χm)) +
+           exp(gg^2)*rv.γ*
+            (-(((rv.β + χm)*erf(gg))/abs(rv.β + χm)) +
               ((rv.β + 2.0*rv.α^2*τ + χm)*erf(abs(rv.β + 2*rv.α^2*τ + χm))/(2.0*rv.α))/
-               abs(rv.β + 2.0*rv.α^2*τ + χm))))/(2.0*rv.α^2)
+               abs(rv.β + 2.0*rv.α^2*τ + χm))))/(2.0*rv.α^2) : 0.0
 end
 
 matrixcorrection(::Type{Riveros1993}, mat::Material, ashell::AtomicSubShell, e0::Float64) = Riveros1993(mat, ashell, energy(ashell), e0)
