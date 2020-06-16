@@ -101,6 +101,9 @@ export IterationResult # The output from quantify(...)
 
 export quantify # Perform the iteration on KRatio(s) or FilterFitResult
 
+include("helpers.jl")
+export zaf # Generates a table of ZAF correction factors
+
 function __init__()
     @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")
     @require NeXLSpectrum = "6c578565-ca7f-4012-afc4-b8412d85af92" include("spectrumsupport.jl")

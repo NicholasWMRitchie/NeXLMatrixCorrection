@@ -70,6 +70,17 @@ Computes the combined correction for atomic number, absorption, secondary fluore
 ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
     ZA(unk, std, cxr, θunk, θstd) * F(unk, std, cxr, θunk, θstd) * coating(unk, std, cxr, θunk, θstd)
 
+
+"""
+    k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+
+The computed k-ratio for the unknown relative to standard.
+"""
+function k(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+    elm = element(cxr)
+    return (nonneg(material(unk), elm) / nonneg(material(std), elm)) * ZAFc(unk, std, cxr, θunk, θstd)
+end
+
 beamEnergy(zaf::ZAFCorrection) = beamEnergy(zaf.za)
 
 Base.show(io::IO, cc::ZAFCorrection) = print(io, "ZAF[", cc.za, ", ", cc.f, ", ", cc.coating, "]")
