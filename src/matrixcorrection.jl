@@ -114,7 +114,7 @@ function massthickness(
 )
     submc, coatingmc = matrixcorrection(ty, substrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
     f(τ) = k - Fχp(submc, cxr, toa, τ) / Fχ(coatingmc, cxr, toa)
-    return find_zero(f, 0.01 * range(ty, substrate, e0), Roots.Order1()) / coating[element(cxr)]
+    return find_zero(f, 0.01 * range(ty, substrate, e0, false), Roots.Order1()) / coating[element(cxr)]
 end
 
 

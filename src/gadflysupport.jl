@@ -37,7 +37,7 @@ end
 
 function Gadfly.plot(tmc::Type{<:MatrixCorrection}, mat::Material, shells::Vector{AtomicSubShell}, beamEnergy::Float64)
     zz, sh, prz = Float64[], String[], Float64[]
-    r = range(tmc, mat, beamEnergy)
+    r = range(tmc, mat, beamEnergy, false)
     for shell in shells
         mc = matrixcorrection(tmc, mat, shell, beamEnergy)
         for z in range(0.0, stop = r, length = 100)
@@ -67,7 +67,7 @@ function Gadfly.plot(
     takeOffAngle,
 )
     zz, sh, prz, lsty = Float64[], String[], Float64[], Int[]
-    r = range(tmc, mat, beamEnergy)
+    r = range(tmc, mat, beamEnergy, false)
     for cxr in cxrs
         shell = inner(cxr)
         mc = matrixcorrection(tmc, mat, shell, beamEnergy)
@@ -106,7 +106,7 @@ function Gadfly.plot(
     takeOffAngle,
 )
     zz, sh, prz, lsty = Float64[], String[], Float64[], Int[]
-    r = range(tmcs[1], mat, beamEnergy)
+    r = range(tmcs[1], mat, beamEnergy, false)
     shell = inner(cxr)
     for z in range(0.0, stop = r, length = 100)
         for tmc in tmcs

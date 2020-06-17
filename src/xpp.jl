@@ -317,13 +317,14 @@ Computes the ϕ(ρz) curve according to the XPP algorithm.
 
 
 """
-    range(mat::MaterialLabel, e0)
+    range(::Type{XPP}, mat::MaterialLabel, e0, inclDensity=true)
+    range(ty::Type{<:BetheEnergyLoss}, mat::Material, e0::Float64, inclDensity=true; emin=50.0, mip::Type{<:NeXLMeanIonizationPotential}=Berger1982)
 
-Total trajectory (range) of an electron with initial energy e0 (eV). (in cm/(g/cm^3))
+Total trajectory (range) of an electron with initial energy e0 (eV). (Units: inclDensity ? cm : cm/(g/cm³))
 """
-function Base.range(::Type{XPP}, mat::Material, e0::Real)
+function Base.range(::Type{XPP}, mat::Material, e0::Real, inclDensity=true)
     j = 0.001 * J(XPP, mat) # XPP expects in keV
-    return R0(XPP, j, D(XPP, j), P(XPP, j), M(XPP, mat), 0.001 * e0)
+    return R0(XPP, j, D(XPP, j), P(XPP, j), M(XPP, mat), 0.001 * e0) / (inclDensity ? density(mat) : 0.0)
 end
 
 """

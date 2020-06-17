@@ -65,6 +65,6 @@ matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::Floa
 
 continuumcorrection(::Type{CitZAF}, mat::Material, ea::Float64, e0::Float64) = CitZAF(mat, nothing, ea, e0)
 
-Base.range(::Type{CitZAF}, mat::Material, e0::Float64) = range(XPP, mat, e0)
+Base.range(::Type{CitZAF}, mat::Material, e0::Float64, inclDensity=true) = range(XPP, mat, e0, inclDensity)
 
 NeXLCore.minproperties(::Type{CitZAF}) = (:BeamEnergy, :TakeOffAngle)

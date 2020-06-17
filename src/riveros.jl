@@ -86,6 +86,6 @@ matrixcorrection(::Type{Riveros1993}, mat::Material, ashell::AtomicSubShell, e0:
 
 continuumcorrection(::Type{Riveros1993}, mat::Material, ea::Float64, e0::Float64) = Riveros1993(mat, nothing, ea, e0)
 
-Base.range(::Type{Riveros1993}, mat::Material, e0::Float64) = range(XPP, mat, e0)
+Base.range(::Type{Riveros1993}, mat::Material, e0::Float64, inclDensity=true) = range(XPP, mat, e0, inclDensity)
 
 NeXLCore.minproperties(::Type{Riveros1993}) = (:BeamEnergy, :TakeOffAngle)
