@@ -13,7 +13,7 @@ function zaf(
     coatz(mat) = get(coatings,name(mat),missing)
     @assert toa>=0.0 && toa <= π/2 "The take-off angle is out-of-range [0, π/2]"
     @assert e0 > 1.0e3 "The beam energy less than 1 keV."
-    res = DataFrame(Material=Material[], Standard=Material[], XRay=CharXRay[], E0=Float64[], Z=Float64[], A=Float64[], #
+    res = DataFrame(Material=String[], Standard=String[], Line=CharXRay[], E₀=Float64[], Z=Float64[], A=Float64[], #
                     F=Float64[], c=Float64[], ZAFc=Float64[], k=Float64[])
     for elm in keys(mat)
         cxrs = characteristic(elm, alltransitions, 0.01, e0)
@@ -22,7 +22,7 @@ function zaf(
             zaf = zafcorrection(mc, fc, Coating, mat, std, sh, e0, unkCoating=coatz(mat), stdCoating=coatz(std))
             for cxr in cxrs
                 row = [
-                    mat, std, cxr, e0, #
+                    mat.name, std.name, cxr, e0, #
                     Z(zaf...),
                     A(zaf..., cxr, toa, toa),
                     F(zaf..., cxr, toa, toa),
