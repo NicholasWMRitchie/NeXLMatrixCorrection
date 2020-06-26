@@ -42,7 +42,7 @@ using Test
         NeXLMatrixCorrection.mLabel(inner(cxr)) => uv(m, 0.01 * m),
     )
 
-    maintain = MaintainLabels([NeXLMatrixCorrection.mLabel], input_uvs)
+    maintain = MaintainInputs([NeXLMatrixCorrection.mLabel], input_uvs)
     mjz = StepMJZbarb(unknown, [n"O", n"Mg", n"Si", n"Ti", n"Zn", n"Zr", n"Ba"]) | maintain
 
     mjz_res = mjz(input_uvs)
@@ -102,7 +102,7 @@ using Test
     # println("MC Result")
     # print(dpt_mcres)
 
-    retain = MaintainLabels([NeXLMatrixCorrection.E0keVLabel, NeXLMatrixCorrection.ZbarbLabel], dpt_res)
+    retain = MaintainInputs([NeXLMatrixCorrection.E0keVLabel, NeXLMatrixCorrection.ZbarbLabel], dpt_res)
 
     qla = StepQlaOoS(unknown, inner(cxr)) | retain
     qla_res = qla(dpt_res)
@@ -128,7 +128,7 @@ using Test
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.WbarLabel(unknown)]), 0.000667, atol = 0.00001)
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.qLabel(unknown)]), 0.00595, atol = 0.0001)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [
             NeXLMatrixCorrection.E0keVLabel,
             NeXLMatrixCorrection.ZbarbLabel,
@@ -154,7 +154,7 @@ using Test
     @test isapprox(σ(rp_res[NeXLMatrixCorrection.RLabel(unknown, inner(cxr))]), 0.00146, atol = 0.001)
     @test isapprox(σ(rp_res[NeXLMatrixCorrection.ϕ0Label(unknown, inner(cxr))]), 0.00643, atol = 0.0001)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [NeXLMatrixCorrection.ZbarbLabel, NeXLMatrixCorrection.ϕ0Label, NeXLMatrixCorrection.E0keVLabel],
         rp_res,
     )
@@ -177,7 +177,7 @@ using Test
     @test isapprox(value(frbar_res[NeXLMatrixCorrection.FLabel(unknown, inner(cxr))]), zaf[1].za.F, rtol = 1.0e-7)
 
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [NeXLMatrixCorrection.ϕ0Label, NeXLMatrixCorrection.RbarLabel, NeXLMatrixCorrection.FLabel],
         frbar_res,
     )
@@ -191,7 +191,7 @@ using Test
     @test isapprox(σ(pb_res[NeXLMatrixCorrection.PLabel(unknown, inner(cxr))]), 2.85e2, atol = 0.4e2)
     @test isapprox(σ(pb_res[NeXLMatrixCorrection.bLabel(unknown, inner(cxr))]), 1.25e2, atol = 0.2e2)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [
             NeXLMatrixCorrection.ϕ0Label,
             NeXLMatrixCorrection.FLabel,
@@ -211,7 +211,7 @@ using Test
     @test isapprox(σ(aϵ_res[NeXLMatrixCorrection.aLabel(unknown, inner(cxr))]), 100, atol = 10)
     @test isapprox(σ(aϵ_res[NeXLMatrixCorrection.ϵLabel(unknown, inner(cxr))]), 0.0013, atol = 0.0001)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [
             NeXLMatrixCorrection.bLabel,
             NeXLMatrixCorrection.ϕ0Label,
@@ -242,7 +242,7 @@ using Test
 
     ABχ_res = cat(AB_res, χdata)
 
-    maintain = MaintainLabels([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
+    maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
     χFr = NeXLMatrixCorrection.StepχFr(unknown, cxr) | maintain
     χFr_res = χFr(ABχ_res)
     χFr_model = χFr ∘ AB_model
@@ -261,7 +261,7 @@ using Test
 
     Frc_input = cat(χFr_res, coatingData)
 
-    maintain = MaintainLabels([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], Frc_input)
+    maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], Frc_input)
     Frc = NeXLMatrixCorrection.StepFrc(unknown, coatU, cxr) | maintain
     Frcu_res = Frc(Frc_input)
     Frc_model = Frc
@@ -280,7 +280,7 @@ using Test
         NeXLMatrixCorrection.mLabel(inner(cxr)) => uv(m, 0.01 * m),
     )
 
-    maintain = MaintainLabels([NeXLMatrixCorrection.mLabel], input_uvs)
+    maintain = MaintainInputs([NeXLMatrixCorrection.mLabel], input_uvs)
     mjz = StepMJZbarb(standard, [n"O", n"Si"]) | maintain
 
     mjz_res = mjz(input_uvs)
@@ -301,7 +301,7 @@ using Test
     # println("MC Result")
     # print(dpt_mcres)
 
-    retain = MaintainLabels([NeXLMatrixCorrection.E0keVLabel, NeXLMatrixCorrection.ZbarbLabel], dpt_res)
+    retain = MaintainInputs([NeXLMatrixCorrection.E0keVLabel, NeXLMatrixCorrection.ZbarbLabel], dpt_res)
     qla = StepQlaOoS(standard, inner(cxr)) | retain
     qla_res = qla(dpt_res)
     qla_model = qla ∘ dpt ∘ mjz
@@ -312,7 +312,7 @@ using Test
     #println("MC Result")
     #print(qla_mcres)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [
             NeXLMatrixCorrection.E0keVLabel,
             NeXLMatrixCorrection.ZbarbLabel,
@@ -331,7 +331,7 @@ using Test
     #println("MC Result")
     #print(rp_mcres)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [NeXLMatrixCorrection.ZbarbLabel, NeXLMatrixCorrection.ϕ0Label, NeXLMatrixCorrection.E0keVLabel],
         rp_res,
     )
@@ -345,7 +345,7 @@ using Test
     #println("MC Result")
     #print(frbar_mcres)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [NeXLMatrixCorrection.ϕ0Label, NeXLMatrixCorrection.RbarLabel, NeXLMatrixCorrection.FLabel],
         frbar_res,
     )
@@ -354,7 +354,7 @@ using Test
     pb_model = pb ∘ frbar_model
     pb_mcres = mcpropagate(pb_model, input_uvs, 1000, parallel = false, rng = rgen)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [
             NeXLMatrixCorrection.ϕ0Label,
             NeXLMatrixCorrection.FLabel,
@@ -368,7 +368,7 @@ using Test
     aϵ_model = aϵ ∘ pb_model
     aϵ_mcres = mcpropagate(aϵ_model, input_uvs, 1000, parallel = false, rng = rgen)
 
-    maintain = MaintainLabels(
+    maintain = MaintainInputs(
         [
             NeXLMatrixCorrection.bLabel,
             NeXLMatrixCorrection.ϕ0Label,
@@ -390,7 +390,7 @@ using Test
 
     ABχ_res = cat(AB_res, χdata)
 
-    maintain = MaintainLabels([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
+    maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
     χFr = NeXLMatrixCorrection.StepχFr(standard, cxr) | maintain
     χFr_res = χFr(ABχ_res)
     χFr_model = χFr ∘ AB_model
@@ -403,7 +403,7 @@ using Test
     )
     Frc_input = cat(χFr_res, coatingData)
 
-    maintain = MaintainLabels([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], Frc_input)
+    maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], Frc_input)
     Frc = NeXLMatrixCorrection.StepFrc(standard, coatS, cxr) | maintain
     Frcs_res = Frc(Frc_input)
     Frc_model = Frc

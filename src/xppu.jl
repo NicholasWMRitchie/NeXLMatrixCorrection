@@ -753,24 +753,24 @@ function NeXLUncertainties.compute(st::StepZA, inputs::LabeledValues, withJac::B
     return (vals, jac)
 end
 
-mjz(sample, elms, all) = StepMJZbarb(sample, elms) | MaintainLabels(mLabel(sample))
+mjz(sample, elms, all) = StepMJZbarb(sample, elms) | MaintainInputs(mLabel(sample))
 dpt(sample, all) = StepDPT(sample, inner(cxr)) | allinp
-qla(sample, all) = StepQlaOoS(sample, inner(cxr)) | MaintainLabels([E0keVLabel(sample), ZbarbLabel(sample)])
+qla(sample, all) = StepQlaOoS(sample, inner(cxr)) | MaintainInputs([E0keVLabel(sample), ZbarbLabel(sample)])
 rp(sample, shell, all) =
     StepRPhi0(sample, shell) |
-    MaintainLabels([E0keVLabel(sample), ZbarbLabel(sample), OoSLabel(sample, shell), QlaLabel(sample, shell)], all)
+    MaintainInputs([E0keVLabel(sample), ZbarbLabel(sample), OoSLabel(sample, shell), QlaLabel(sample, shell)], all)
 frbar(sample, shell, all) =
     StepFRBar(sample, inner(cxr)) |
-    MaintainLabels([ZbarbLabel(sample), ϕ0Label(sample, shell), E0keVLabel(sample)], all)
+    MaintainInputs([ZbarbLabel(sample), ϕ0Label(sample, shell), E0keVLabel(sample)], all)
 pb(sample, shell, all) =
     StepPb(sample, shell) |
-    MaintainLabels([ϕ0Label(sample, shell), RbarLabel(sample, shell), FLabel(sample, shell)], all)
+    MaintainInputs([ϕ0Label(sample, shell), RbarLabel(sample, shell), FLabel(sample, shell)], all)
 aϵ(sample, shell, all) =
     Stepaϵ(sample, shell) |
-    MaintainLabels([ϕ0Label(sample, shell), FLabel(sample, shell), PLabel(sample, shell), bLabel(sample, shell)], all)
+    MaintainInputs([ϕ0Label(sample, shell), FLabel(sample, shell), PLabel(sample, shell), bLabel(sample, shell)], all)
 AB(sample, shell, all) =
     NeXLMatrixCorrection.StepAB(unknown, inner(cxr)) |
-    MaintainLabels([bLabel(sample, shell), ϕ0Label(sample, shell), ϵLabel(sample, shell), FLabel(sample, shell)], all)
+    MaintainInputs([bLabel(sample, shell), ϕ0Label(sample, shell), ϵLabel(sample, shell), FLabel(sample, shell)], all)
 
 """
     steps1(sample, elms, shell, all)
@@ -783,7 +783,7 @@ steps1(sample, elms, shell, all = false) =
 
 
 χFr(sample, shell, all) =
-    NeXLMatrixCorrection.StepχFr(sample, shell) | MaintainLabels([θLabel(sample), FLabel(sample, shell)], all)
+    NeXLMatrixCorrection.StepχFr(sample, shell) | MaintainInputs([θLabel(sample), FLabel(sample, shell)], all)
 
 """
     steps2(sample, shell, all)
@@ -792,14 +792,14 @@ steps2 requires as data μoρLabel, dzLabel in an UncertainValues
 """
 steps2(sample, shell, all = false) = χFr(sample, shell, all)
 
-Frc(sample, xray, coating, all) = StepFrc(sample, coating, xray) | MaintainLabels([FLabel(sample, inner(xray))], all)
+Frc(sample, xray, coating, all) = StepFrc(sample, coating, xray) | MaintainInputs([FLabel(sample, inner(xray))], all)
 
 """
     steps3(sample, xray, layer, all)
 
 steps3 requires as data tcLabel, μoρLabel for the coating in an UncertainValues
 """
-steps3(sample, xray, layer, all = false) = Frc(sample, xray, layer) | MaintainLabels(FLabel(sample, inner(xray)), all)
+steps3(sample, xray, layer, all = false) = Frc(sample, xray, layer) | MaintainInputs(FLabel(sample, inner(xray)), all)
 
 
 
