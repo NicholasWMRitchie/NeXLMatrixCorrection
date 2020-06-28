@@ -267,17 +267,18 @@ source(ir::IterationResult)::Label = ir.label
 function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::Bool = true)
     elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], Label[]
     g, z, a, f = Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[]
-    c, gzafc, stds, dmfs = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[]
+    c, gzafc, stds, dmfs, lines = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[], String[]
     for elm in keys(ir.comp)
         push!(labels, ir.label)
         push!(elms, elm.symbol)
         rc = round(ir.comp[elm])
         push!(mfs, value(rc))
         push!(dmfs, σ(rc))
-        added = false
+        added = false  # computed element
         for kr in ir.kratios
             if elm == kr.element
                 push!(ks, value(kr.kratio))
+                push!(lines, repr(kr.lines))
                 if withZAF
                     zafs = _ZAF(ir.iterate, kr.standard, kr.stdProps, kr.lines)
                     zafu = _ZAF(ir.iterate, ir.comp, kr.unkProps, kr.lines)
@@ -298,7 +299,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         end
         if !added
             push!(ks, missing), push!(cks, missing), push!(stds, missing), push!(c, missing), push!(z, missing),
-            push!(a, missing), push!(f, missing), push!(g, missing), push!(gzafc, missing)
+            push!(a, missing), push!(f, missing), push!(g, missing), push!(gzafc, missing), push!(lines, missing)
         end
     end
     return withZAF ?
@@ -306,6 +307,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         :Label => labels,
         :Element => elms,
         :Standard => stds,
+        :Lines => lines,
         #:Converged => [ir.converged for elm in keys(ir.comp)],
         #:Iterations => [ir.iterations for elm in keys(ir.comp)],
         Symbol("Mass Frac.") => mfs,
@@ -333,10 +335,10 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
 end
 
 NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; withZAF::Bool = true)::DataFrame =
-    mapreduce(ir->asa(DataFrame,ir,withZAF=withZAF), vcat, irs)
+    asa(DataFrame, map(ir->ir.comp,irs))
 
 DataFrames.describe(irs::AbstractVector{IterationResult}) =
-    describe(asa(DataFrame, collect(map(ir->ir.comp, irs)))[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
+    describe(asa(DataFrame, irs)[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
 
 Base.show(io::IO, itres::IterationResult) = print(
     io,

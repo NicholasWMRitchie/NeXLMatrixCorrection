@@ -11,7 +11,7 @@ function quantify(
     fl::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
 )::IterationResult
-    iter = Iteration(mc, fl, cc, updater = NeXLMatrixCorrection.WegsteinUpdateRule())
+    iter = Iteration(mc, fl, cc, updater = WegsteinUpdateRule())
     krs = filter(kr -> !(element(kr) in strip), kratios(ffr))
     skro = SimpleKRatioOptimizer(1.5)
     return quantify(iter, ffr.label, optimizeks(skro, krs))

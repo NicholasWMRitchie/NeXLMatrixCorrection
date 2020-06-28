@@ -260,4 +260,22 @@ Base.isapprox(v1::Real, uv2::UncertainValue; atol::Real=0.0) =
         @test evaluate(randomize(mat, 0.5), stds, 26.0e3, 40)
         @test evaluate(randomize(mat, 0.5), stds, 30.0e3, 40)
     end
+    @testset "K309 test" begin
+        # From a measurement
+        props = Dict(:BeamEnergy=>15.0e3, :TakeOffAngle=>deg2rad(40.0))
+        fe = KRatio(characteristic(n"Fe",kalpha),props,props,mat"Fe",UncertainValue(0.08884060796139037,0.000363897))
+        al = KRatio(characteristic(n"Al",ktransitions),props,props,mat"Al2O3",UncertainValue(0.12212761167159845,0.000257044))
+        si = KRatio(characteristic(n"Si",ktransitions),props,props,mat"Si",UncertainValue(0.13931565459523768,0.000175283))
+        ba = KRatio(characteristic(n"Ba",ltransitions),props,props,mat"BaF2",UncertainValue(0.14026640286207112,0.000494559))
+        o = KRatio(characteristic(n"O",ktransitions),props,props,mat"Al2O3",UncertainValue(0.636480599484999,0.000823425))
+        ca = KRatio(characteristic(n"Ca",ktransitions),props,props,mat"CaF2",UncertainValue(0.20597043348028954,0.000417253))
+        res = quantify(nl"K309", [al,ba,ca,fe,o,si])
+        @test isapprox(res.comp[n"Fe"],0.1038,atol=0.0001) # 0.1036 in DTSA-II
+        @test isapprox(res.comp[n"Al"],0.0756,atol=0.0001) # 0.0756
+        @test isapprox(res.comp[n"Si"],0.1829,atol=0.0001) # 0.1823
+        @test isapprox(res.comp[n"Ba"],0.1410,atol=0.0001) # 0.1402
+        @test isapprox(res.comp[n"O"],0.3885,atol=0.0001)  # 0.3899
+        @test isapprox(res.comp[n"Ca"],0.1060,atol=0.0001) # 0.1036
+        @test isapprox(analyticaltotal(res.comp),0.997797,atol=0.000001) # 0.9986
+    end
 end
