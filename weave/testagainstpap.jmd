@@ -12,7 +12,7 @@ function mapline(elm, index)
   return [ brightest(characteristic(elm, trs)) ]
 end
 
-pap = CSV.read("papkratios.csv", header=3, skipto=4) |> DataFrame
+pap = DataFrame!(CSV.File("papkratios.csv", header=3, skipto=4))
 xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
 for r in eachrow(pap)
   try
