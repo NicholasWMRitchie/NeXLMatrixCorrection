@@ -324,7 +324,7 @@ Total trajectory (range) of an electron with initial energy e0 (eV). (Units: inc
 """
 function Base.range(::Type{XPP}, mat::Material, e0::Real, inclDensity=true)
     j = 0.001 * J(XPP, mat) # XPP expects in keV
-    return R0(XPP, j, D(XPP, j), P(XPP, j), M(XPP, mat), 0.001 * e0) / (inclDensity ? density(mat) : 0.0)
+    return R0(XPP, j, D(XPP, j), P(XPP, j), M(XPP, mat), 0.001 * e0) / (inclDensity ? density(mat) : 1.0)
 end
 
 """
