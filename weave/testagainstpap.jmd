@@ -29,8 +29,8 @@ for r in eachrow(pap)
     push!(czres, missing)
   end
 end
-insertcols!(pap, ncol(pap)+1, XPP=xppres)
-insertcols!(pap, ncol(pap)+1, CitZAF=czres)
+insertcols!(pap, ncol(pap)+1, :XPP=>xppres)
+insertcols!(pap, ncol(pap)+1, :CitZAF=>czres)
 display(pap)
 ```
 

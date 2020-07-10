@@ -11,7 +11,7 @@ using CSV
 using DataFrames
 using NeXLMatrixCorrection
 
-heinrich =DataFrame!(CSV.File("Heinrich1995kratios.csv", header=18, skipto=19))
+heinrich =DataFrame!(CSV.File(joinpath(@__DIR__,"Heinrich1995kratios.csv"), header=18, skipto=19))
 trss = Dict("Kα"=>kalpha, "Kβ"=>kbeta, "Lα"=>lalpha, "Lβ"=>lbeta, "Mα"=>malpha, "Mβ"=>mbeta)
 trsnames = Dict(1=>"Kα", 2=>"Kβ", 3=>"Lα", 4=>"Lβ", 8=>"Mα", 9=>"Mβ")
 heinrich.Z1 = map(z->elements[z].symbol, heinrich.Z1)
@@ -27,26 +27,33 @@ for r in eachrow(heinrich)
       algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
       push!(xppres, k(algs..., θ, θ)/kk)
     catch c
+      @show c
       push!(xppres, missing)
     end
     try
       algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
       push!(czres, k(algs..., θ, θ)/kk)
     catch c
+      @show c
       push!(czres, missing)
     end
     try
       algs = zafcorrection(Riveros1993, ReedFluorescence, NullCoating, unk, std, lines, e0)
       push!(rivres, k(algs..., θ, θ)/kk)
     catch c
+      @show c
       push!(rivres, missing)
     end
 end
-insertcols!(heinrich, ncol(heinrich)+1, XPP=xppres)
-insertcols!(heinrich, ncol(heinrich)+1, CitZAF=czres)
-insertcols!(heinrich, ncol(heinrich)+1, Riveros=rivres)
+insertcols!(heinrich, ncol(heinrich)+1, :XPP=>xppres)
+insertcols!(heinrich, ncol(heinrich)+1, :CitZAF=>czres)
+insertcols!(heinrich, ncol(heinrich)+1, :Riveros=>rivres)
+#display(show(dropmissing!(heinrich)))
+```
+
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
 # Items 857 to 860 see to be in error.
-filter!(r->!(r.Item in 857:860), sort!(dropmissing!(heinrich),:XPP))
+filter!(r->!(r.Item in 857:860), sort!(heinrich,:XPP))
 # The columns XPP and CitZAF represent the measured k-ratio over the computed k-ratio for these algorithms.
 # Display the table sorted by XPP
 display(heinrich)

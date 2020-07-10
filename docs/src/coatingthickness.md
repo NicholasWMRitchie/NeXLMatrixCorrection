@@ -35,15 +35,19 @@ for the thickness that produces the measured k-ratio.
 ##### The Calculation
 
 First, load 'NeXLSpectrum' to read and fit the spectra and 'NeXLMatrixCorrection' for k-ratio related calculations.
-```julia
+````julia
 using NeXLSpectrum
 using NeXLMatrixCorrection
 using DataFrames # To tabulate the k-ratios
 using Gadfly  # To plot the fit residual
-```
+````
+
+
+
+
 
 Then read in the spectra - SiO₂ as the measured material, Si, Al₂O₃ and C as the references.
-```julia; fig_width=10; fig_height=3; fig_ext=".svg";
+````julia
 path=joinpath(@__DIR__, "spectra")
 sio2=loadspectrum(joinpath(path,"SiO2_StdC_15kV7p5nA130kHz_300s.msa"))
 si =loadspectrum(joinpath(path,"Si_StdC_15kV7p5nA130kHz_132kHz24DT_100s.msa"))
@@ -51,47 +55,141 @@ al2o3 = loadspectrum(joinpath(path,"Al2O3_StdC_15kV7p5nA130kHz_300s.msa"))
 c = loadspectrum(joinpath(path,"C_StdC_15kV7p5nA130kHz_48kHz9DT_100s.msa"))
 e0, toa = sameproperty([sio2,si,al2o3,c], :BeamEnergy), sameproperty([sio2,si,al2o3,c], :TakeOffAngle)
 plot(sio2, si, al2o3, c, klms=[n"Si", n"Al", n"O", n"C" ], xmax=2.5e3)
-```
+````
+
+
+![](figures/coatingthickness_2_1.svg)
+
+
 
 Build a detector model with details from the spectrum and an estimate of the resolution and low-level discriminator
 channel.
-```julia
+````julia
 det = BasicEDS(length(sio2), energy(1, sio2), channelwidth(1, sio2), 128.0, 120)
 filt = buildfilter(det)
-```
+````
+
+
+````
+NeXLSpectrum.VariableWidthFilter[NeXLSpectrum.BasicEDS(4096, E[ch] = -482.8
+3378 + 5.003319999999974⋅ch, 128.0 eV @ Mn K-L3, 120, Dict{Shell,Element}(S
+hell[M] => Element(Barium),Shell[N] => Element(Plutonium),Shell[K] => Eleme
+nt(Beryllium),Shell[L] => Element(Scandium)))]
+````
+
+
+
+
 
 Create fitting filters for each element we require from the references.
-```julia
+````julia
 refdata = (
   ( al2o3, n"O", mat"Al2O3" ),
   ( si, n"Si", mat"Si" ),
   ( c, n"C", mat"C" ),
 )
 frs = mapreduce(ref->filterreference(filt, ref...), append!, refdata)
-```
+````
+
+
+````
+3-element Array{NeXLSpectrum.FilteredReference,1}:
+ Reference[O K-L3 + 1 other]
+ Reference[Si K-L3 + 2 others]
+ Reference[C K-L2]
+````
+
+
+
+
 
 Now with the fitting filters and the measured SiO₂ spectrum we can perform the fit of Si, O and C to SiO₂.
-```julia; fig_width=10; fig_height=3; fig_ext=".svg";
+````julia
 res = fit(sio2, filt, frs)
 display(plot(res))
+````
+
+
+![](figures/coatingthickness_5_1.svg)
+
+````julia
 NeXLUncertainties.asa(DataFrame, kratios(res))
-```
+````
+
+
+````
+3×12 DataFrame. Omitted printing of 6 columns
+│ Row │ Element │ Z     │ Lines              │ E0unk   │ E0std   │ θunk    
+ │
+│     │ String  │ Int64 │ Array{CharXRay,1}  │ Float64 │ Float64 │ Float64 
+ │
+├─────┼─────────┼───────┼────────────────────┼─────────┼─────────┼─────────
+─┤
+│ 1   │ O       │ 8     │ O K-L3 + 1 other   │ 15000.0 │ 15000.0 │ 0.698132
+ │
+│ 2   │ C       │ 6     │ C K-L2             │ 15000.0 │ 15000.0 │ 0.698132
+ │
+│ 3   │ Si      │ 14    │ Si K-L3 + 2 others │ 15000.0 │ 15000.0 │ 0.698132
+ │
+````
+
+
+
+
 
 From the k-ratios, we can determine the mass-thickness of the carbon layer on the SiO₂ sample.
-```julia
+````julia
 k = value(findlabel(res, n"C K-L2"),res)
 ρz = massthickness(XPP, mat"SiO2", mat"C", n"C K-L2", sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
 print("The thickness is $(round(ρz*1.0e7/density(pure(n"C")); sigdigits=3)) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
-```
-```julia
+````
+
+
+````
+The thickness is 24.4 nm.
+````
+
+
+
+````julia
 ρz = massthickness(CitZAF, mat"SiO2", mat"C", n"C K-L2", sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
 print("The thickness is $(round(ρz*1.0e7/density(pure(n"C")); sigdigits=3)) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
-```
+````
+
+
+````
+The thickness is 17.1 nm.
+````
+
+
+
+
 
 Finally, we correct the measured k-ratios for Si and O to account for the carbon coating.
-```julia
+````julia
 krs = NeXLMatrixCorrection.correctkratios(kratios(res), mat"C", ρz)
 NeXLUncertainties.asa(DataFrame, krs)
-```
+````
+
+
+````
+3×12 DataFrame. Omitted printing of 6 columns
+│ Row │ Element │ Z     │ Lines              │ E0unk   │ E0std   │ θunk    
+ │
+│     │ String  │ Int64 │ Array{CharXRay,1}  │ Float64 │ Float64 │ Float64 
+ │
+├─────┼─────────┼───────┼────────────────────┼─────────┼─────────┼─────────
+─┤
+│ 1   │ O       │ 8     │ O K-L3 + 1 other   │ 15000.0 │ 15000.0 │ 0.698132
+ │
+│ 2   │ C       │ 6     │ C K-L2             │ 15000.0 │ 15000.0 │ 0.698132
+ │
+│ 3   │ Si      │ 14    │ Si K-L3 + 2 others │ 15000.0 │ 15000.0 │ 0.698132
+ │
+````
+
+
+
+
 
 Usually, the coating compensation is handled in the matrix correction algorithm through providing coating data.

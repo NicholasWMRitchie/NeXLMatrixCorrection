@@ -3,16 +3,16 @@ using NeXLMatrixCorrection
 
 let start_dir = pwd()
     cd(@__DIR__)
-    outpath = normpath(joinpath(@__DIR__, "..", "docs", "build"))
+    outpath = normpath(joinpath(@__DIR__, "..", "docs", "src"))
     @show outpath
     if !isdirpath(outpath)
         mkpath(outpath)
     end
 
-    weave("coatingthickness.jmd", out_path=joinpath(outpath,"coatingthickness.html"))
-    weave("example.jmd", out_path=joinpath(outpath,"example.html"))
-    weave("testagainstpap.jmd", out_path=joinpath(outpath,"testagainstpap.html"))
-    weave("testagainstheinrich.jmd", out_path=joinpath(outpath,"testagainstheinrich.html"))
+    weave("example.jmd", out_path=joinpath(outpath,"example.md"), doctype="github")
+    weave("coatingthickness.jmd", out_path=joinpath(outpath,"coatingthickness.md"), doctype="github")
+    weave("testagainstpap.jmd", out_path=joinpath(outpath,"testagainstpap.md"), doctype="github")
+    weave("testagainstheinrich.jmd", out_path=joinpath(outpath,"testagainstheinrich.md"), doctype="github")
 
     cd(start_dir)
 end
