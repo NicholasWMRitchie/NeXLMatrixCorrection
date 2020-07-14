@@ -1,4 +1,14 @@
-# NeXLMatrixCorrection
+# ![](NeXL_sm.png)MatrixCorrection
+| **Documentation**                        | **Build Status**                  |
+|:----------------------------------------:|:---------------------------------:|
+| [![][docs-stable-img]][docs-stable-url]  | [![][travis-img]][travis-url]     |
+
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://pages.nist.gov/NeXLMatrixCorrection.jl
+[travis-img]: https://travis-ci.com/usnistgov/NeXLMatrixCorrection.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/usnistgov/NeXLMatrixCorrection.jl
+
 
 The matrix correction package in the NeXL microanalysis library for Julia.  `NeXLMatrixCorrection` depends upon
 `NeXLUncertainties` and `NeXLCore`.
