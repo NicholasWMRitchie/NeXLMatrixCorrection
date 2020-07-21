@@ -394,7 +394,10 @@ using Test
     χFr = NeXLMatrixCorrection.StepχFr(standard, cxr) | maintain
     χFr_res = χFr(ABχ_res)
     χFr_model = χFr ∘ AB_model
-    χFr_mcres = mcpropagate(χFr, cat(AB_res, χdata), 1000, parallel = false, rng = rgen)
+    input = cat(AB_res, χdata)
+    display(input)
+    println()
+    χFr_mcres = mcpropagate(χFr, input, 1000, parallel = false, rng = rgen)
 
     coatS = "11 nm C"
     coatingData = uvs( #

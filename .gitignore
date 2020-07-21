@@ -6,3 +6,7 @@
 Manifest.toml
 /weave/*.html
 /weave/jl_*
+/docs/src/coatingthickness.md
+/docs/src/example.md
+/docs/src/testingagainstheinrich.md
+/docs/src/testingagainstpap.md
