@@ -36,6 +36,7 @@ quantify(iter::Iteration, sampleName::String, measured::Vector{KRatio})
 and
 ```julia
 quantify(ffr::FilterFitResult,...)
+```
 to simplify usage.
 
 
@@ -62,6 +63,8 @@ KRatio(
   0.324 # The k-ratio
 )
 ```
+
+# Structure and Method Documentation
 
 ```@autodocs
 Modules = [NeXLMatrixCorrection]
