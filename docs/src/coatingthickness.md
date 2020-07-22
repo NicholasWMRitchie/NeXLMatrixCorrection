@@ -58,7 +58,11 @@ plot(sio2, si, al2o3, c, klms=[n"Si", n"Al", n"O", n"C" ], xmax=2.5e3)
 ````
 
 
-![](figures/coatingthickness_2_1.svg)
+````
+Error: AssertionError: eltype(palette[1:length(specs)]) == Colorant
+````
+
+
 
 
 
@@ -73,8 +77,8 @@ filt = buildfilter(det)
 ````
 NeXLSpectrum.VariableWidthFilter[NeXLSpectrum.BasicEDS(4096, E[ch] = -482.8
 3378 + 5.003319999999974⋅ch, 128.0 eV @ Mn K-L3, 120, Dict{Shell,Element}(S
-hell[M] => Element(Barium),Shell[N] => Element(Plutonium),Shell[K] => Eleme
-nt(Beryllium),Shell[L] => Element(Scandium)))]
+hell[M] => Element(Barium),Shell[N] => Element(Plutonium),Shell[L] => Eleme
+nt(Scandium),Shell[K] => Element(Beryllium)))]
 ````
 
 

@@ -2,7 +2,6 @@ using NeXLCore
 using NeXLMatrixCorrection
 using Random
 using Test
-using LinearAlgebra
 
 @testset "XPPU" begin
     rgen = MersenneTwister(0xBADF00D)
