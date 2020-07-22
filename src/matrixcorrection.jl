@@ -5,25 +5,79 @@ using PeriodicTable
 using Roots
 
 """
-`MatrixCorrection` is an abstract type for computing ϕ(ρz)-type matrix correction algorithms.  Subclasses should
-implement
+`MatrixCorrection` is an abstract type for computing ϕ(ρz)-type matrix correction algorithms.  A sub-class
+`MCA <: MatrixCorrection` should implement
 
-    F(mc::MatrixCorrection) # Integral of the area under the ϕ(ρz)-curve
-    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real) # Integral of the transmitted area under the ϕ(ρz)-curve
-    Fχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real) # Area under 0 to τ under the transmitted ϕ(ρz)-curve
-    ϕ(mc::MatrixCorrection, ρz) # The ϕ(ρz)-curve
+    # Integral of the area under the ϕ(ρz)-curve
+    F(mc::MCA)
+    # Integral of the transmitted area under the ϕ(ρz)-curve
+    Fχ(mc::MCA, xray::CharXRay, θtoa::Real)
+    # Area under 0 to τ under the transmitted ϕ(ρz)-curve
+    Fχp(mc::MCA, xray::CharXRay, θtoa::Real, τ::Real)
+    # The ϕ(ρz)-curve
+    ϕ(mc::MCA, ρz)
+    # A factory method from MCA
+    matrixcorrection(::Type{MCA}, mat::Material, ashell::AtomicSubShell, e0)::MCA
+
+The algorithm should precompute as much as possible based on the `Material`, `AtomicSubShell` and beam
+energy.  The class `MCA` should define member variables `subshell::AtomicSubShell`, `material::Material` and
+`E0::AbstractFloat` to store the input values. See `XPP` for an example.
 
 From these methods, other methods like `Z(...)`, `A(...)` are implemented.
 """
 abstract type MatrixCorrection end
 
+"""
+    F(mc::MatrixCorrection)
 
+Integral of the ϕ(ρz)-curve from ρz = 0 to ∞.
+"""
+F(mc::MatrixCorrection) = error("$mc does not implement F(mc::$mc)")
+"""
+    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
+
+Integral of the area under the absorption corrected ϕ(ρz)-curve from ρz = 0 to ∞.
+"""
+Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)  = error("$mc does not implement F(mc::$mc, xray::CharXRay, θtoa::Real)")
+
+"""
+    Fχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)
+
+The partial integral of the absorption corrected ϕ(ρz) curve from ρz = 0 to τ #
+"""
+Fχp(mc::MatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)  = error("$mc does not implement Fχp(mc::$mc, xray::CharXRay, θtoa::Real, τ::Real)")
+
+"""
+    ϕ(mc::MatrixCorrection, ρz)
+
+The ϕ(ρz)-curve for visualization and other purposes.
+"""
+ϕ(mc::MatrixCorrection, ρz)  = error("$mc does not implement ϕ(mc::$mc, ρz)")
+
+"""
+    NeXLCore.atomicsubshell(mc::MatrixCorrection)
+
+The sub-shell for which this `MatrixCorrection` has been calculated.
+"""
 NeXLCore.atomicsubshell(mc::MatrixCorrection) = mc.subshell
+
+"""
+    NeXLCore.material(mc::MatrixCorrection) = mc.material
+
+The material for which this `MatrixCorrection` has been calculated.
+"""
 NeXLCore.material(mc::MatrixCorrection) = mc.material
+
+"""
+    beamEnergy(mc::MatrixCorrection) = mc.E0
+
+The beam energy (eV) for which this `MatrixCorrection` has been calculated.
+"""
 beamEnergy(mc::MatrixCorrection) = mc.E0
 
 """
     χ(mat::Material, xray::CharXRay, θtoa)
+
 Angle adjusted mass absorption coefficient.
 """
 χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) = mac(mat, xray) * csc(θtoa)
@@ -45,7 +99,7 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
       θstd::AbstractFloat
     )
 
-The atomic number and absorption correction factors.
+The atomic number (Z) and absorption (A) correction factors.
 """
 function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
@@ -55,6 +109,7 @@ end
 
 """
     Z(unk::MatrixCorrection, std::MatrixCorrection)
+
 The atomic number correction factor.
 """
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
@@ -65,6 +120,7 @@ end
 
 """
     A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
+
 The absorption correction factors.
 """
 function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
