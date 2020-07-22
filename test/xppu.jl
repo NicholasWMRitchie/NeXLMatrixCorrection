@@ -2,6 +2,7 @@ using NeXLCore
 using NeXLMatrixCorrection
 using Random
 using Test
+using LinearAlgebra
 
 @testset "XPPU" begin
     rgen = MersenneTwister(0xBADF00D)
@@ -245,8 +246,10 @@ using Test
     maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
     χFr = NeXLMatrixCorrection.StepχFr(unknown, cxr) | maintain
     χFr_res = χFr(ABχ_res)
-    # χFr_model = χFr ∘ AB_model
-    # χFr_mcres = mcpropagate(χFr, ABχ_res, 1000, parallel=false, rng=rgen)
+    #using DataFrames, CSV
+    #CSV.write("c:\\Users\\nritchie\\Desktop\\ABχ_res[1].csv",asa(DataFrame,ABχ_res))
+    #χFr_model = χFr ∘ AB_model
+    #χFr_mcres = mcpropagate(χFr, ABχ_res, 1000, parallel=false, rng=rgen)
 
     @test isapprox(value(χFr_res[NeXLMatrixCorrection.χLabel(unknown, cxr)]), 9.04e3, atol = 0.01e3)
     @test isapprox(value(χFr_res[NeXLMatrixCorrection.FrLabel(unknown, cxr)]), 2.85e-4, atol = 0.1e-4)
@@ -393,7 +396,8 @@ using Test
     maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
     χFr = NeXLMatrixCorrection.StepχFr(standard, cxr) | maintain
     χFr_res = χFr(ABχ_res)
-    χFr_mcres = mcpropagate(χFr, ABχ_res, 1000, parallel = false, rng = rgen)
+    #@test isposdef(ABχ_res)
+    #χFr_mcres = mcpropagate(χFr, ABχ_res, 1000, parallel = false, rng = rgen)
 
     coatS = "11 nm C"
     coatingData = uvs( #
