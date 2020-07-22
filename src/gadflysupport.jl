@@ -137,7 +137,7 @@ function Gadfly.plot(
     )
 end
 
-function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material)
+function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material; palette=NeXLPalette)
     mfs, kok, dkok, color = String[], Float64[], Float64[], Color[]
     next = 1
     matcolors = Dict{String,RGB{Float64}}()
@@ -156,7 +156,7 @@ function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material)
             push!(dkok, σ(kr.kratio) / kc)
             matname = "$(name(unkComp)) $(kr.unkProps[:BeamEnergy]/1000.0) keV"
             if !haskey(matcolors, matname)
-                matcolors[matname] = NeXLPalette[next]
+                matcolors[matname] = palette[next]
                 next += 1
             end
             push!(color, matcolors[matname])

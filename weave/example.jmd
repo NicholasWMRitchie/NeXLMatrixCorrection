@@ -31,5 +31,3 @@ Now take a slightly different perspective that focuses more on iteration related
 ```julia
 asa(DataFrame, res, withZAF=false)
 ```
-
-Nicholas W. M. Ritchie, 30-Apr-2020

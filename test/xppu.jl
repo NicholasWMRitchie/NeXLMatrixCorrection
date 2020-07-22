@@ -245,7 +245,7 @@ using Test
     maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
     χFr = NeXLMatrixCorrection.StepχFr(unknown, cxr) | maintain
     χFr_res = χFr(ABχ_res)
-    χFr_model = χFr ∘ AB_model
+    # χFr_model = χFr ∘ AB_model
     # χFr_mcres = mcpropagate(χFr, ABχ_res, 1000, parallel=false, rng=rgen)
 
     @test isapprox(value(χFr_res[NeXLMatrixCorrection.χLabel(unknown, cxr)]), 9.04e3, atol = 0.01e3)
@@ -393,8 +393,7 @@ using Test
     maintain = MaintainInputs([NeXLMatrixCorrection.θLabel, NeXLMatrixCorrection.FLabel], ABχ_res)
     χFr = NeXLMatrixCorrection.StepχFr(standard, cxr) | maintain
     χFr_res = χFr(ABχ_res)
-    χFr_model = χFr ∘ AB_model
-    χFr_mcres = mcpropagate(χFr, cat(AB_res, χdata), 1000, parallel = false, rng = rgen)
+    χFr_mcres = mcpropagate(χFr, ABχ_res, 1000, parallel = false, rng = rgen)
 
     coatS = "11 nm C"
     coatingData = uvs( #
