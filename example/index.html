@@ -20,32 +20,39 @@ krs = [
  k[BaCl, Ba L3-M5] = 0.44779 ± 0.002</code></pre><h5 id="Perform-the-Iteration"><a class="docs-heading-anchor" href="#Perform-the-Iteration">Perform the Iteration</a><a id="Perform-the-Iteration-1"></a><a class="docs-heading-anchor-permalink" href="#Perform-the-Iteration" title="Permalink"></a></h5><pre><code class="language-julia"># Now perform the iteration on the k-ratios
 res = quantify(lbl, krs)
 # Tabulate the results...
-asa(DataFrame, res, withZAF=true)</code></pre><pre><code class="language-none">4×14 DataFrame. Omitted printing of 8 columns
+asa(DataFrame, res, withZAF=true)</code></pre><pre><code class="language-none">4×14 DataFrame. Omitted printing of 1 columns
 │ Row │ Label │ Element │ Standard │ Lines    │ Mass Frac. │ Δ[Mass Frac.] 
-│
+│ k[Meas]  │ Δk[Meas] │ Generation │ Z        │ A        │ F        │ Coati
+ng  │
 │     │ Label │ String  │ String   │ String   │ Float64    │ Float64       
-│
+│ Float64? │ Float64? │ Float64?   │ Float64? │ Float64? │ Float64? │ Float
+64? │
 ├─────┼───────┼─────────┼──────────┼──────────┼────────────┼───────────────
-┤
+┼──────────┼──────────┼────────────┼──────────┼──────────┼──────────┼──────
+────┤
 │ 1   │ K458  │ Si      │ SiO2     │ Si K-L3  │ 0.23133    │ 0.00063       
-│
+│ 0.441263 │ 0.0012   │ 1.0        │ 1.16228  │ 0.767812 │ 1.00007  │ 0.999
+057 │
 │ 2   │ K458  │ Ba      │ BaCl     │ Ba L3-M5 │ 0.4218     │ 0.0019        
-│
+│ 0.447794 │ 0.002    │ 1.0        │ 0.816548 │ 1.03873  │ 0.994896 │ 0.999
+944 │
 │ 3   │ K458  │ O       │ SiO2     │ O K-L3   │ 0.32701    │ 0.00044       
-│
+│ 0.746227 │ 0.001    │ 1.0        │ 1.15781  │ 1.07826  │ 0.999621 │ 0.973
+821 │
 │ 4   │ K458  │ Zn      │ Zn       │ Zn K-L3  │ 0.030727   │ 0.00022       
-│</code></pre><p>Now take a slightly different perspective that focuses more on iteration related data.</p><pre><code class="language-julia">asa(DataFrame, res, withZAF=false)</code></pre><pre><code class="language-none">4×8 DataFrame. Omitted printing of 2 columns
+│ 0.027776 │ 0.0002   │ 1.0        │ 0.919149 │ 0.983471 │ 1.0      │ 0.999
+993 │</code></pre><p>Now take a slightly different perspective that focuses more on iteration related data.</p><pre><code class="language-julia">asa(DataFrame, res, withZAF=false)</code></pre><pre><code class="language-none">4×8 DataFrame
 │ Row │ Label │ Element │ Converged │ Iterations │ Mass Frac. │ Δ[Mass Frac
-.] │
+.] │ k[Meas]  │ k[Comp]   │
 │     │ Label │ String  │ Bool      │ Int64      │ Float64    │ Float64    
-   │
+   │ Float64? │ Float64?  │
 ├─────┼───────┼─────────┼───────────┼────────────┼────────────┼────────────
-───┤
+───┼──────────┼───────────┤
 │ 1   │ K458  │ Si      │ 1         │ 7          │ 0.23133    │ 0.00063    
-   │
+   │ 0.441263 │ 0.441263  │
 │ 2   │ K458  │ Ba      │ 1         │ 7          │ 0.4218     │ 0.0019     
-   │
+   │ 0.447794 │ 0.447791  │
 │ 3   │ K458  │ O       │ 1         │ 7          │ 0.32701    │ 0.00044    
-   │
+   │ 0.746227 │ 0.746226  │
 │ 4   │ K458  │ Zn      │ 1         │ 7          │ 0.030727   │ 0.00022    
-   │</code></pre><p>Nicholas W. M. Ritchie, 30-Apr-2020</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="../coatingthickness/">Coating Thickness »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 10 July 2020 17:17">Friday 10 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   │ 0.027776 │ 0.0277758 │</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="../coatingthickness/">Coating Thickness »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 28 July 2020 14:50">Tuesday 28 July 2020</span>. Using Julia version 1.5.0-rc2.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

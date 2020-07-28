@@ -14,15 +14,15 @@
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g class="plotroot xscalable yscalable" id="img-518900ed-1">
-  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-518900ed-2">
+<g class="plotroot xscalable yscalable" id="img-01d139c8-1">
+  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-01d139c8-2">
     <g transform="translate(108.08,89.99)">
       <g class="primitive">
         <text text-anchor="middle" dy="0.6em">kMeas/kCalc</text>
       </g>
     </g>
   </g>
-  <g class="guide xlabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="img-518900ed-3">
+  <g class="guide xlabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="img-01d139c8-3">
     <g transform="translate(19.96,83.32)">
       <g class="primitive">
         <text text-anchor="middle" dy="0.6em">0.0</text>
@@ -49,245 +49,237 @@
       </g>
     </g>
   </g>
-  <g clip-path="url(#img-518900ed-4)">
-    <g id="img-518900ed-5">
-      <g pointer-events="visible" stroke-width="0.3" fill="#000000" fill-opacity="0.000" stroke="#000000" stroke-opacity="0.000" class="guide background" id="img-518900ed-6">
-        <g transform="translate(108.08,46.46)" id="img-518900ed-7">
+  <g clip-path="url(#img-01d139c8-4)">
+    <g id="img-01d139c8-5">
+      <g pointer-events="visible" stroke-width="0.3" fill="#000000" fill-opacity="0.000" stroke="#000000" stroke-opacity="0.000" class="guide background" id="img-01d139c8-6">
+        <g transform="translate(108.08,46.46)" id="img-01d139c8-7">
           <path d="M-90.12,-35.85 L 90.12 -35.85 90.12 35.85 -90.12 35.85 z" class="primitive"/>
         </g>
       </g>
-      <g class="guide ygridlines xfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="img-518900ed-8">
-        <g transform="translate(108.08,80.32)" id="img-518900ed-9">
+      <g class="guide ygridlines xfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="img-01d139c8-8">
+        <g transform="translate(108.08,80.32)" id="img-01d139c8-9">
           <path fill="none" d="M-90.12,0 L 90.12 0" class="primitive"/>
         </g>
-        <g transform="translate(108.08,63.39)" id="img-518900ed-10">
+        <g transform="translate(108.08,57.75)" id="img-01d139c8-10">
           <path fill="none" d="M-90.12,0 L 90.12 0" class="primitive"/>
         </g>
-        <g transform="translate(108.08,46.46)" id="img-518900ed-11">
+        <g transform="translate(108.08,35.18)" id="img-01d139c8-11">
           <path fill="none" d="M-90.12,0 L 90.12 0" class="primitive"/>
         </g>
-        <g transform="translate(108.08,29.54)" id="img-518900ed-12">
-          <path fill="none" d="M-90.12,0 L 90.12 0" class="primitive"/>
-        </g>
-        <g transform="translate(108.08,12.61)" id="img-518900ed-13">
+        <g transform="translate(108.08,12.61)" id="img-01d139c8-12">
           <path fill="none" d="M-90.12,0 L 90.12 0" class="primitive"/>
         </g>
       </g>
-      <g class="guide xgridlines yfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="img-518900ed-14">
-        <g transform="translate(19.96,46.46)" id="img-518900ed-15">
+      <g class="guide xgridlines yfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="img-01d139c8-13">
+        <g transform="translate(19.96,46.46)" id="img-01d139c8-14">
           <path fill="none" d="M0,-35.85 L 0 35.85" class="primitive"/>
         </g>
-        <g transform="translate(64.02,46.46)" id="img-518900ed-16">
+        <g transform="translate(64.02,46.46)" id="img-01d139c8-15">
           <path fill="none" d="M0,-35.85 L 0 35.85" class="primitive"/>
         </g>
-        <g transform="translate(108.08,46.46)" id="img-518900ed-17">
+        <g transform="translate(108.08,46.46)" id="img-01d139c8-16">
           <path fill="none" d="M0,-35.85 L 0 35.85" class="primitive"/>
         </g>
-        <g transform="translate(152.14,46.46)" id="img-518900ed-18">
+        <g transform="translate(152.14,46.46)" id="img-01d139c8-17">
           <path fill="none" d="M0,-35.85 L 0 35.85" class="primitive"/>
         </g>
-        <g transform="translate(196.2,46.46)" id="img-518900ed-19">
+        <g transform="translate(196.2,46.46)" id="img-01d139c8-18">
           <path fill="none" d="M0,-35.85 L 0 35.85" class="primitive"/>
         </g>
       </g>
-      <g class="plotpanel" id="img-518900ed-20">
+      <g class="plotpanel" id="img-01d139c8-19">
         <metadata>
           <boundingbox value="17.958333333333343mm 10.611666666666665mm 180.24166666666665mm 71.70333333333333mm"/>
-          <unitbox value="-0.02269610856305263 41.18162572005318 2.045392217126105 -42.363251440106346"/>
+          <unitbox value="-0.02269610856305263 30.88621929003988 2.045392217126105 -31.772438580079758"/>
         </metadata>
-        <g shape-rendering="crispEdges" stroke-width="0.3" id="img-518900ed-21">
-          <g class="geometry" fill-opacity="1" stroke="#000000" stroke-opacity="0.000" fill="#00BFFF" id="img-518900ed-22">
-            <g transform="translate(23.56,64.24)" id="img-518900ed-23">
-              <path d="M-3.63,-16.08 L 3.63 -16.08 3.63 16.08 -3.63 16.08 z" class="primitive"/>
+        <g shape-rendering="crispEdges" stroke-width="0.3" id="img-01d139c8-20">
+          <g class="geometry" fill-opacity="1" stroke="#000000" stroke-opacity="0.000" fill="#00BFFF" id="img-01d139c8-21">
+            <g transform="translate(23.56,58.88)" id="img-01d139c8-22">
+              <path d="M-3.63,-21.44 L 3.63 -21.44 3.63 21.44 -3.63 21.44 z" class="primitive"/>
             </g>
-            <g transform="translate(30.76,80.32)" id="img-518900ed-24">
+            <g transform="translate(30.76,80.32)" id="img-01d139c8-23">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(37.97,80.32)" id="img-518900ed-25">
+            <g transform="translate(37.96,80.32)" id="img-01d139c8-24">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(45.17,80.32)" id="img-518900ed-26">
+            <g transform="translate(45.16,80.32)" id="img-01d139c8-25">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(52.38,80.32)" id="img-518900ed-27">
+            <g transform="translate(52.36,80.32)" id="img-01d139c8-26">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(59.58,80.32)" id="img-518900ed-28">
+            <g transform="translate(59.56,80.32)" id="img-01d139c8-27">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(66.78,80.32)" id="img-518900ed-29">
+            <g transform="translate(66.76,80.32)" id="img-01d139c8-28">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(73.99,79.47)" id="img-518900ed-30">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
+            <g transform="translate(73.96,79.19)" id="img-01d139c8-29">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
             </g>
-            <g transform="translate(81.19,76.93)" id="img-518900ed-31">
+            <g transform="translate(81.16,75.8)" id="img-01d139c8-30">
+              <path d="M-3.63,-4.51 L 3.63 -4.51 3.63 4.51 -3.63 4.51 z" class="primitive"/>
+            </g>
+            <g transform="translate(88.36,79.19)" id="img-01d139c8-31">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
+            </g>
+            <g transform="translate(95.56,76.93)" id="img-01d139c8-32">
               <path d="M-3.63,-3.39 L 3.63 -3.39 3.63 3.39 -3.63 3.39 z" class="primitive"/>
             </g>
-            <g transform="translate(88.4,79.47)" id="img-518900ed-32">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
+            <g transform="translate(102.76,71.29)" id="img-01d139c8-33">
+              <path d="M-3.63,-9.03 L 3.63 -9.03 3.63 9.03 -3.63 9.03 z" class="primitive"/>
             </g>
-            <g transform="translate(95.6,77.78)" id="img-518900ed-33">
-              <path d="M-3.63,-2.54 L 3.63 -2.54 3.63 2.54 -3.63 2.54 z" class="primitive"/>
+            <g transform="translate(109.96,54.36)" id="img-01d139c8-34">
+              <path d="M-3.63,-25.95 L 3.63 -25.95 3.63 25.95 -3.63 25.95 z" class="primitive"/>
             </g>
-            <g transform="translate(102.8,73.54)" id="img-518900ed-34">
-              <path d="M-3.63,-6.77 L 3.63 -6.77 3.63 6.77 -3.63 6.77 z" class="primitive"/>
+            <g transform="translate(117.16,47.59)" id="img-01d139c8-35">
+              <path d="M-3.63,-32.72 L 3.63 -32.72 3.63 32.72 -3.63 32.72 z" class="primitive"/>
             </g>
-            <g transform="translate(110.01,60.85)" id="img-518900ed-35">
-              <path d="M-3.63,-19.46 L 3.63 -19.46 3.63 19.46 -3.63 19.46 z" class="primitive"/>
+            <g transform="translate(124.36,46.46)" id="img-01d139c8-36">
+              <path d="M-3.63,-33.85 L 3.63 -33.85 3.63 33.85 -3.63 33.85 z" class="primitive"/>
             </g>
-            <g transform="translate(117.21,55.77)" id="img-518900ed-36">
-              <path d="M-3.63,-24.54 L 3.63 -24.54 3.63 24.54 -3.63 24.54 z" class="primitive"/>
+            <g transform="translate(131.56,71.29)" id="img-01d139c8-37">
+              <path d="M-3.63,-9.03 L 3.63 -9.03 3.63 9.03 -3.63 9.03 z" class="primitive"/>
             </g>
-            <g transform="translate(124.42,53.23)" id="img-518900ed-37">
-              <path d="M-3.63,-27.08 L 3.63 -27.08 3.63 27.08 -3.63 27.08 z" class="primitive"/>
+            <g transform="translate(138.76,74.67)" id="img-01d139c8-38">
+              <path d="M-3.63,-5.64 L 3.63 -5.64 3.63 5.64 -3.63 5.64 z" class="primitive"/>
             </g>
-            <g transform="translate(131.62,75.24)" id="img-518900ed-38">
-              <path d="M-3.63,-5.08 L 3.63 -5.08 3.63 5.08 -3.63 5.08 z" class="primitive"/>
+            <g transform="translate(145.96,69.03)" id="img-01d139c8-39">
+              <path d="M-3.63,-11.28 L 3.63 -11.28 3.63 11.28 -3.63 11.28 z" class="primitive"/>
             </g>
-            <g transform="translate(138.82,76.08)" id="img-518900ed-39">
-              <path d="M-3.63,-4.23 L 3.63 -4.23 3.63 4.23 -3.63 4.23 z" class="primitive"/>
+            <g transform="translate(153.16,72.42)" id="img-01d139c8-40">
+              <path d="M-3.63,-7.9 L 3.63 -7.9 3.63 7.9 -3.63 7.9 z" class="primitive"/>
             </g>
-            <g transform="translate(146.03,71.85)" id="img-518900ed-40">
-              <path d="M-3.63,-8.46 L 3.63 -8.46 3.63 8.46 -3.63 8.46 z" class="primitive"/>
+            <g transform="translate(160.36,78.06)" id="img-01d139c8-41">
+              <path d="M-3.63,-2.26 L 3.63 -2.26 3.63 2.26 -3.63 2.26 z" class="primitive"/>
             </g>
-            <g transform="translate(153.23,74.39)" id="img-518900ed-41">
-              <path d="M-3.63,-5.92 L 3.63 -5.92 3.63 5.92 -3.63 5.92 z" class="primitive"/>
+            <g transform="translate(167.56,74.67)" id="img-01d139c8-42">
+              <path d="M-3.63,-5.64 L 3.63 -5.64 3.63 5.64 -3.63 5.64 z" class="primitive"/>
             </g>
-            <g transform="translate(160.44,78.62)" id="img-518900ed-42">
-              <path d="M-3.63,-1.69 L 3.63 -1.69 3.63 1.69 -3.63 1.69 z" class="primitive"/>
+            <g transform="translate(174.76,72.42)" id="img-01d139c8-43">
+              <path d="M-3.63,-7.9 L 3.63 -7.9 3.63 7.9 -3.63 7.9 z" class="primitive"/>
             </g>
-            <g transform="translate(167.64,76.08)" id="img-518900ed-43">
-              <path d="M-3.63,-4.23 L 3.63 -4.23 3.63 4.23 -3.63 4.23 z" class="primitive"/>
+            <g transform="translate(181.96,75.8)" id="img-01d139c8-44">
+              <path d="M-3.63,-4.51 L 3.63 -4.51 3.63 4.51 -3.63 4.51 z" class="primitive"/>
             </g>
-            <g transform="translate(174.84,74.39)" id="img-518900ed-44">
-              <path d="M-3.63,-5.92 L 3.63 -5.92 3.63 5.92 -3.63 5.92 z" class="primitive"/>
+            <g transform="translate(189.16,79.19)" id="img-01d139c8-45">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
             </g>
-            <g transform="translate(182.05,76.93)" id="img-518900ed-45">
+            <g transform="translate(196.36,75.8)" id="img-01d139c8-46">
+              <path d="M-3.63,-4.51 L 3.63 -4.51 3.63 4.51 -3.63 4.51 z" class="primitive"/>
+            </g>
+            <g transform="translate(203.57,79.19)" id="img-01d139c8-47">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
+            </g>
+            <g transform="translate(210.77,78.06)" id="img-01d139c8-48">
+              <path d="M-3.63,-2.26 L 3.63 -2.26 3.63 2.26 -3.63 2.26 z" class="primitive"/>
+            </g>
+            <g transform="translate(217.97,79.19)" id="img-01d139c8-49">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
+            </g>
+            <g transform="translate(225.17,78.06)" id="img-01d139c8-50">
+              <path d="M-3.63,-2.26 L 3.63 -2.26 3.63 2.26 -3.63 2.26 z" class="primitive"/>
+            </g>
+            <g transform="translate(232.37,76.93)" id="img-01d139c8-51">
               <path d="M-3.63,-3.39 L 3.63 -3.39 3.63 3.39 -3.63 3.39 z" class="primitive"/>
             </g>
-            <g transform="translate(189.25,79.47)" id="img-518900ed-46">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
+            <g transform="translate(239.57,79.19)" id="img-01d139c8-52">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
             </g>
-            <g transform="translate(196.46,76.93)" id="img-518900ed-47">
+            <g transform="translate(246.77,80.32)" id="img-01d139c8-53">
+              <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
+            </g>
+            <g transform="translate(253.97,78.06)" id="img-01d139c8-54">
+              <path d="M-3.63,-2.26 L 3.63 -2.26 3.63 2.26 -3.63 2.26 z" class="primitive"/>
+            </g>
+            <g transform="translate(261.17,76.93)" id="img-01d139c8-55">
               <path d="M-3.63,-3.39 L 3.63 -3.39 3.63 3.39 -3.63 3.39 z" class="primitive"/>
             </g>
-            <g transform="translate(203.66,79.47)" id="img-518900ed-48">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
+            <g transform="translate(268.37,79.19)" id="img-01d139c8-56">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
             </g>
-            <g transform="translate(210.86,78.62)" id="img-518900ed-49">
-              <path d="M-3.63,-1.69 L 3.63 -1.69 3.63 1.69 -3.63 1.69 z" class="primitive"/>
-            </g>
-            <g transform="translate(218.07,79.47)" id="img-518900ed-50">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
-            </g>
-            <g transform="translate(225.27,78.62)" id="img-518900ed-51">
-              <path d="M-3.63,-1.69 L 3.63 -1.69 3.63 1.69 -3.63 1.69 z" class="primitive"/>
-            </g>
-            <g transform="translate(232.48,77.78)" id="img-518900ed-52">
-              <path d="M-3.63,-2.54 L 3.63 -2.54 3.63 2.54 -3.63 2.54 z" class="primitive"/>
-            </g>
-            <g transform="translate(239.68,79.47)" id="img-518900ed-53">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
-            </g>
-            <g transform="translate(246.88,79.47)" id="img-518900ed-54">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
-            </g>
-            <g transform="translate(254.09,79.47)" id="img-518900ed-55">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
-            </g>
-            <g transform="translate(261.29,77.78)" id="img-518900ed-56">
-              <path d="M-3.63,-2.54 L 3.63 -2.54 3.63 2.54 -3.63 2.54 z" class="primitive"/>
-            </g>
-            <g transform="translate(268.5,79.47)" id="img-518900ed-57">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
-            </g>
-            <g transform="translate(275.7,80.32)" id="img-518900ed-58">
+            <g transform="translate(275.57,80.32)" id="img-01d139c8-57">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(282.9,78.62)" id="img-518900ed-59">
-              <path d="M-3.63,-1.69 L 3.63 -1.69 3.63 1.69 -3.63 1.69 z" class="primitive"/>
+            <g transform="translate(282.77,78.06)" id="img-01d139c8-58">
+              <path d="M-3.63,-2.26 L 3.63 -2.26 3.63 2.26 -3.63 2.26 z" class="primitive"/>
             </g>
-            <g transform="translate(290.11,80.32)" id="img-518900ed-60">
+            <g transform="translate(289.97,80.32)" id="img-01d139c8-59">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(297.31,80.32)" id="img-518900ed-61">
+            <g transform="translate(297.17,80.32)" id="img-01d139c8-60">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(304.52,80.32)" id="img-518900ed-62">
+            <g transform="translate(304.37,80.32)" id="img-01d139c8-61">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(311.72,80.32)" id="img-518900ed-63">
+            <g transform="translate(311.57,80.32)" id="img-01d139c8-62">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(318.92,80.32)" id="img-518900ed-64">
+            <g transform="translate(318.77,80.32)" id="img-01d139c8-63">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(326.13,80.32)" id="img-518900ed-65">
+            <g transform="translate(325.97,80.32)" id="img-01d139c8-64">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(333.33,80.32)" id="img-518900ed-66">
+            <g transform="translate(333.17,80.32)" id="img-01d139c8-65">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(340.54,80.32)" id="img-518900ed-67">
+            <g transform="translate(340.37,80.32)" id="img-01d139c8-66">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(347.74,80.32)" id="img-518900ed-68">
+            <g transform="translate(347.57,80.32)" id="img-01d139c8-67">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(354.94,80.32)" id="img-518900ed-69">
+            <g transform="translate(354.77,80.32)" id="img-01d139c8-68">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(362.15,80.32)" id="img-518900ed-70">
+            <g transform="translate(361.97,80.32)" id="img-01d139c8-69">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(369.35,80.32)" id="img-518900ed-71">
+            <g transform="translate(369.17,80.32)" id="img-01d139c8-70">
               <path d="M-3.63,-0 L 3.63 -0 3.63 0 -3.63 0 z" class="primitive"/>
             </g>
-            <g transform="translate(376.56,79.47)" id="img-518900ed-72">
-              <path d="M-3.63,-0.85 L 3.63 -0.85 3.63 0.85 -3.63 0.85 z" class="primitive"/>
+            <g transform="translate(376.37,79.19)" id="img-01d139c8-71">
+              <path d="M-3.63,-1.13 L 3.63 -1.13 3.63 1.13 -3.63 1.13 z" class="primitive"/>
             </g>
           </g>
         </g>
       </g>
     </g>
   </g>
-  <g class="guide ylabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="img-518900ed-73">
-    <g transform="translate(16.96,80.32)" id="img-518900ed-74">
+  <g class="guide ylabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="img-01d139c8-72">
+    <g transform="translate(16.96,80.32)" id="img-01d139c8-73">
       <g class="primitive">
         <text text-anchor="end" dy="0.35em">0</text>
       </g>
     </g>
-    <g transform="translate(16.96,63.39)" id="img-518900ed-75">
+    <g transform="translate(16.96,57.75)" id="img-01d139c8-74">
       <g class="primitive">
         <text text-anchor="end" dy="0.35em">10</text>
       </g>
     </g>
-    <g transform="translate(16.96,46.46)" id="img-518900ed-76">
+    <g transform="translate(16.96,35.18)" id="img-01d139c8-75">
       <g class="primitive">
         <text text-anchor="end" dy="0.35em">20</text>
       </g>
     </g>
-    <g transform="translate(16.96,29.54)" id="img-518900ed-77">
+    <g transform="translate(16.96,12.61)" id="img-01d139c8-76">
       <g class="primitive">
         <text text-anchor="end" dy="0.35em">30</text>
       </g>
     </g>
-    <g transform="translate(16.96,12.61)" id="img-518900ed-78">
-      <g class="primitive">
-        <text text-anchor="end" dy="0.35em">40</text>
-      </g>
-    </g>
   </g>
-  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-518900ed-79">
-    <g transform="translate(8.81,44.46)" id="img-518900ed-80">
+  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-01d139c8-77">
+    <g transform="translate(8.81,44.46)" id="img-01d139c8-78">
       <g class="primitive">
         <text text-anchor="middle" dy="0.35em" transform="rotate(-90,0, 2)">Count</text>
       </g>
     </g>
   </g>
-  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-518900ed-81">
-    <g transform="translate(108.08,5)" id="img-518900ed-82">
+  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="img-01d139c8-79">
+    <g transform="translate(108.08,5)" id="img-01d139c8-80">
       <g class="primitive">
         <text text-anchor="middle" dy="0.6em">Riveros</text>
       </g>
@@ -295,7 +287,7 @@
   </g>
 </g>
 <defs>
-  <clipPath id="img-518900ed-4">
+  <clipPath id="img-01d139c8-4">
     <path d="M17.96,10.61 L 198.2 10.61 198.2 82.32 17.96 82.32" />
   </clipPath>
 </defs>

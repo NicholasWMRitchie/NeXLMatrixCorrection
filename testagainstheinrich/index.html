@@ -47,116 +47,146 @@ insertcols!(heinrich, ncol(heinrich)+1, :Riveros=&gt;rivres)
 filter!(r-&gt;!(r.Item in 857:860), sort!(heinrich,:XPP))
 # The columns XPP and CitZAF represent the measured k-ratio over the computed k-ratio for these algorithms.
 # Display the table sorted by XPP
-display(heinrich)</code></pre><pre><code class="language-none">1821×13 DataFrame. Omitted printing of 5 columns
+display(heinrich)</code></pre><pre><code class="language-none">1821×13 DataFrame
 │ Row  │ Item  │ Line   │ Z1     │ Z2     │ C1      │ E0    │ Ec    │ TOA  
-   │
+   │ Kexp    │ Origin │ XPP      │ CitZAF   │ Riveros  │
 │      │ Int64 │ String │ String │ String │ Float64 │ Int64 │ Int64 │ Float
-64 │
+64 │ Float64 │ Int64  │ Float64? │ Float64? │ Float64? │
 ├──────┼───────┼────────┼────────┼────────┼─────────┼───────┼───────┼──────
-───┤
+───┼─────────┼────────┼──────────┼──────────┼──────────┤
 │ 1    │ 136   │ Kα     │ B      │ Zr     │ 0.1789  │ 30000 │ 188   │ 40.0 
-   │
+   │ 0.2819  │ 1      │ 0.416139 │ 0.438618 │ 0.0      │
 │ 2    │ 135   │ Kα     │ B      │ Zr     │ 0.1789  │ 25000 │ 188   │ 40.0 
-   │
+   │ 0.2691  │ 1      │ 0.434801 │ 0.472184 │ 0.672277 │
 │ 3    │ 134   │ Kα     │ B      │ Zr     │ 0.1789  │ 20000 │ 188   │ 40.0 
-   │
+   │ 0.2536  │ 1      │ 0.475214 │ 0.524091 │ 0.708461 │
 │ 4    │ 133   │ Kα     │ B      │ Zr     │ 0.1789  │ 15000 │ 188   │ 40.0 
-   │
+   │ 0.2369  │ 1      │ 0.556829 │ 0.606    │ 0.598988 │
 │ 5    │ 132   │ Kα     │ B      │ Zr     │ 0.1789  │ 12000 │ 188   │ 40.0 
-   │
+   │ 0.2382  │ 1      │ 0.61098  │ 0.647495 │ 0.656667 │
 │ 6    │ 131   │ Kα     │ B      │ Zr     │ 0.1789  │ 10000 │ 188   │ 40.0 
-   │
+   │ 0.2382  │ 1      │ 0.6674   │ 0.689543 │ 0.716394 │
 │ 7    │ 130   │ Kα     │ B      │ Zr     │ 0.1789  │ 8000  │ 188   │ 40.0 
-   │
+   │ 0.2452  │ 1      │ 0.722344 │ 0.724066 │ 0.773663 │
 ⋮
 │ 1814 │ 188   │ Kα     │ B      │ U      │ 0.1537  │ 10000 │ 188   │ 40.0 
-   │
+   │ 0.1634  │ 1      │ 1.74916  │ 1.99283  │ 1.91682  │
 │ 1815 │ 861   │ Kα     │ Cu     │ Zn     │ 5.65    │ 10100 │ 8980  │ 40.0 
-   │
+   │ 0.558   │ 5      │ 1.79211  │ 1.79211  │ 1.79211  │
 │ 1816 │ 124   │ Kα     │ B      │ Ni     │ 0.144   │ 8000  │ 188   │ 40.0 
-   │
+   │ 0.0282  │ 1      │ 1.8117   │ 1.82623  │ 1.97989  │
 │ 1817 │ 189   │ Kα     │ B      │ U      │ 0.1537  │ 12000 │ 188   │ 40.0 
-   │
+   │ 0.1566  │ 1      │ 1.85883  │ 2.12664  │ 2.0153   │
 │ 1818 │ 190   │ Kα     │ B      │ U      │ 0.1537  │ 15000 │ 188   │ 40.0 
-   │
+   │ 0.1526  │ 1      │ 1.98604  │ 2.2357   │ 2.11073  │
 │ 1819 │ 165   │ Kα     │ B      │ Nd     │ 0.31    │ 10000 │ 188   │ 40.0 
-   │
+   │ 0.166   │ 5      │ 2.10423  │ 2.06951  │ 2.31675  │
 │ 1820 │ 328   │ Kα     │ Al     │ Fe     │ 0.1     │ 2000  │ 1559  │ 75.0 
-   │
+   │ 0.0543  │ 5      │ 2.28491  │ 2.03918  │ 2.06745  │
 │ 1821 │ 166   │ Kα     │ B      │ Nd     │ 0.31    │ 15000 │ 188   │ 40.0 
-   │</code></pre><h5 id="XPP"><a class="docs-heading-anchor" href="#XPP">XPP</a><a id="XPP-1"></a><a class="docs-heading-anchor-permalink" href="#XPP" title="Permalink"></a></h5><p>Let&#39;s visualize this.</p><pre><code class="language-julia">using Gadfly
+   │ 0.137   │ 5      │ 2.3164   │ 2.28363  │ 2.50008  │</code></pre><h5 id="XPP"><a class="docs-heading-anchor" href="#XPP">XPP</a><a id="XPP-1"></a><a class="docs-heading-anchor-permalink" href="#XPP" title="Permalink"></a></h5><p>Let&#39;s visualize this.</p><pre><code class="language-julia">using Gadfly
 plotargs = (  Stat.histogram(bincount=50), Geom.bar,  Guide.xlabel(&quot;kMeas/kCalc&quot;), Guide.ylabel(&quot;Count&quot;), Coord.cartesian(xmin=0.0, xmax=2.0) )
 
-plot(heinrich, x=:XPP, plotargs..., Guide.title(&quot;XPP&quot;))</code></pre><p><img src="../figures/testagainstheinrich_3_1.svg" alt/></p><h5 id="CitZAF"><a class="docs-heading-anchor" href="#CitZAF">CitZAF</a><a id="CitZAF-1"></a><a class="docs-heading-anchor-permalink" href="#CitZAF" title="Permalink"></a></h5><pre><code class="language-julia">plot(heinrich, x=:CitZAF, plotargs..., Guide.title(&quot;CitZAF&quot;))</code></pre><p><img src="../figures/testagainstheinrich_4_1.svg" alt/></p><h5 id="Riveros"><a class="docs-heading-anchor" href="#Riveros">Riveros</a><a id="Riveros-1"></a><a class="docs-heading-anchor-permalink" href="#Riveros" title="Permalink"></a></h5><pre><code class="language-julia">plot(heinrich, x=:Riveros, plotargs..., Guide.title(&quot;Riveros&quot;))</code></pre><p><img src="../figures/testagainstheinrich_5_1.svg" alt/></p><h5 id="Summary-Statistics"><a class="docs-heading-anchor" href="#Summary-Statistics">Summary Statistics</a><a id="Summary-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#Summary-Statistics" title="Permalink"></a></h5><pre><code class="language-julia">describe(heinrich[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)</code></pre><pre><code class="language-none">3×8 DataFrame. Omitted printing of 2 columns
-│ Row │ variable │ mean    │ std      │ min      │ q25      │ median   │
-│     │ Symbol   │ Float64 │ Float64  │ Float64  │ Float64  │ Float64  │
-├─────┼──────────┼─────────┼──────────┼──────────┼──────────┼──────────┤
-│ 1   │ XPP      │ 1.02407 │ 0.11594  │ 0.416139 │ 0.988486 │ 1.00252  │
-│ 2   │ CitZAF   │ 1.0077  │ 0.144751 │ 0.438618 │ 0.957969 │ 0.993088 │
-│ 3   │ Riveros  │ 1.06529 │ 0.247911 │ 0.0      │ 1.00233  │ 1.02406  │</code></pre><h5 id="Low-Z-Performance"><a class="docs-heading-anchor" href="#Low-Z-Performance">Low Z Performance</a><a id="Low-Z-Performance-1"></a><a class="docs-heading-anchor-permalink" href="#Low-Z-Performance" title="Permalink"></a></h5><p>Let&#39;s look at the relative performance for low Z elements (z&lt;8).  Sadly, there is no O data :-(</p><pre><code class="language-julia">lowZ = filter(r-&gt;z(parse(Element,r.Z1))&lt;8, heinrich)
-describe(lowZ[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)</code></pre><pre><code class="language-none">3×8 DataFrame. Omitted printing of 2 columns
-│ Row │ variable │ mean    │ std      │ min      │ q25      │ median  │
-│     │ Symbol   │ Float64 │ Float64  │ Float64  │ Float64  │ Float64 │
-├─────┼──────────┼─────────┼──────────┼──────────┼──────────┼─────────┤
-│ 1   │ XPP      │ 1.14396 │ 0.289023 │ 0.416139 │ 0.986049 │ 1.05951 │
-│ 2   │ CitZAF   │ 1.20833 │ 0.341309 │ 0.438618 │ 0.991009 │ 1.13112 │
-│ 3   │ Riveros  │ 1.25253 │ 0.655883 │ 0.0      │ 1.02788  │ 1.16089 │</code></pre><pre><code class="language-julia">display(plot(lowZ, x=:CitZAF, plotargs..., Guide.title(&quot;CitZAF&quot;)))</code></pre><p><img src="../figures/testagainstheinrich_8_1.svg" alt/></p><pre><code class="language-julia">display(plot(lowZ, x=:XPP, plotargs..., Guide.title(&quot;XPP&quot;)))</code></pre><p><img src="../figures/testagainstheinrich_8_2.svg" alt/></p><pre><code class="language-julia">display(plot(lowZ, x=:Riveros, plotargs..., Guide.title(&quot;Riveros&quot;)))</code></pre><p><img src="../figures/testagainstheinrich_8_3.svg" alt/></p><p>Let&#39;s find out which are the &quot;problem children&quot;.</p><pre><code class="language-julia">display(sort!(filter(r-&gt;abs(1.0-r.XPP)&gt;0.2, lowZ),:XPP))</code></pre><pre><code class="language-none">59×13 DataFrame. Omitted printing of 5 columns
+plot(heinrich, x=:XPP, plotargs..., Guide.title(&quot;XPP&quot;))</code></pre><p><img src="../figures/testagainstheinrich_3_1.svg" alt/></p><h5 id="CitZAF"><a class="docs-heading-anchor" href="#CitZAF">CitZAF</a><a id="CitZAF-1"></a><a class="docs-heading-anchor-permalink" href="#CitZAF" title="Permalink"></a></h5><pre><code class="language-julia">plot(heinrich, x=:CitZAF, plotargs..., Guide.title(&quot;CitZAF&quot;))</code></pre><p><img src="../figures/testagainstheinrich_4_1.svg" alt/></p><h5 id="Riveros"><a class="docs-heading-anchor" href="#Riveros">Riveros</a><a id="Riveros-1"></a><a class="docs-heading-anchor-permalink" href="#Riveros" title="Permalink"></a></h5><pre><code class="language-julia">plot(heinrich, x=:Riveros, plotargs..., Guide.title(&quot;Riveros&quot;))</code></pre><p><img src="../figures/testagainstheinrich_5_1.svg" alt/></p><h5 id="Summary-Statistics"><a class="docs-heading-anchor" href="#Summary-Statistics">Summary Statistics</a><a id="Summary-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#Summary-Statistics" title="Permalink"></a></h5><pre><code class="language-julia">describe(heinrich[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)</code></pre><pre><code class="language-none">3×8 DataFrame
+│ Row │ variable │ mean    │ std      │ min      │ q25      │ median   │ q7
+5     │ max     │
+│     │ Symbol   │ Float64 │ Float64  │ Float64  │ Float64  │ Float64  │ Fl
+oat64 │ Float64 │
+├─────┼──────────┼─────────┼──────────┼──────────┼──────────┼──────────┼───
+──────┼─────────┤
+│ 1   │ XPP      │ 1.02407 │ 0.11594  │ 0.416139 │ 0.988486 │ 1.00252  │ 1.
+0253  │ 2.3164  │
+│ 2   │ CitZAF   │ 1.0077  │ 0.144751 │ 0.438618 │ 0.957969 │ 0.993088 │ 1.
+02273 │ 2.28363 │
+│ 3   │ Riveros  │ 1.06529 │ 0.247911 │ 0.0      │ 1.00233  │ 1.02406  │ 1.
+06557 │ 4.08545 │</code></pre><h5 id="Low-Z-Performance"><a class="docs-heading-anchor" href="#Low-Z-Performance">Low Z Performance</a><a id="Low-Z-Performance-1"></a><a class="docs-heading-anchor-permalink" href="#Low-Z-Performance" title="Permalink"></a></h5><p>Let&#39;s look at the relative performance for low Z elements (z&lt;8).  Sadly, there is no O data :-(</p><pre><code class="language-julia">lowZ = filter(r-&gt;z(parse(Element,r.Z1))&lt;8, heinrich)
+describe(lowZ[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)</code></pre><pre><code class="language-none">3×8 DataFrame
+│ Row │ variable │ mean    │ std      │ min      │ q25      │ median  │ q75
+     │ max     │
+│     │ Symbol   │ Float64 │ Float64  │ Float64  │ Float64  │ Float64 │ Flo
+at64 │ Float64 │
+├─────┼──────────┼─────────┼──────────┼──────────┼──────────┼─────────┼────
+─────┼─────────┤
+│ 1   │ XPP      │ 1.14396 │ 0.289023 │ 0.416139 │ 0.986049 │ 1.05951 │ 1.2
+8341 │ 2.3164  │
+│ 2   │ CitZAF   │ 1.20833 │ 0.341309 │ 0.438618 │ 0.991009 │ 1.13112 │ 1.3
+187  │ 2.28363 │
+│ 3   │ Riveros  │ 1.25253 │ 0.655883 │ 0.0      │ 1.02788  │ 1.16089 │ 1.4
+9209 │ 4.08545 │</code></pre><pre><code class="language-julia">display(plot(lowZ, x=:CitZAF, plotargs..., Guide.title(&quot;CitZAF&quot;)))</code></pre><p><img src="../figures/testagainstheinrich_8_1.svg" alt/></p><pre><code class="language-julia">display(plot(lowZ, x=:XPP, plotargs..., Guide.title(&quot;XPP&quot;)))</code></pre><p><img src="../figures/testagainstheinrich_8_2.svg" alt/></p><pre><code class="language-julia">display(plot(lowZ, x=:Riveros, plotargs..., Guide.title(&quot;Riveros&quot;)))</code></pre><p><img src="../figures/testagainstheinrich_8_3.svg" alt/></p><p>Let&#39;s find out which are the &quot;problem children&quot;.</p><pre><code class="language-julia">display(sort!(filter(r-&gt;abs(1.0-r.XPP)&gt;0.2, lowZ),:XPP))</code></pre><pre><code class="language-none">59×13 DataFrame
 │ Row │ Item  │ Line   │ Z1     │ Z2     │ C1      │ E0    │ Ec    │ TOA   
-  │
+  │ Kexp    │ Origin │ XPP      │ CitZAF   │ Riveros  │
 │     │ Int64 │ String │ String │ String │ Float64 │ Int64 │ Int64 │ Float6
-4 │
+4 │ Float64 │ Int64  │ Float64? │ Float64? │ Float64? │
 ├─────┼───────┼────────┼────────┼────────┼─────────┼───────┼───────┼───────
-──┤
+──┼─────────┼────────┼──────────┼──────────┼──────────┤
 │ 1   │ 136   │ Kα     │ B      │ Zr     │ 0.1789  │ 30000 │ 188   │ 40.0  
-  │
+  │ 0.2819  │ 1      │ 0.416139 │ 0.438618 │ 0.0      │
 │ 2   │ 135   │ Kα     │ B      │ Zr     │ 0.1789  │ 25000 │ 188   │ 40.0  
-  │
+  │ 0.2691  │ 1      │ 0.434801 │ 0.472184 │ 0.672277 │
 │ 3   │ 134   │ Kα     │ B      │ Zr     │ 0.1789  │ 20000 │ 188   │ 40.0  
-  │
+  │ 0.2536  │ 1      │ 0.475214 │ 0.524091 │ 0.708461 │
 │ 4   │ 133   │ Kα     │ B      │ Zr     │ 0.1789  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.2369  │ 1      │ 0.556829 │ 0.606    │ 0.598988 │
 │ 5   │ 132   │ Kα     │ B      │ Zr     │ 0.1789  │ 12000 │ 188   │ 40.0  
-  │
+  │ 0.2382  │ 1      │ 0.61098  │ 0.647495 │ 0.656667 │
 │ 6   │ 131   │ Kα     │ B      │ Zr     │ 0.1789  │ 10000 │ 188   │ 40.0  
-  │
+  │ 0.2382  │ 1      │ 0.6674   │ 0.689543 │ 0.716394 │
 │ 7   │ 130   │ Kα     │ B      │ Zr     │ 0.1789  │ 8000  │ 188   │ 40.0  
-  │
+  │ 0.2452  │ 1      │ 0.722344 │ 0.724066 │ 0.773663 │
 ⋮
 │ 52  │ 125   │ Kα     │ B      │ Ni     │ 0.144   │ 10000 │ 188   │ 40.0  
-  │
+  │ 0.0237  │ 1      │ 1.66876  │ 1.81216  │ 1.84918  │
 │ 53  │ 111   │ Kα     │ B      │ Ni     │ 0.0578  │ 12000 │ 188   │ 40.0  
-  │
+  │ 0.0073  │ 1      │ 1.68207  │ 2.04823  │ 3.01249  │
 │ 54  │ 188   │ Kα     │ B      │ U      │ 0.1537  │ 10000 │ 188   │ 40.0  
-  │
+  │ 0.1634  │ 1      │ 1.74916  │ 1.99283  │ 1.91682  │
 │ 55  │ 124   │ Kα     │ B      │ Ni     │ 0.144   │ 8000  │ 188   │ 40.0  
-  │
+  │ 0.0282  │ 1      │ 1.8117   │ 1.82623  │ 1.97989  │
 │ 56  │ 189   │ Kα     │ B      │ U      │ 0.1537  │ 12000 │ 188   │ 40.0  
-  │
+  │ 0.1566  │ 1      │ 1.85883  │ 2.12664  │ 2.0153   │
 │ 57  │ 190   │ Kα     │ B      │ U      │ 0.1537  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.1526  │ 1      │ 1.98604  │ 2.2357   │ 2.11073  │
 │ 58  │ 165   │ Kα     │ B      │ Nd     │ 0.31    │ 10000 │ 188   │ 40.0  
-  │
+  │ 0.166   │ 5      │ 2.10423  │ 2.06951  │ 2.31675  │
 │ 59  │ 166   │ Kα     │ B      │ Nd     │ 0.31    │ 15000 │ 188   │ 40.0  
-  │</code></pre><h5 id="Performance-by-Data-Source"><a class="docs-heading-anchor" href="#Performance-by-Data-Source">Performance by Data Source</a><a id="Performance-by-Data-Source-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-by-Data-Source" title="Permalink"></a></h5><p>Let&#39;s look at the relative performance by data source</p><pre><code class="language-julia">vcat(map(org-&gt;describe(filter(r-&gt;r.Origin==org, heinrich)[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max), 1:11)...)</code></pre><pre><code class="language-none">33×8 DataFrame. Omitted printing of 2 columns
-│ Row │ variable │ mean     │ std       │ min      │ q25      │ median   │
-│     │ Symbol   │ Float64  │ Float64   │ Union…   │ Union…   │ Union…   │
-├─────┼──────────┼──────────┼───────────┼──────────┼──────────┼──────────┤
-│ 1   │ XPP      │ 1.06108  │ 0.197942  │ 0.416139 │ 0.988139 │ 1.00165  │
-│ 2   │ CitZAF   │ 1.09749  │ 0.247607  │ 0.438618 │ 0.988467 │ 1.02458  │
-│ 3   │ Riveros  │ 1.13373  │ 0.460387  │ 0.0      │ 1.02261  │ 1.04829  │
-│ 4   │ XPP      │ 1.0013   │ 0.0302697 │ 0.919383 │ 0.988511 │ 1.00496  │
-│ 5   │ CitZAF   │ 0.930553 │ 0.0886838 │ 0.773003 │ 0.850813 │ 0.963248 │
-│ 6   │ Riveros  │ 1.01054  │ 0.0278175 │ 0.930001 │ 1.00188  │ 1.00995  │
-│ 7   │ XPP      │ 1.02806  │ 0.0520892 │ 0.889167 │ 0.998981 │ 1.01122  │
+  │ 0.137   │ 5      │ 2.3164   │ 2.28363  │ 2.50008  │</code></pre><h5 id="Performance-by-Data-Source"><a class="docs-heading-anchor" href="#Performance-by-Data-Source">Performance by Data Source</a><a id="Performance-by-Data-Source-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-by-Data-Source" title="Permalink"></a></h5><p>Let&#39;s look at the relative performance by data source</p><pre><code class="language-julia">vcat(map(org-&gt;describe(filter(r-&gt;r.Origin==org, heinrich)[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max), 1:11)...)</code></pre><pre><code class="language-none">33×8 DataFrame
+│ Row │ variable │ mean     │ std       │ min      │ q25      │ median   │ 
+q75     │ max     │
+│     │ Symbol   │ Float64  │ Float64   │ Union…   │ Union…   │ Union…   │ 
+Union…  │ Union…  │
+├─────┼──────────┼──────────┼───────────┼──────────┼──────────┼──────────┼─
+────────┼─────────┤
+│ 1   │ XPP      │ 1.06108  │ 0.197942  │ 0.416139 │ 0.988139 │ 1.00165  │ 
+1.04864 │ 1.98604 │
+│ 2   │ CitZAF   │ 1.09749  │ 0.247607  │ 0.438618 │ 0.988467 │ 1.02458  │ 
+1.12014 │ 2.2357  │
+│ 3   │ Riveros  │ 1.13373  │ 0.460387  │ 0.0      │ 1.02261  │ 1.04829  │ 
+1.14829 │ 4.08545 │
+│ 4   │ XPP      │ 1.0013   │ 0.0302697 │ 0.919383 │ 0.988511 │ 1.00496  │ 
+1.01699 │ 1.06018 │
+│ 5   │ CitZAF   │ 0.930553 │ 0.0886838 │ 0.773003 │ 0.850813 │ 0.963248 │ 
+1.00373 │ 1.05587 │
+│ 6   │ Riveros  │ 1.01054  │ 0.0278175 │ 0.930001 │ 1.00188  │ 1.00995  │ 
+1.02204 │ 1.07915 │
+│ 7   │ XPP      │ 1.02806  │ 0.0520892 │ 0.889167 │ 0.998981 │ 1.01122  │ 
+1.04469 │ 1.28859 │
 ⋮
-│ 26  │ CitZAF   │ 0.996435 │ 0.0311259 │ 0.918866 │ 0.985224 │ 0.993082 │
-│ 27  │ Riveros  │ 1.06719  │ 0.0712832 │ 0.994109 │ 1.00628  │ 1.02026  │
-│ 28  │ XPP      │ NaN      │ NaN       │          │          │          │
-│ 29  │ CitZAF   │ NaN      │ NaN       │          │          │          │
-│ 30  │ Riveros  │ NaN      │ NaN       │          │          │          │
-│ 31  │ XPP      │ 0.998633 │ 0.0182596 │ 0.959832 │ 0.987556 │ 0.99676  │
-│ 32  │ CitZAF   │ 1.01093  │ 0.0235833 │ 0.957343 │ 0.994074 │ 1.00831  │
-│ 33  │ Riveros  │ 1.01996  │ 0.0170493 │ 0.997234 │ 1.00773  │ 1.01486  │</code></pre><pre><code class="language-julia">using Compose
+│ 26  │ CitZAF   │ 0.996435 │ 0.0311259 │ 0.918866 │ 0.985224 │ 0.993082 │ 
+1.00535 │ 1.07921 │
+│ 27  │ Riveros  │ 1.06719  │ 0.0712832 │ 0.994109 │ 1.00628  │ 1.02026  │ 
+1.14141 │ 1.19468 │
+│ 28  │ XPP      │ NaN      │ NaN       │          │          │          │ 
+        │         │
+│ 29  │ CitZAF   │ NaN      │ NaN       │          │          │          │ 
+        │         │
+│ 30  │ Riveros  │ NaN      │ NaN       │          │          │          │ 
+        │         │
+│ 31  │ XPP      │ 0.998633 │ 0.0182596 │ 0.959832 │ 0.987556 │ 0.99676  │ 
+1.00875 │ 1.0679  │
+│ 32  │ CitZAF   │ 1.01093  │ 0.0235833 │ 0.957343 │ 0.994074 │ 1.00831  │ 
+1.02516 │ 1.08213 │
+│ 33  │ Riveros  │ 1.01996  │ 0.0170493 │ 0.997234 │ 1.00773  │ 1.01486  │ 
+1.02683 │ 1.08164 │</code></pre><pre><code class="language-julia">using Compose
 origins = Dict(
   1 =&gt;&quot;Bastin’s measurements of borides&quot;,
   2 =&gt; &quot;Goldstein et al. measurements&quot;,
@@ -193,121 +223,121 @@ hstack(
 )</code></pre><p><img src="../figures/testagainstheinrich_13_1.svg" alt/></p><p>Compare with Riveros</p><pre><code class="language-julia">hstack(
   plot(weird, x=:Riveros, plotargs..., Guide.title(&quot;Weird&quot;)),
   plot(notweird, x=:Riveros, plotargs..., Guide.title(&quot;Less So&quot;))
-)</code></pre><p><img src="../figures/testagainstheinrich_14_1.svg" alt/></p><p>They are all z=41 (Nb) in z=92 (U) at moderate to high E0</p><pre><code class="language-julia">display(weird)</code></pre><pre><code class="language-none">36×13 DataFrame. Omitted printing of 5 columns
+)</code></pre><p><img src="../figures/testagainstheinrich_14_1.svg" alt/></p><p>They are all z=41 (Nb) in z=92 (U) at moderate to high E0</p><pre><code class="language-julia">display(weird)</code></pre><pre><code class="language-none">36×13 DataFrame
 │ Row │ Item  │ Line   │ Z1     │ Z2     │ C1      │ E0    │ Ec    │ TOA   
-  │
+  │ Kexp    │ Origin │ XPP      │ CitZAF   │ Riveros  │
 │     │ Int64 │ String │ String │ String │ Float64 │ Int64 │ Int64 │ Float6
-4 │
+4 │ Float64 │ Int64  │ Float64? │ Float64? │ Float64? │
 ├─────┼───────┼────────┼────────┼────────┼─────────┼───────┼───────┼───────
-──┤
+──┼─────────┼────────┼──────────┼──────────┼──────────┤
 │ 1   │ 1098  │ Lα     │ Nb     │ U      │ 0.0189  │ 20000 │ 2371  │ 40.0  
-  │
+  │ 0.0156  │ 9      │ 1.06789  │ 0.953513 │ 1.15011  │
 │ 2   │ 1097  │ Lα     │ Nb     │ U      │ 0.0189  │ 15000 │ 2371  │ 40.0  
-  │
+  │ 0.0172  │ 9      │ 1.07277  │ 0.966629 │ 1.15532  │
 │ 3   │ 1105  │ Lα     │ Nb     │ U      │ 0.0406  │ 20000 │ 2371  │ 40.0  
-  │
+  │ 0.0334  │ 9      │ 1.07486  │ 0.960833 │ 1.15719  │
 │ 4   │ 1091  │ Lα     │ Nb     │ U      │ 0.0132  │ 20000 │ 2371  │ 40.0  
-  │
+  │ 0.0108  │ 9      │ 1.07639  │ 0.960834 │ 1.15939  │
 │ 5   │ 1119  │ Lα     │ Nb     │ U      │ 0.0741  │ 20000 │ 2371  │ 40.0  
-  │
+  │ 0.0611  │ 9      │ 1.0775   │ 0.965113 │ 1.15953  │
 │ 6   │ 1126  │ Lα     │ Nb     │ U      │ 0.1286  │ 20000 │ 2371  │ 40.0  
-  │
+  │ 0.1066  │ 9      │ 1.07974  │ 0.970823 │ 1.16154  │
 │ 7   │ 1102  │ Lα     │ Nb     │ U      │ 0.0189  │ 40000 │ 2371  │ 40.0  
-  │
+  │ 0.0112  │ 9      │ 1.08132  │ 1.04168  │ 1.10838  │
 ⋮
 │ 29  │ 1121  │ Lα     │ Nb     │ U      │ 0.0741  │ 30000 │ 2371  │ 40.0  
-  │
+  │ 0.0501  │ 9      │ 1.10597  │ 1.01609  │ 1.11761  │
 │ 30  │ 1099  │ Lα     │ Nb     │ U      │ 0.0189  │ 25000 │ 2371  │ 40.0  
-  │
+  │ 0.0137  │ 9      │ 1.10606  │ 0.996615 │ 1.19468  │
 │ 31  │ 1107  │ Lα     │ Nb     │ U      │ 0.0406  │ 30000 │ 2371  │ 40.0  
-  │
+  │ 0.0271  │ 9      │ 1.10972  │ 1.01941  │ 1.12173  │
 │ 32  │ 1109  │ Lα     │ Nb     │ U      │ 0.0406  │ 40000 │ 2371  │ 40.0  
-  │
+  │ 0.0235  │ 9      │ 1.11614  │ 1.07356  │ 1.14347  │
 │ 33  │ 1123  │ Lα     │ Nb     │ U      │ 0.0741  │ 40000 │ 2371  │ 40.0  
-  │
+  │ 0.0434  │ 9      │ 1.11714  │ 1.07224  │ 1.1436   │
 │ 34  │ 1116  │ Lα     │ Nb     │ U      │ 0.0587  │ 40000 │ 2371  │ 40.0  
-  │
+  │ 0.034   │ 9      │ 1.12304  │ 1.07892  │ 1.15005  │
 │ 35  │ 1130  │ Lα     │ Nb     │ U      │ 0.1286  │ 40000 │ 2371  │ 40.0  
-  │
+  │ 0.0762  │ 9      │ 1.12762  │ 1.07921  │ 1.15291  │
 │ 36  │ 1093  │ Lα     │ Nb     │ U      │ 0.0132  │ 30000 │ 2371  │ 40.0  
-  │</code></pre><p>They are either z=41 (Nb) in z=92 (U) at low E0 or U in Nb.  What is up with Nb in XPP????</p><pre><code class="language-julia">display(notweird)</code></pre><pre><code class="language-none">48×13 DataFrame. Omitted printing of 5 columns
+  │ 0.0086  │ 9      │ 1.12816  │ 1.03646  │ 1.14072  │</code></pre><p>They are either z=41 (Nb) in z=92 (U) at low E0 or U in Nb.  What is up with Nb in XPP????</p><pre><code class="language-julia">display(notweird)</code></pre><pre><code class="language-none">48×13 DataFrame
 │ Row │ Item  │ Line   │ Z1     │ Z2     │ C1      │ E0    │ Ec    │ TOA   
-  │
+  │ Kexp    │ Origin │ XPP      │ CitZAF   │ Riveros  │
 │     │ Int64 │ String │ String │ String │ Float64 │ Int64 │ Int64 │ Float6
-4 │
+4 │ Float64 │ Int64  │ Float64? │ Float64? │ Float64? │
 ├─────┼───────┼────────┼────────┼────────┼─────────┼───────┼───────┼───────
-──┤
+──┼─────────┼────────┼──────────┼──────────┼──────────┤
 │ 1   │ 1124  │ Lα     │ Nb     │ U      │ 0.1286  │ 10000 │ 2371  │ 40.0  
-  │
+  │ 0.1417  │ 9      │ 0.983377 │ 0.918866 │ 1.00305  │
 │ 2   │ 1117  │ Lα     │ Nb     │ U      │ 0.0741  │ 10000 │ 2371  │ 40.0  
-  │
+  │ 0.0817  │ 9      │ 0.985262 │ 0.918912 │ 1.00758  │
 │ 3   │ 1814  │ Mα     │ U      │ Nb     │ 0.9811  │ 25000 │ 3552  │ 40.0  
-  │
+  │ 0.9739  │ 9      │ 0.994797 │ 0.989878 │ 0.994109 │
 │ 4   │ 1816  │ Mα     │ U      │ Nb     │ 0.9811  │ 40000 │ 3552  │ 40.0  
-  │
+  │ 0.9663  │ 9      │ 0.995014 │ 0.991214 │ 0.995278 │
 │ 5   │ 1815  │ Mα     │ U      │ Nb     │ 0.9811  │ 35000 │ 3552  │ 40.0  
-  │
+  │ 0.968   │ 9      │ 0.995657 │ 0.991385 │ 0.995525 │
 │ 6   │ 1820  │ Mα     │ U      │ Nb     │ 0.9868  │ 25000 │ 3552  │ 40.0  
-  │
+  │ 0.9824  │ 9      │ 0.995695 │ 0.992225 │ 0.9952   │
 │ 7   │ 1089  │ Lα     │ Nb     │ U      │ 0.0132  │ 10000 │ 2371  │ 40.0  
-  │
+  │ 0.0144  │ 9      │ 0.997337 │ 0.929367 │ 1.02406  │
 ⋮
 │ 41  │ 1788  │ Mα     │ U      │ Nb     │ 0.8714  │ 35000 │ 3552  │ 40.0  
-  │
+  │ 0.7632  │ 9      │ 1.01332  │ 0.988683 │ 1.01442  │
 │ 42  │ 1785  │ Mα     │ U      │ Nb     │ 0.8714  │ 20000 │ 3552  │ 40.0  
-  │
+  │ 0.8027  │ 9      │ 1.01338  │ 0.984421 │ 1.00988  │
 │ 43  │ 1110  │ Lα     │ Nb     │ U      │ 0.0587  │ 10000 │ 2371  │ 40.0  
-  │
+  │ 0.0629  │ 9      │ 1.01432  │ 0.94568  │ 1.03822  │
 │ 44  │ 1804  │ Mα     │ U      │ Nb     │ 0.9594  │ 10000 │ 3552  │ 40.0  
-  │
+  │ 0.9308  │ 9      │ 1.01889  │ 1.01112  │ 1.01609  │
 │ 45  │ 1791  │ Mα     │ U      │ Nb     │ 0.9259  │ 15000 │ 3552  │ 40.0  
-  │
+  │ 0.8796  │ 9      │ 1.02182  │ 1.00524  │ 1.01874  │
 │ 46  │ 1784  │ Mα     │ U      │ Nb     │ 0.8714  │ 15000 │ 3552  │ 40.0  
-  │
+  │ 0.8075  │ 9      │ 1.02392  │ 0.997219 │ 1.01984  │
 │ 47  │ 1797  │ Mα     │ U      │ Nb     │ 0.9413  │ 10000 │ 3552  │ 40.0  
-  │
+  │ 0.9026  │ 9      │ 1.02536  │ 1.01441  │ 1.02157  │
 │ 48  │ 1783  │ Mα     │ U      │ Nb     │ 0.8714  │ 10000 │ 3552  │ 40.0  
-  │</code></pre><p>What about other U?</p><pre><code class="language-julia">uranium = filter(r-&gt;(r.Z1==&quot;U&quot;) || (r.Z2==&quot;U&quot;), heinrich)
+  │ 0.8161  │ 9      │ 1.02706  │ 1.00568  │ 1.02068  │</code></pre><p>What about other U?</p><pre><code class="language-julia">uranium = filter(r-&gt;(r.Z1==&quot;U&quot;) || (r.Z2==&quot;U&quot;), heinrich)
 hstack(
   plot(uranium, x=:XPP, plotargs..., Guide.title(&quot;XPP&quot;)),
   plot(uranium, x=:CitZAF, plotargs..., Guide.title(&quot;CitZAF&quot;)),
   plot(uranium, x=:Riveros, plotargs..., Guide.title(&quot;Riveros&quot;))
 )</code></pre><p><img src="../figures/testagainstheinrich_17_1.svg" alt/></p><p>Which rows are zero (close to zero) for the Riveros model?</p><pre><code class="language-julia">zr= filter(r-&gt;r.Riveros&lt;0.01, heinrich)
-display(select(zr, Not([:XPP, :CitZAF, :Origin])))</code></pre><pre><code class="language-none">22×10 DataFrame. Omitted printing of 2 columns
+display(select(zr, Not([:XPP, :CitZAF, :Origin])))</code></pre><pre><code class="language-none">22×10 DataFrame
 │ Row │ Item  │ Line   │ Z1     │ Z2     │ C1      │ E0    │ Ec    │ TOA   
-  │
+  │ Kexp    │ Riveros  │
 │     │ Int64 │ String │ String │ String │ Float64 │ Int64 │ Int64 │ Float6
-4 │
+4 │ Float64 │ Float64? │
 ├─────┼───────┼────────┼────────┼────────┼─────────┼───────┼───────┼───────
-──┤
+──┼─────────┼──────────┤
 │ 1   │ 136   │ Kα     │ B      │ Zr     │ 0.1789  │ 30000 │ 188   │ 40.0  
-  │
+  │ 0.2819  │ 0.0      │
 │ 2   │ 184   │ Kα     │ B      │ W      │ 0.0555  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.0188  │ 0.0      │
 │ 3   │ 172   │ Kα     │ B      │ Ta     │ 0.0564  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.0194  │ 0.0      │
 │ 4   │ 61    │ Kα     │ B      │ Ti     │ 0.284   │ 30000 │ 188   │ 40.0  
-  │
+  │ 0.109   │ 0.0      │
 │ 5   │ 31    │ Kα     │ B      │ Al     │ 0.8278  │ 30000 │ 188   │ 40.0  
-  │
+  │ 0.1694  │ 0.0      │
 │ 6   │ 52    │ Kα     │ B      │ Ti     │ 0.1678  │ 30000 │ 188   │ 40.0  
-  │
+  │ 0.0578  │ 0.0      │
 │ 7   │ 30    │ Kα     │ B      │ Al     │ 0.8278  │ 25000 │ 188   │ 40.0  
-  │
+  │ 0.1638  │ 0.0      │
 ⋮
 │ 15  │ 43    │ Kα     │ B      │ Si     │ 0.6857  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.0713  │ 0.0      │
 │ 16  │ 121   │ Kα     │ B      │ Ni     │ 0.0882  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.016   │ 0.0      │
 │ 17  │ 21    │ Kα     │ B      │ Al     │ 0.4449  │ 12000 │ 188   │ 40.0  
-  │
+  │ 0.0396  │ 0.0      │
 │ 18  │ 16    │ Kα     │ B      │ N      │ 0.4348  │ 30000 │ 188   │ 40.0  
-  │
+  │ 0.165   │ 0.0      │
 │ 19  │ 965   │ Lα     │ Cu     │ Au     │ 0.1983  │ 48500 │ 931   │ 52.5  
-  │
+  │ 0.069   │ 0.0      │
 │ 20  │ 311   │ Kα     │ Al     │ Fe     │ 0.1     │ 40000 │ 1559  │ 20.0  
-  │
+  │ 0.011   │ 0.0      │
 │ 21  │ 118   │ Kα     │ B      │ Ni     │ 0.0843  │ 15000 │ 188   │ 40.0  
-  │
+  │ 0.0095  │ 0.0      │
 │ 22  │ 112   │ Kα     │ B      │ Ni     │ 0.0578  │ 15000 │ 188   │ 40.0  
-  │</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../testagainstpap/">« Compare To PAP</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 10 July 2020 17:17">Friday 10 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  │ 0.0062  │ 0.0      │</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../testagainstpap/">« Compare To PAP</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 28 July 2020 14:49">Tuesday 28 July 2020</span>. Using Julia version 1.5.0-rc2.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

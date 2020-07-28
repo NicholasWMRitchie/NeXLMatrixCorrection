@@ -14,8 +14,8 @@ e0, toa = sameproperty([sio2,si,al2o3,c], :BeamEnergy), sameproperty([sio2,si,al
 plot(sio2, si, al2o3, c, klms=[n&quot;Si&quot;, n&quot;Al&quot;, n&quot;O&quot;, n&quot;C&quot; ], xmax=2.5e3)</code></pre><p><img src="../figures/coatingthickness_2_1.svg" alt/></p><p>Build a detector model with details from the spectrum and an estimate of the resolution and low-level discriminator channel.</p><pre><code class="language-julia">det = BasicEDS(length(sio2), energy(1, sio2), channelwidth(1, sio2), 128.0, 120)
 filt = buildfilter(det)</code></pre><pre><code class="language-none">NeXLSpectrum.VariableWidthFilter[NeXLSpectrum.BasicEDS(4096, E[ch] = -482.8
 3378 + 5.003319999999974⋅ch, 128.0 eV @ Mn K-L3, 120, Dict{Shell,Element}(S
-hell[M] =&gt; Element(Barium),Shell[N] =&gt; Element(Plutonium),Shell[K] =&gt; Eleme
-nt(Beryllium),Shell[L] =&gt; Element(Scandium)))]</code></pre><p>Create fitting filters for each element we require from the references.</p><pre><code class="language-julia">refdata = (
+hell[L] =&gt; Element(Scandium),Shell[K] =&gt; Element(Beryllium),Shell[N] =&gt; Ele
+ment(Plutonium),Shell[M] =&gt; Element(Barium)))]</code></pre><p>Create fitting filters for each element we require from the references.</p><pre><code class="language-julia">refdata = (
   ( al2o3, n&quot;O&quot;, mat&quot;Al2O3&quot; ),
   ( si, n&quot;Si&quot;, mat&quot;Si&quot; ),
   ( c, n&quot;C&quot;, mat&quot;C&quot; ),
@@ -24,32 +24,32 @@ frs = mapreduce(ref-&gt;filterreference(filt, ref...), append!, refdata)</code><
  Reference[O K-L3 + 1 other]
  Reference[Si K-L3 + 2 others]
  Reference[C K-L2]</code></pre><p>Now with the fitting filters and the measured SiO₂ spectrum we can perform the fit of Si, O and C to SiO₂.</p><pre><code class="language-julia">res = fit(sio2, filt, frs)
-display(plot(res))</code></pre><p><img src="../figures/coatingthickness_5_1.svg" alt/></p><pre><code class="language-julia">NeXLUncertainties.asa(DataFrame, kratios(res))</code></pre><pre><code class="language-none">3×12 DataFrame. Omitted printing of 6 columns
+display(plot(res))</code></pre><p><img src="../figures/coatingthickness_5_1.svg" alt/></p><pre><code class="language-julia">NeXLUncertainties.asa(DataFrame, kratios(res))</code></pre><pre><code class="language-none">3×12 DataFrame
 │ Row │ Element │ Z     │ Lines              │ E0unk   │ E0std   │ θunk    
- │
+ │ θstd     │ Standard │ Cstd     │ ΔCstd   │ K         │ ΔK          │
 │     │ String  │ Int64 │ Array{CharXRay,1}  │ Float64 │ Float64 │ Float64 
- │
+ │ Float64  │ String   │ Float64  │ Float64 │ Float64   │ Float64     │
 ├─────┼─────────┼───────┼────────────────────┼─────────┼─────────┼─────────
-─┤
+─┼──────────┼──────────┼──────────┼─────────┼───────────┼─────────────┤
 │ 1   │ O       │ 8     │ O K-L3 + 1 other   │ 15000.0 │ 15000.0 │ 0.698132
- │
+ │ 0.698132 │ Al2O3    │ 0.470749 │ 0.0     │ 0.992173  │ 0.000449488 │
 │ 2   │ C       │ 6     │ C K-L2             │ 15000.0 │ 15000.0 │ 0.698132
- │
+ │ 0.698132 │ C        │ 1.0      │ 0.0     │ 0.0124119 │ 3.91605e-5  │
 │ 3   │ Si      │ 14    │ Si K-L3 + 2 others │ 15000.0 │ 15000.0 │ 0.698132
- │</code></pre><p>From the k-ratios, we can determine the mass-thickness of the carbon layer on the SiO₂ sample.</p><pre><code class="language-julia">k = value(findlabel(res, n&quot;C K-L2&quot;),res)
+ │ 0.698132 │ Si       │ 1.0      │ 0.0     │ 0.430509  │ 0.000101609 │</code></pre><p>From the k-ratios, we can determine the mass-thickness of the carbon layer on the SiO₂ sample.</p><pre><code class="language-julia">k = value(findlabel(res, n&quot;C K-L2&quot;),res)
 ρz = massthickness(XPP, mat&quot;SiO2&quot;, mat&quot;C&quot;, n&quot;C K-L2&quot;, sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
 print(&quot;The thickness is $(round(ρz*1.0e7/density(pure(n&quot;C&quot;)); sigdigits=3)) nm.&quot;)  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)</code></pre><pre><code class="language-none">The thickness is 24.4 nm.</code></pre><pre><code class="language-julia">ρz = massthickness(CitZAF, mat&quot;SiO2&quot;, mat&quot;C&quot;, n&quot;C K-L2&quot;, sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
 print(&quot;The thickness is $(round(ρz*1.0e7/density(pure(n&quot;C&quot;)); sigdigits=3)) nm.&quot;)  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)</code></pre><pre><code class="language-none">The thickness is 17.1 nm.</code></pre><p>Finally, we correct the measured k-ratios for Si and O to account for the carbon coating.</p><pre><code class="language-julia">krs = NeXLMatrixCorrection.correctkratios(kratios(res), mat&quot;C&quot;, ρz)
-NeXLUncertainties.asa(DataFrame, krs)</code></pre><pre><code class="language-none">3×12 DataFrame. Omitted printing of 6 columns
+NeXLUncertainties.asa(DataFrame, krs)</code></pre><pre><code class="language-none">3×12 DataFrame
 │ Row │ Element │ Z     │ Lines              │ E0unk   │ E0std   │ θunk    
- │
+ │ θstd     │ Standard │ Cstd     │ ΔCstd   │ K         │ ΔK          │
 │     │ String  │ Int64 │ Array{CharXRay,1}  │ Float64 │ Float64 │ Float64 
- │
+ │ Float64  │ String   │ Float64  │ Float64 │ Float64   │ Float64     │
 ├─────┼─────────┼───────┼────────────────────┼─────────┼─────────┼─────────
-─┤
+─┼──────────┼──────────┼──────────┼─────────┼───────────┼─────────────┤
 │ 1   │ O       │ 8     │ O K-L3 + 1 other   │ 15000.0 │ 15000.0 │ 0.698132
- │
+ │ 0.698132 │ Al2O3    │ 0.470749 │ 0.0     │ 1.05011   │ 0.000475736 │
 │ 2   │ C       │ 6     │ C K-L2             │ 15000.0 │ 15000.0 │ 0.698132
- │
+ │ 0.698132 │ C        │ 1.0      │ 0.0     │ 0.0124119 │ 3.91605e-5  │
 │ 3   │ Si      │ 14    │ Si K-L3 + 2 others │ 15000.0 │ 15000.0 │ 0.698132
- │</code></pre><p>Usually, the coating compensation is handled in the matrix correction algorithm through providing coating data.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example/">« Example</a><a class="docs-footer-nextpage" href="../testagainstpap/">Compare To PAP »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 10 July 2020 17:17">Friday 10 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ │ 0.698132 │ Si       │ 1.0      │ 0.0     │ 0.431379  │ 0.000101814 │</code></pre><p>Usually, the coating compensation is handled in the matrix correction algorithm through providing coating data.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example/">« Example</a><a class="docs-footer-nextpage" href="../testagainstpap/">Compare To PAP »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 28 July 2020 14:49">Tuesday 28 July 2020</span>. Using Julia version 1.5.0-rc2.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

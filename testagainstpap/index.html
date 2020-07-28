@@ -31,29 +31,52 @@ for r in eachrow(pap)
 end
 insertcols!(pap, ncol(pap)+1, :XPP=&gt;xppres)
 insertcols!(pap, ncol(pap)+1, :CitZAF=&gt;czres)
-display(pap)</code></pre><pre><code class="language-none">826×9 DataFrame. Omitted printing of 2 columns
-│ Row │ A     │ Line  │ B     │ E0      │ WgtFracA │ kA      │ TOA     │
-│     │ Int64 │ Int64 │ Int64 │ Float64 │ Float64  │ Float64 │ Float64 │
-├─────┼───────┼───────┼───────┼─────────┼──────────┼─────────┼─────────┤
-│ 1   │ 13    │ 0     │ 26    │ 20.0    │ 0.241    │ 0.124   │ 52.5    │
-│ 2   │ 13    │ 0     │ 26    │ 25.0    │ 0.241    │ 0.098   │ 52.5    │
-│ 3   │ 13    │ 0     │ 26    │ 30.0    │ 0.241    │ 0.083   │ 52.5    │
-│ 4   │ 26    │ 0     │ 13    │ 20.0    │ 0.759    │ 0.736   │ 52.5    │
-│ 5   │ 26    │ 0     │ 13    │ 25.0    │ 0.759    │ 0.742   │ 52.5    │
-│ 6   │ 26    │ 0     │ 13    │ 30.0    │ 0.759    │ 0.748   │ 52.5    │
-│ 7   │ 26    │ 0     │ 16    │ 10.0    │ 0.466    │ 0.406   │ 75.0    │
+display(pap)</code></pre><pre><code class="language-none">826×9 DataFrame
+│ Row │ A     │ Line  │ B     │ E0      │ WgtFracA │ kA      │ TOA     │ XP
+P      │ CitZAF   │
+│     │ Int64 │ Int64 │ Int64 │ Float64 │ Float64  │ Float64 │ Float64 │ Fl
+oat64? │ Float64? │
+├─────┼───────┼───────┼───────┼─────────┼──────────┼─────────┼─────────┼───
+───────┼──────────┤
+│ 1   │ 13    │ 0     │ 26    │ 20.0    │ 0.241    │ 0.124   │ 52.5    │ 1.
+05918  │ 0.901026 │
+│ 2   │ 13    │ 0     │ 26    │ 25.0    │ 0.241    │ 0.098   │ 52.5    │ 1.
+07042  │ 0.924951 │
+│ 3   │ 13    │ 0     │ 26    │ 30.0    │ 0.241    │ 0.083   │ 52.5    │ 1.
+02594  │ 0.914386 │
+│ 4   │ 26    │ 0     │ 13    │ 20.0    │ 0.759    │ 0.736   │ 52.5    │ 0.
+996823 │ 1.00185  │
+│ 5   │ 26    │ 0     │ 13    │ 25.0    │ 0.759    │ 0.742   │ 52.5    │ 0.
+990216 │ 0.990101 │
+│ 6   │ 26    │ 0     │ 13    │ 30.0    │ 0.759    │ 0.748   │ 52.5    │ 0.
+982697 │ 0.978262 │
+│ 7   │ 26    │ 0     │ 16    │ 10.0    │ 0.466    │ 0.406   │ 75.0    │ 1.
+04115  │ 1.07304  │
 ⋮
-│ 819 │ 42    │ 12    │ 7     │ 6.0     │ 0.942    │ 0.9023  │ 40.0    │
-│ 820 │ 42    │ 12    │ 7     │ 8.0     │ 0.942    │ 0.9078  │ 40.0    │
-│ 821 │ 42    │ 12    │ 7     │ 10.0    │ 0.942    │ 0.9122  │ 40.0    │
-│ 822 │ 42    │ 12    │ 7     │ 12.0    │ 0.942    │ 0.9163  │ 40.0    │
-│ 823 │ 42    │ 12    │ 7     │ 15.0    │ 0.942    │ 0.922   │ 40.0    │
-│ 824 │ 42    │ 12    │ 7     │ 20.0    │ 0.942    │ 0.9268  │ 40.0    │
-│ 825 │ 42    │ 12    │ 7     │ 25.0    │ 0.942    │ 0.936   │ 40.0    │
-│ 826 │ 42    │ 12    │ 7     │ 30.0    │ 0.942    │ 0.9399  │ 40.0    │</code></pre><h5 id="XPP"><a class="docs-heading-anchor" href="#XPP">XPP</a><a id="XPP-1"></a><a class="docs-heading-anchor-permalink" href="#XPP" title="Permalink"></a></h5><p>Let&#39;s visualize this.</p><pre><code class="language-julia">using Gadfly
-plot(pap, x=:XPP, y=:XPP, Stat.histogram(bincount=50), Geom.bar, Guide.title(&quot;XPP&quot;))</code></pre><p><img src="../figures/testagainstpap_2_1.svg" alt/></p><h5 id="CitZAF"><a class="docs-heading-anchor" href="#CitZAF">CitZAF</a><a id="CitZAF-1"></a><a class="docs-heading-anchor-permalink" href="#CitZAF" title="Permalink"></a></h5><pre><code class="language-julia">plot(pap, x=:CitZAF, y=:CitZAF, Stat.histogram(bincount=50), Geom.bar, Guide.title(&quot;CitZAF&quot;))</code></pre><p><img src="../figures/testagainstpap_3_1.svg" alt/></p><h5 id="Summary-Statistics"><a class="docs-heading-anchor" href="#Summary-Statistics">Summary Statistics</a><a id="Summary-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#Summary-Statistics" title="Permalink"></a></h5><pre><code class="language-julia">describe(pap[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)</code></pre><pre><code class="language-none">2×8 DataFrame. Omitted printing of 2 columns
-│ Row │ variable │ mean     │ std       │ min      │ q25      │ median   │
-│     │ Symbol   │ Float64  │ Float64   │ Float64  │ Float64  │ Float64  │
-├─────┼──────────┼──────────┼───────────┼──────────┼──────────┼──────────┤
-│ 1   │ XPP      │ 1.00355  │ 0.0264633 │ 0.897411 │ 0.989226 │ 0.999223 │
-│ 2   │ CitZAF   │ 0.990101 │ 0.0477465 │ 0.848773 │ 0.96709  │ 0.995988 │</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../coatingthickness/">« Coating Thickness</a><a class="docs-footer-nextpage" href="../testagainstheinrich/">Compare to Heinrich »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 10 July 2020 17:17">Friday 10 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+│ 819 │ 42    │ 12    │ 7     │ 6.0     │ 0.942    │ 0.9023  │ 40.0    │ 1.
+01017  │ 1.03023  │
+│ 820 │ 42    │ 12    │ 7     │ 8.0     │ 0.942    │ 0.9078  │ 40.0    │ 1.
+0082   │ 1.02528  │
+│ 821 │ 42    │ 12    │ 7     │ 10.0    │ 0.942    │ 0.9122  │ 40.0    │ 1.
+00652  │ 1.02104  │
+│ 822 │ 42    │ 12    │ 7     │ 12.0    │ 0.942    │ 0.9163  │ 40.0    │ 1.
+00473  │ 1.01683  │
+│ 823 │ 42    │ 12    │ 7     │ 15.0    │ 0.942    │ 0.922   │ 40.0    │ 1.
+00209  │ 1.01059  │
+│ 824 │ 42    │ 12    │ 7     │ 20.0    │ 0.942    │ 0.9268  │ 40.0    │ 1.
+00213  │ 1.00443  │
+│ 825 │ 42    │ 12    │ 7     │ 25.0    │ 0.942    │ 0.936   │ 40.0    │ 0.
+996914 │ 0.992622 │
+│ 826 │ 42    │ 12    │ 7     │ 30.0    │ 0.942    │ 0.9399  │ 40.0    │ 0.
+996953 │ 0.985872 │</code></pre><h5 id="XPP"><a class="docs-heading-anchor" href="#XPP">XPP</a><a id="XPP-1"></a><a class="docs-heading-anchor-permalink" href="#XPP" title="Permalink"></a></h5><p>Let&#39;s visualize this.</p><pre><code class="language-julia">using Gadfly
+plot(pap, x=:XPP, y=:XPP, Stat.histogram(bincount=50), Geom.bar, Guide.title(&quot;XPP&quot;))</code></pre><p><img src="../figures/testagainstpap_2_1.svg" alt/></p><h5 id="CitZAF"><a class="docs-heading-anchor" href="#CitZAF">CitZAF</a><a id="CitZAF-1"></a><a class="docs-heading-anchor-permalink" href="#CitZAF" title="Permalink"></a></h5><pre><code class="language-julia">plot(pap, x=:CitZAF, y=:CitZAF, Stat.histogram(bincount=50), Geom.bar, Guide.title(&quot;CitZAF&quot;))</code></pre><p><img src="../figures/testagainstpap_3_1.svg" alt/></p><h5 id="Summary-Statistics"><a class="docs-heading-anchor" href="#Summary-Statistics">Summary Statistics</a><a id="Summary-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#Summary-Statistics" title="Permalink"></a></h5><pre><code class="language-julia">describe(pap[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)</code></pre><pre><code class="language-none">2×8 DataFrame
+│ Row │ variable │ mean     │ std       │ min      │ q25      │ median   │ 
+q75     │ max     │
+│     │ Symbol   │ Float64  │ Float64   │ Float64  │ Float64  │ Float64  │ 
+Float64 │ Float64 │
+├─────┼──────────┼──────────┼───────────┼──────────┼──────────┼──────────┼─
+────────┼─────────┤
+│ 1   │ XPP      │ 1.00355  │ 0.0264633 │ 0.897411 │ 0.989226 │ 0.999223 │ 
+1.0121  │ 1.19012 │
+│ 2   │ CitZAF   │ 0.990101 │ 0.0477465 │ 0.848773 │ 0.96709  │ 0.995988 │ 
+1.01802 │ 1.19848 │</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../coatingthickness/">« Coating Thickness</a><a class="docs-footer-nextpage" href="../testagainstheinrich/">Compare to Heinrich »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 28 July 2020 14:49">Tuesday 28 July 2020</span>. Using Julia version 1.5.0-rc2.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
