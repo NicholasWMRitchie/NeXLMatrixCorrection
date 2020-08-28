@@ -12,7 +12,7 @@ function mapline(elm, index)
   return [ brightest(characteristic(elm, trs)) ]
 end
 
-pap = DataFrame!(CSV.File("papkratios.csv", header=3, skipto=4))
+pap = CSV.read("papkratios.csv", DataFrame, header=3, skipto=4)
 xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
 for r in eachrow(pap)
   try
@@ -98,5 +98,3 @@ describe(pap[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
 │ 1   │ XPP      │ 1.00355  │ 0.0264633 │ 0.897411 │ 0.989226 │ 0.999223 │
 │ 2   │ CitZAF   │ 0.990101 │ 0.0477465 │ 0.848773 │ 0.96709  │ 0.995988 │
 ````
-
-

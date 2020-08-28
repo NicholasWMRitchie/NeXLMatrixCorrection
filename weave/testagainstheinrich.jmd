@@ -11,7 +11,7 @@ using CSV
 using DataFrames
 using NeXLMatrixCorrection
 
-heinrich =DataFrame!(CSV.File(joinpath(@__DIR__,"Heinrich1995kratios.csv"), header=18, skipto=19))
+heinrich = CSV.read(joinpath(@__DIR__,"Heinrich1995kratios.csv"), DataFrame, header=18, skipto=19)
 trss = Dict("Kα"=>kalpha, "Kβ"=>kbeta, "Lα"=>lalpha, "Lβ"=>lbeta, "Mα"=>malpha, "Mβ"=>mbeta)
 trsnames = Dict(1=>"Kα", 2=>"Kβ", 3=>"Lα", 4=>"Lβ", 8=>"Mα", 9=>"Mβ")
 heinrich.Z1 = map(z->elements[z].symbol, heinrich.Z1)
