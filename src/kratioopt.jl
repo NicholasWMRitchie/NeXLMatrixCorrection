@@ -19,7 +19,7 @@ struct SimpleKRatioOptimizer <: KRatioOptimizer
     SimpleKRatioOptimizer(overvoltage) = new(overvoltage, Dict{Vector{CharXRay}, AbstractFloat}())
 end
 
-function optimizeks(skro::SimpleKRatioOptimizer, krs::Vector{KRatio})::Vector{KRatio}
+function optimizeks(skro::SimpleKRatioOptimizer, krs::AbstractVector{T})::Vector{T} where  T <: Union{KRatio, KRatios}
     function score(kr) # Larger is better....
         sc = get(skro.scores, kr.lines, -1.0)
         if sc==-1.0
@@ -32,7 +32,7 @@ function optimizeks(skro::SimpleKRatioOptimizer, krs::Vector{KRatio})::Vector{KR
         end
         return sc
     end
-    res = Vector{KRatio}()
+    res = Vector{T}()
     for elm in elms(krs)
         elmkrs=filter(k->k.element==elm, krs)
         push!(res, elmkrs[findmax(score.(elmkrs))[2]])
