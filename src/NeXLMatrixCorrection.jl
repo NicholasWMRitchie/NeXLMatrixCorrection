@@ -79,7 +79,7 @@ export reedFluorescence # Construct a structure encapsulating the Reed fluoresce
 include("kratioopt.jl")
 export KRatioOptimizer # Abstract class
 export SimpleKRatioOptimizer # A very simple implmentation of KRatioOptimizer
-export optimizeks
+export optimizeks # The method required of KRatioOptimizer
 
 # Performs iteration to estimate the composition from measured k-ratios
 include("iterate.jl")
@@ -109,7 +109,6 @@ export getstandards # Get a list of suggested standards for an element.
 
 function __init__()
     @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")
-    @require NeXLSpectrum = "6c578565-ca7f-4012-afc4-b8412d85af92" include("spectrumsupport.jl")
 end
 
 end

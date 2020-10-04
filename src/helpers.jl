@@ -40,7 +40,7 @@ end
 
 function NeXLMatrixCorrection.zaf(ir::IterationResult; minweight=0.01)
     stds = Dict( kr.element=>kr.standard for kr in ir.kratios)
-    spec = ir.label.spec
+    spec = ir.label.spectrum
     NeXLMatrixCorrection.zaf(ir.comp, spec[:BeamEnergy], spec[:TakeOffAngle];
         mc=ir.iterate.mctype, fc=ir.iterate.fctype, stds=stds, minweight=minweight)
 end
