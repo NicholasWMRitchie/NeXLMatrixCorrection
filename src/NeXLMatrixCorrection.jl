@@ -43,6 +43,7 @@ export ZAFc # Combined correction factor ZAF + coating
 
 # Use massthickness to estimate the thickness of an ultra-thin coating on a substrate.
 export massthickness # Estimate the mass-thickness of a coating on a substrate
+export coatingasfilm # Calculates the coating thickness and creates a Film object to represent it.
 export kcoating # Calculate the measured k for an ultra-thin coating on a substrate
 
 # Wraps multiple ZAFCorrection objects to calculate the full matrix correction for one or more characteristic x-rays

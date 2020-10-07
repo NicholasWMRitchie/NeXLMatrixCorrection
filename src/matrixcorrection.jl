@@ -173,6 +173,18 @@ function massthickness(
     return find_zero(f, 0.01 * range(ty, substrate, e0, false), Roots.Order1()) / coating[element(cxr)]
 end
 
+function coatingasfilm(
+    ty::Type{<:MatrixCorrection},
+    substrate::Material,
+    coating::Material,
+    cxr::CharXRay,
+    e0::Real,
+    toa::Real,
+    k::Real,)
+    @assert haskey(coating.properties, :Density)
+    return Film(coating, massthickness(ty, substrate, coating, cxr, e0, toa, k) / coating[:Density])
+end
+
 
 """
     correctkratios(krs::AbstractVector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
