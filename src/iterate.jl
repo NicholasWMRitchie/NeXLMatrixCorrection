@@ -104,22 +104,13 @@ using asa(DataFrame, rur::RecordingUpdateRule) or plotted using Gadfly's plot(ru
 """
 struct RecordingUpdateRule <: UpdateRule
     base::UpdateRule
-    zafs::Vector{Dict{Element,Float64}}
     comps::Vector{Dict{Element,Float64}}
-    prev::Vector{Material}
-    meas::Dict{Element,KRatio}
     """
         RecordingUpdateRule(ur::UpdateRule)
 
     Wrap an UpdateRule instance with diagnostic recorders.
     """
-    RecordingUpdateRule(ur::UpdateRule) = new(
-        ur,
-        Vector{Dict{Element,Float64}}(),
-        Vector{Dict{Element,Float64}}(),
-        Vector{Material}(),
-        Dict{Element,KRatio}(),
-    )
+    RecordingUpdateRule(ur::UpdateRule) = new( ur, Vector{Dict{Element,Float64}}())
 end
 """
     NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)::DataFrame
@@ -127,26 +118,9 @@ end
 Tabulate the iteration steps in a DataFrame.
 """
 function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
-    dzafs, dcs = Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
-    prev, meas = Dict{Element,Vector{Float64}}(), Dict{Element,Vector{Float64}}()
-    allelms = union(keys(rur.zafs[1]), keys(rur.comps[1]), keys(rur.prev[1]), keys(rur.meas))
-    for elm in allelms
-        dzafs[elm], dcs[elm], prev[elm], meas[elm] = [], [], [], []
-    end
-    for i in eachindex(rur.zafs)
-        for elm in allelms
-            push!(dzafs[elm], get(rur.zafs[i], elm, 0.0))
-            push!(dcs[elm], get(rur.comps[i], elm, 0.0))
-            push!(prev[elm], rur.prev[i][elm])
-            push!(meas[elm], value(rur.meas[elm].kratio))
-        end
-    end
-    df = DataFrame(Iter = collect(eachindex(rur.zafs)))
-    for elm in allelms
-        df[!, Symbol("Prev($(elm.symbol))")] = prev[elm]
-        df[!, Symbol("Next($(elm.symbol))")] = dcs[elm]
-        df[!, Symbol("ZAF($(elm.symbol))")] = dzafs[elm]
-        df[!, Symbol("meas($(elm.symbol))")] = meas[elm]
+    df = DataFrame(Iter = eachindex(rur.comps))
+    for elm in keys(rur.comps[1])
+        df[!, Symbol("Cest[$(elm.symbol)]")] = [ get(rur.comps[i], elm, 0.0) for i in eachindex(rur.comps) ]
     end
     return df
 end
@@ -157,23 +131,16 @@ function NeXLMatrixCorrection.update( #
     measured::Vector{KRatio},
     zafs::Dict{Element,Float64},
 )::Dict{Element,Float64}
-    res = NeXLMatrixCorrection.update(rur.base, prevcomp, measured, zafs)
-    if isempty(rur.meas)
-        for kr in measured
-            rur.meas[kr.element] = kr
-        end
+    if length(rur.comps)==0
+        push!(rur.comps, Dict(elm=>prevcomp[elm] for elm in keys(prevcomp)))
     end
-    push!(rur.prev, prevcomp)
-    push!(rur.zafs, zafs)
+    res = NeXLMatrixCorrection.update(rur.base, prevcomp, measured, zafs)
     push!(rur.comps, res)
     return res
 end
 
 function NeXLMatrixCorrection.reset(rur::RecordingUpdateRule)
-    resize!(rur.zafs, 0)
     resize!(rur.comps, 0)
-    resize!(rur.prev, 0)
-    empty!(rur.meas)
     NeXLMatrixCorrection.reset(rur.base)
 end
 
