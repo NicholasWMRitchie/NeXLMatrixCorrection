@@ -95,10 +95,10 @@ function NeXLUncertainties.asa(#
     ::Type{DataFrame},
     unk::ZAFCorrection,
     std::ZAFCorrection,
-    trans::AbstractVector{Transition},
+    trans::NTuple{N,Transition},
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-)::DataFrame
+)::DataFrame where {N}
     @assert isequal(atomicsubshell(unk.za), atomicsubshell(std.za))
     "The atomic sub-shell for the standard and unknown don't match."
     cxrs = characteristic(
@@ -107,25 +107,19 @@ function NeXLUncertainties.asa(#
         1.0e-9,
         0.999 * min(beamEnergy(unk.za), beamEnergy(std.za)),
     )
-    stds, stdE0, unks, unkE0, xray =
-        Vector{String}(), Vector{Float64}(), Vector{String}(), Vector{Float64}(), Vector{CharXRay}()
-    z, a, f, c, zaf, k, unkToa, stdToa = Vector{Float64}(),
-    Vector{Float64}(),
-    Vector{Float64}(),
-    Vector{Float64}(),
-    Vector{Float64}(),
-    Vector{Float64}(),
-    Vector{Float64}(),
-    Vector{Float64}()
+    stds, celm, stdE0, unks, unkE0, xray = String[], Float64[], Float64[], String[], Float64[], CharXRay[]
+    z, a, f, c, zaf, k, unkToa, stdToa = #
+        Float64[], Float64[], Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
     for cxr in cxrs
         if isequal(inner(cxr), atomicsubshell(std.za))
             elm = element(cxr)
             push!(unks, name(material(unk.za)))
+            push!(celm, material(unk.za)[elm])
             push!(unkE0, beamEnergy(unk.za))
-            push!(unkToa, rad2deg(θunk))
+            push!(unkToa, θunk)
             push!(stds, name(material(std.za)))
             push!(stdE0, beamEnergy(std.za))
-            push!(stdToa, rad2deg(θstd))
+            push!(stdToa, θstd)
             push!(xray, cxr)
             push!(z, Z(unk, std))
             push!(a, A(unk, std, cxr, θunk, θstd))
@@ -149,6 +143,7 @@ function NeXLUncertainties.asa(#
         F = f,
         c = c,
         ZAF = zaf,
+        C = celm,
         k = k,
     )
 end
