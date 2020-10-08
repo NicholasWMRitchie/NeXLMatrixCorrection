@@ -40,6 +40,7 @@ include("zafcorrection.jl")
 export ZAFCorrection
 export zafcorrection # Factory method for ZAFCorrection
 export ZAFc # Combined correction factor ZAF + coating
+export beamEnergy
 
 # Use massthickness to estimate the thickness of an ultra-thin coating on a substrate.
 export massthickness # Estimate the mass-thickness of a coating on a substrate
