@@ -18,6 +18,7 @@ export Fχ # Absorbed intensity function
 export matrixcorrection # Factory method for MatrixCorrection algorithms (XPP and NullCorrection)
 export continuumcorrection # Factory method for creating matrix correction algorithms for continuum correction
 export correctcontinuum # The method to calculate the continuum correction
+export χ # Calculates reduced mass-absorption coefficient
 
 # Abstract class for a base fluorescence correction
 include("fluorescencecorrection.jl")
@@ -31,7 +32,6 @@ include("coating.jl")
 export CoatingCorrection
 export NullCoating  # 100% transmission (no correction)
 export Coating      # A basic multi-layer coating for ultra-thin coatings
-export transmission # Coating transmission
 export carboncoating # Build a carbon coating
 export coatingcorrection # Factory method for CoatingCorrection algorithms (Null or Coating)
 
@@ -71,6 +71,10 @@ include("xppu.jl")
 export JzLabel
 export Ju
 export StepMJZbarb, StepDPT, StepQlaOoS
+
+# Implements Merlet's XPhi algorithm
+include("xphi.jl")
+export XPhi
 
 # Implements Reed's 1991 fluorescence correction
 include("reed.jl")

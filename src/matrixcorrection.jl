@@ -159,7 +159,7 @@ Estimate the mass-thickness of a ultra-thin layer of a `coating` material on a `
 of a characteristic X-ray `cxr`.  Works for k-ratios of the order of 1 %.  The standard for the coating is assumed
 to be of the same material as the coating.
 """
-function massthickness(
+function NeXLCore.massthickness(
     ty::Type{<:MatrixCorrection},
     substrate::Material,
     coating::Material,

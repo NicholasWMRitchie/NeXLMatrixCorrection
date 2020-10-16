@@ -35,7 +35,7 @@ Calculate the transmission fraction for the specified X-ray through the coating
 in the direction of the detector.
 """
 NeXLCore.transmission(cc::Coating, xray::CharXRay, θtoa::AbstractFloat) =
-    mapreduce(lyr -> NeXLCore.transmission(lyr, xray, θtoa), *, cc.layers, init = 1.0)
+    mapreduce(lyr -> transmission(lyr, xray, θtoa), *, cc.layers, init = 1.0)
 
 Base.show(io::IO, coating::Coating) = length(coating.layers) == 1 ? #
     (thickness(coating.layers[1]) <= 0.0 ? Base.show(io, "No coating") : Base.show(io, coating.layers[1])) : #

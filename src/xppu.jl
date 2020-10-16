@@ -824,6 +824,6 @@ function xppu(sample::Material, cxr::CharXRay, coating::Film, e0::UncertainValue
     r2 = s2(cat(r1, input2))
 
     s3 = steps3(sample.name, shell, coating.material.name, all)
-    r3 = steps3(r2)
+    r3 = s3(r2)
     return r3
 end

@@ -1,8 +1,9 @@
 ### Comparing Matrix Correction Algorithms
-Nicholas W. M. Ritchie 15-May-2020 Added Riveros 12-Jun-2020
+Nicholas W. M. Ritchie 15-May-2020 Added Riveros 12-Jun-2020, XPhi 15-Oct-2020
 
-Testing matrix correction algorithms XPP and CitZAF against the k-ratio database published by Heinrich in
-"X-Ray Spectroscopy in Electron Beam Instruments" (1995)
+Testing matrix correction algorithms XPP, CitZAF, Riveros, and XPhi against the
+k-ratio database published by Heinrich in "X-Ray Spectroscopy in Electron Beam
+Instruments" (1995)
 
 Look to the end of the document for various interesting plots.
 
@@ -17,7 +18,7 @@ trsnames = Dict(1=>"Kα", 2=>"Kβ", 3=>"Lα", 4=>"Lβ", 8=>"Mα", 9=>"Mβ")
 heinrich.Z1 = map(z->elements[z].symbol, heinrich.Z1)
 heinrich.Z2 = map(z->elements[z].symbol, heinrich.Z2)
 heinrich.Line = map(l->trsnames[l], heinrich.Line)
-xppres, czres, rivres = Union{Float64,Missing}[], Union{Float64,Missing}[], Union{Float64,Missing}[]
+xppres, czres, rivres, xphires = Union{Float64,Missing}[], Union{Float64,Missing}[], Union{Float64,Missing}[], Union{Float64,Missing}[]
 for r in eachrow(heinrich)
     a, b = parse(Element,r.Z1), parse(Element,r.Z2)
     e0, θ  = convert(Float64,r.E0), deg2rad(r.TOA)
@@ -44,10 +45,18 @@ for r in eachrow(heinrich)
       @show c
       push!(rivres, missing)
     end
+    try
+      algs = zafcorrection(XPhi, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      push!(xphires, k(algs..., θ, θ)/kk)
+    catch c
+      @show c
+      push!(xphires, missing)
+    end
 end
 insertcols!(heinrich, ncol(heinrich)+1, :XPP=>xppres)
 insertcols!(heinrich, ncol(heinrich)+1, :CitZAF=>czres)
 insertcols!(heinrich, ncol(heinrich)+1, :Riveros=>rivres)
+insertcols!(heinrich, ncol(heinrich)+1, :XPhi=>xphires)
 #display(show(dropmissing!(heinrich)))
 ```
 
@@ -79,6 +88,11 @@ plot(heinrich, x=:CitZAF, plotargs..., Guide.title("CitZAF"))
 plot(heinrich, x=:Riveros, plotargs..., Guide.title("Riveros"))
 ```
 
+##### XPhi
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+plot(heinrich, x=:XPhi, plotargs..., Guide.title("XPhi"))
+```
+
 ##### Summary Statistics
 ```julia
 describe(heinrich[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)
@@ -95,6 +109,7 @@ describe(lowZ[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)
 display(plot(lowZ, x=:CitZAF, plotargs..., Guide.title("CitZAF")))
 display(plot(lowZ, x=:XPP, plotargs..., Guide.title("XPP")))
 display(plot(lowZ, x=:Riveros, plotargs..., Guide.title("Riveros")))
+display(plot(lowZ, x=:XPhi, plotargs..., Guide.title("XPhi")))
 ```
 Let's find out which are the "problem children".
 ```julia
@@ -131,7 +146,8 @@ for origin in 1:11
         hstack(
           plot(df, x=:XPP, plotargs..., Guide.title("XPP")),
           plot(df, x=:CitZAF, plotargs..., Guide.title("CitZAF")),
-          plot(df, x=:Riveros, plotargs..., Guide.title("Riveros"))
+          plot(df, x=:Riveros, plotargs..., Guide.title("Riveros")),
+          plot(df, x=:XPhi, plotargs..., Guide.title("XPhi"))
           )))
     end
 end
@@ -164,6 +180,15 @@ hstack(
 )
 ```
 
+Compare with XPhi
+```julia; fig_width=10; fig_height=4; fig_ext=".svg";
+hstack(
+  plot(weird, x=:XPhi, plotargs..., Guide.title("Weird")),
+  plot(notweird, x=:XPhi, plotargs..., Guide.title("Less So"))
+)
+```
+
+
 
 They are all z=41 (Nb) in z=92 (U) at moderate to high E0
 ```julia
@@ -179,7 +204,8 @@ uranium = filter(r->(r.Z1=="U") || (r.Z2=="U"), heinrich)
 hstack(
   plot(uranium, x=:XPP, plotargs..., Guide.title("XPP")),
   plot(uranium, x=:CitZAF, plotargs..., Guide.title("CitZAF")),
-  plot(uranium, x=:Riveros, plotargs..., Guide.title("Riveros"))
+  plot(uranium, x=:Riveros, plotargs..., Guide.title("Riveros")),
+  plot(uranium, x=:XPhi, plotargs..., Guide.title("XPhi"))
 )
 ```
 
