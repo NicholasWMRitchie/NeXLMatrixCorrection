@@ -24,7 +24,7 @@ export χ # Calculates reduced mass-absorption coefficient
 include("fluorescencecorrection.jl")
 export FluorescenceCorrection # Abstract class for the algorithm implementing the F-term
 export NullFluorescence
-export F # Compute the flurorescence correction
+# export F # Compute the flurorescence correction
 export fluorescencecorrection # Factory method for FluorescenceCorrection algorithms (Reed and NullFluorescence)
 
 # Abstract class for a base coating correction algorithm
@@ -106,6 +106,15 @@ export Iteration # Defines the iteration procedure
 export IterationResult # The output from quantify(...)
 
 export quantify # Perform the iteration on KRatio(s) or FilterFitResult
+
+include("supportedthinfilms.jl")
+export SupportedThinFilms
+export nlayers
+export χs
+export outer, inner
+
+#include("xfilm.jl")
+#export XFilm
 
 include("helpers.jl")
 export zaf # Generates a table of ZAF correction factors
