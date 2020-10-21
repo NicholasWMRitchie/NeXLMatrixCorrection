@@ -16,26 +16,30 @@ function ρzx(E0::Float64, Ec::Float64, elm::Element)::Float64
 end
 
 """
-    ρzm(ρzx::Float64, E0::Float64, Ec::Float64, mat::Material)
+    ρzm(ρzx::Float64, E0::Float64, Ec::Float64, em::Union{Element,Material})
 
 Depth of the peak of the ϕ(ρz) curve in g/cm² (Merlet 1994 eqn 5 or Merlet 1995 eqn 7).
 E0, Ec in keV, Z is the atomic number
 """
-function ρzm(ρzx::Float64, E0::Float64, Ec::Float64, mat::Material)::Float64
-    U0, Z = E0 / Ec, z(mat)
+function ρzm(ρzx::Float64, E0::Float64, Ec::Float64, em::Union{Element,Material})::Float64
+    U0, Z = E0 / Ec, z(em)
     # return ρzx * (0.1 + 0.35 * exp(-0.07 * Z)) / (1.0 + 10.0 / (U0^10.0)) # 1994
     return ρzx * (0.1 + 0.35 * exp(-0.07 * Z)) / (1.0 + 1000.0 / (Z * U0^10.0)) # 1995
 end
 
+
 """
-    τ(Z::Int, t::Float64)
+    τ(elm::Element, t::Float64)
 
 Transmission coefficient of Zeller and Ruste 1976 (from Merlet 1994 & 1995)
 """
-function τ(Z::Int, t::Float64)::Float64
+function τ(elm::Element, ρzm::Float64, ρzx::Float64)::Float64
+    Z, t = z(elm), ρzm / ρzx
     τ1, τ2 = (1.0 - t)^(4.65 + 0.0356 * Z), (1.0 - t)^(1.112 + 0.00414 * Z^2)
     return τ1 + 4.65 * (τ2 - τ1) / evalpoly(Z, (3.54, 0.0356, -0.00414)) # Ok
 end
+
+mexp(sh::AtomicSubShell) = n(sh) == 1 ? 0.95 : 0.8
 
 """
     Φm(elm::Element, J::Float64, A::Float64, sh::AtomicSubShell, E0::Float64, ρzm::Float64, ρzx::Float64)
@@ -45,15 +49,15 @@ Z, J, A are the atomic number, ionization potential and atomic weight (mass-frac
 """
 function Φm(
     elm::Element,
-    J::Float64,
-    A::Float64,
+    J::Float64, # Mean ionization potential (keV)
+    A::Float64, # Atomic weight
     sh::AtomicSubShell,
-    E0::Float64,
+    E0::Float64, # in keV
     ρzm::Float64,
     ρzx::Float64,
 )::Float64
-    Z, m, U0 = z(elm), (n(sh) == 1 ? 0.95 : 0.8), E0 / (0.001 * energy(sh)) # Ok
-    @assert U0 > 1.0
+    Z, m, U0 = z(elm), mexp(sh), E0 / (0.001 * energy(sh)) # Ok
+    @assert U0 > 1.0  && U0 < 100.0
     @assert J > 0.021 && J < 1.0 # keV
     Ud = U0 * (1.0 - 1.03e5 * ρzm * Z / (E0^1.61 * J^0.3 * A)) # Ok
     pZ = -0.25 + 0.0787 * Z^0.3 # Ok
@@ -70,7 +74,7 @@ function Φm(
         (1.0 / d2) *
         (1.0 - (1.0 - 1.0 / (Ud^d2)) / (d2 * log(Ud))) # Ok
     QUd, QU0 = log(Ud) / (Ud^m), log(U0) / (U0^m) # Ok
-    return τ(Z, ρzm / ρzx) * (QUd / QU0) +
+    return τ(elm, ρzm, ρzx) * (QUd / QU0) +
            a * (0.28 * (1.0 - 0.5 * exp(-0.1 * Z)) * b1 + 0.165 * Z^0.6 * b2) # Ok
 end
 
@@ -116,17 +120,16 @@ struct XPhi <: MatrixCorrection
         E0, Ec = 0.001 * e0, 0.001 * energy(sh)
         mk = keys(mat)
         # This implements the multi-element weighting on page 367 of 1994
+        Φ0_v = Φ0(mat, E0, Ec)
         M = sum(nonneg(mat, elm) * z(elm) / a(elm, mat) for elm in mk)
-        ρzx_v =
-            sum(nonneg(mat, elm) * z(elm) / a(elm, mat) * ρzx(E0, Ec, elm) for elm in mk) / M
-        ρzm_v = ρzm(ρzx_v, E0, Ec, mat)
         Φm_v =
             sum(
                 nonneg(mat, elm) * z(elm) / a(elm, mat) *
-                Φm(elm, 0.001 * J(Berger1982, elm), a(elm, mat), sh, E0, ρzm_v, ρzx_v)
+                Φm(elm, 0.001 * J(Berger1982, elm), a(elm, mat), sh, E0,  ρzm(ρzx(E0, Ec, elm), E0, Ec, elm), ρzx(E0, Ec, elm))
                 for elm in mk
             ) / M
-        Φ0_v = Φ0(mat, E0, Ec)
+        ρzx_v = sum(nonneg(mat, elm) * z(elm) / a(elm, mat) * ρzx(E0, Ec, elm) for elm in mk) / M
+        ρzm_v = ρzm(ρzx_v, E0, Ec, mat)
         α_v, β_v = 0.46598 * (ρzx_v - ρzm_v), ρzm_v / sqrt(log(Φm_v / Φ0_v))
         @assert isapprox(Φm_v * exp(-(ρzm_v / β_v)^2), Φ0_v, rtol = 1.0e-6)
         @assert isapprox(exp(-((ρzx_v - ρzm_v) / α_v)^2), 0.01, atol = 1.0e-5)
