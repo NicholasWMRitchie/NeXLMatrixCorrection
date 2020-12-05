@@ -8,20 +8,29 @@ of k-ratios with one KRatio per element.
 abstract type KRatioOptimizer end
 
 """
-    SimpleKRatioOptimizer
+    SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[])
 
 Implements a simple optimizer based on shell first, overvoltage next and brightness last.  Once it picks
-an optimum set of lines for an element, it will not change.
+an optimum set of lines for an element, it will not change.  You can force the selection of specific
+lines by including the brightest in a family in `favor`.
 """
 struct SimpleKRatioOptimizer <: KRatioOptimizer
     overvoltage::Float64
     scores::Dict{Vector{CharXRay},AbstractFloat}
-    SimpleKRatioOptimizer(overvoltage) = new(overvoltage, Dict{Vector{CharXRay}, AbstractFloat}())
+    favor::Vector{CharXRay}
+
+    SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[]) = new(overvoltage, Dict{Vector{CharXRay}, AbstractFloat}(), favor)
 end
+
+Base.show(io::IO, skro::SimpleKRatioOptimizer) = print(io,"SimpleKRatioOptimizer[U>$(skro.overvoltage), favor=$(skro.favor)")
 
 function optimizeks(skro::SimpleKRatioOptimizer, krs::AbstractVector{T})::Vector{T} where  T <: Union{KRatio, KRatios}
     function score(kr) # Larger is better....
-        sc = get(skro.scores, kr.lines, -1.0)
+        if brightest(kr.lines) in skro.favor
+            sc = 1.0e100
+        else
+            sc =  get(skro.scores, kr.lines, -1.0)
+        end
         if sc==-1.0
             br = brightest(kr.lines)
             ov = min(kr.stdProps[:BeamEnergy], kr.unkProps[:BeamEnergy]) / edgeenergy(br)
