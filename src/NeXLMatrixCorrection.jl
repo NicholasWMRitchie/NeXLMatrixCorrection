@@ -18,12 +18,13 @@ export Fχ # Absorbed intensity function
 export matrixcorrection # Factory method for MatrixCorrection algorithms (XPP and NullCorrection)
 export continuumcorrection # Factory method for creating matrix correction algorithms for continuum correction
 export correctcontinuum # The method to calculate the continuum correction
+export χ # Calculates reduced mass-absorption coefficient
 
 # Abstract class for a base fluorescence correction
 include("fluorescencecorrection.jl")
 export FluorescenceCorrection # Abstract class for the algorithm implementing the F-term
 export NullFluorescence
-export F # Compute the flurorescence correction
+# export F # Compute the flurorescence correction
 export fluorescencecorrection # Factory method for FluorescenceCorrection algorithms (Reed and NullFluorescence)
 
 # Abstract class for a base coating correction algorithm
@@ -31,7 +32,6 @@ include("coating.jl")
 export CoatingCorrection
 export NullCoating  # 100% transmission (no correction)
 export Coating      # A basic multi-layer coating for ultra-thin coatings
-export transmission # Coating transmission
 export carboncoating # Build a carbon coating
 export coatingcorrection # Factory method for CoatingCorrection algorithms (Null or Coating)
 
@@ -72,6 +72,10 @@ export JzLabel
 export Ju
 export StepMJZbarb, StepDPT, StepQlaOoS
 
+# Implements Merlet's XPhi algorithm
+include("xphi.jl")
+export XPhi
+
 # Implements Reed's 1991 fluorescence correction
 include("reed.jl")
 export ReedFluorescence
@@ -82,6 +86,10 @@ include("kratioopt.jl")
 export KRatioOptimizer # Abstract class
 export SimpleKRatioOptimizer # A very simple implmentation of KRatioOptimizer
 export optimizeks # The method required of KRatioOptimizer
+
+include("standard.jl")
+export Standard # Collects k-ratios to be used for standardization.
+export standardize # Apply similar standards to a KRatio
 
 # Performs iteration to estimate the composition from measured k-ratios
 include("iterate.jl")
@@ -102,6 +110,15 @@ export Iteration # Defines the iteration procedure
 export IterationResult # The output from quantify(...)
 
 export quantify # Perform the iteration on KRatio(s) or FilterFitResult
+
+include("supportedthinfilms.jl")
+export SupportedThinFilms
+export nlayers
+export χs
+export outer, inner
+
+#include("xfilm.jl")
+#export XFilm
 
 include("helpers.jl")
 export zaf # Generates a table of ZAF correction factors

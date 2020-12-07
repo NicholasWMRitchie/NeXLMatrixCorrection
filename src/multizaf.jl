@@ -354,17 +354,17 @@ NeXLUncertainties.asa(
 
 function NeXLUncertainties.asa(
     ::Type{DataFrame},
-    asunk::Material,
+    unk::Material,
     std::Material,
     lines::Vector{CharXRay},
     e0::Float64,
     toa::Float64;
-    zacorr::Type{<:MatrixCorrection} = XPP,
-    fcorr::Type{<:FluorescenceCorrection} = ReedFluorescence,
-    ccorr::Type{<:CoatingCorrection} = Coating,
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    coating::Type{<:CoatingCorrection} = Coating,
 )
     flines = filter(cxr->energy(inner(cxr)) < e0, lines)
-    zafs = zafcorrection(zacorr, fcorr, ccorr, unk, std, flines, e0)
+    zafs = zafcorrection(mc, fc, coating, unk, std, flines, e0)
     asa(DataFrame, zafs..., toa, toa)
 end
 

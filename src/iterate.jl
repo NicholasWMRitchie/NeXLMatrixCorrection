@@ -340,56 +340,57 @@ function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZ
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
 """
-    quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
-    quantify(iter::Iteration, name::String, measured::Vector{KRatio})::IterationResult
-    quantify(ffr::FitResult; strip::AbstractVector{Element} = Element[], mc::Type{<:MatrixCorrection} = XPP, fl::Type{<:FluorescenceCorrection} = ReedFluorescence, cc::Type{<:CoatingCorrection} = Coating)::IterationResult
+    quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; standards::AbstractVector{KRatio}=KRatio[], maxIter::Int = 100)::IterationResult
+    quantify(iter::Iteration, name::String, measured::Vector{KRatio}; standards::AbstractVector{Standard}=Standard[], maxIter::Int = 100)::IterationResult
 
 Perform the iteration procedurer as described in `iter` using the `measured` k-ratios to produce the best
 estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the
 k-ratios from filter fit spectra.
 """
-quantify(iter::Iteration, name::String, measured::Vector{KRatio}) = quantify(iter, label(name), measured)
+quantify(iter::Iteration, name::String, measured::Vector{KRatio}; kwargs...) = quantify(iter, label(name), measured; kwargs...)
 
-function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIter::Int = 100)::IterationResult
+function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; standards::AbstractVector{Standard}=Standard[], maxIter::Int = 100)::IterationResult
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio})::Dict{Element,Float64} =
         Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
     # Compute the estimated k-ratios
     computeKs(estComp::Material, zafs::Dict{Element,Float64}, stdComps::Dict{Element,Float64})::Dict{Element,Float64} =
         Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
-    function computefinal(estcomp, measured)
+    function computefinal(estcomp, meas)
         final = Dict{Element,UncertainValue}(elm=>convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
-        for kr in measured
+        for kr in meas
             elm = element(kr)
-            final[elm] = uv(value(final[elm]), (value(final[elm])/value(kr.kratio))*σ(kr.kratio))
+            @assert value(final[elm])*fractional(kr.kratio) >= 0.0 "$(final[elm]) $(kr.kratio)"
+            final[elm] = uv(value(final[elm]), value(final[elm])*fractional(kr.kratio))
         end
         return material(name(estcomp), final)
     end
+    standardized = [ standardize(kr, standards) for kr in measured ]
     # Compute the k-ratio difference metric
-    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
+    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in standardized)
     # Compute the standard matrix correction factors
-    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.lines) for kr in measured)
-    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in measured)
+    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.lines) for kr in standardized)
+    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in standardized)
     # First estimate c_unk = k*c_std
-    estcomp = material(repr(label), compute(iter.unmeasured, firstEstimate(measured)))
+    estcomp = material(repr(label), compute(iter.unmeasured, firstEstimate(standardized)))
     # Compute the associated matrix corrections
     zafs = computeZAFs(iter, estcomp, stdZafs)
     bestComp, bestKrs = estcomp, computeKs(estcomp, zafs, stdComps)
     bestEval, bestIter = 1.0e300, 0
     reset(iter.updater)
-    for iters = 1:maxIter
-        # How close are the calculated k-ratios to the measured?
+    for iters in Base.OneTo(maxIter)
+        # How close are the calculated k-ratios to the standardized version of the measured?
         estkrs = computeKs(estcomp, zafs, stdComps)
         if eval(estkrs) < bestEval
             # If no convergence report it but return closest result...
             bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
-            if converged(iter.converged, measured, bestKrs)
-                fc = computefinal(estcomp, measured)
-                return IterationResult(label, fc, measured, bestKrs, true, bestIter, iter)
+            if converged(iter.converged, standardized, bestKrs)
+                fc = computefinal(estcomp, standardized)
+                return IterationResult(label, fc, standardized, bestKrs, true, bestIter, iter)
             end
         end
         # Compute the next estimated mass fractions
-        upd = update(iter.updater, estcomp, measured, zafs)
+        upd = update(iter.updater, estcomp, standardized, zafs)
         # Apply unmeasured element rules
         estcomp = material(repr(label), compute(iter.unmeasured, upd))
         # calculated matrix correction for estcomp
@@ -397,21 +398,23 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}, maxIt
     end
     @warn "$label did not converge in $(maxIter)."
     @warn "   Using best non-converged result from step $(bestIter)."
-    return IterationResult(label, bestComp, measured, bestKrs, false, bestIter, iter)
+    return IterationResult(label, bestComp, standardized, bestKrs, false, bestIter, iter)
 end
 
 quantify(
     sampleName::String,
     measured::Vector{KRatio};
+    standards::AbstractVector{Standard}=Standard[],
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
-) = quantify(Iteration(mc, fc, cc), label(sampleName), measured)
+) = quantify(Iteration(mc, fc, cc), label(sampleName), measured, standards=standards)
 
 quantify(
     lbl::Label,
     measured::Vector{KRatio};
+    standards::AbstractVector{Standard}=Standard[],
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
-) = quantify(Iteration(mc, fc, cc), lbl, measured)
+) = quantify(Iteration(mc, fc, cc), lbl, measured, standards=standards)

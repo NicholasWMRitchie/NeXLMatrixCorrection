@@ -83,7 +83,7 @@ function dEdρs(::Type{XPP}, mat::Material, Ekev::AbstractFloat) #C1
         d, p, v = D(XPP, j), P(XPP, j), Ekev / Jkev
         return sum(i -> d[i] * v^p[i], 1:3)
     end
-    return -(M(XPP, mat) / Jkev) / f(mat, Ekev)
+    return -(M(XPP, mat) / Jkev) / f(mat, Ekev, Jkev)
 end
 
 """

@@ -44,3 +44,62 @@ function NeXLMatrixCorrection.zaf(ir::IterationResult; minweight=0.01)
     NeXLMatrixCorrection.zaf(ir.comp, spec[:BeamEnergy], spec[:TakeOffAngle];
         mc=ir.iterate.mctype, fc=ir.iterate.fctype, stds=stds, minweight=minweight)
 end
+
+function NeXLUncertainties.asa(
+    ::Type{DataFrame}, 
+    krs::AbstractVector{KRatio}, 
+    withComputedKs::Bool, 
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection}=ReedFluorescence
+)
+    fm, sm, cm = Union{Float64,Missing}, Union{String,Missing}, Union{Material,Missing}
+    lines, mease0, meastoa, meascomp = String[], fm[], fm[], cm[]
+    refe0, reftoa, refcomp, krv, dkrv, cks, ratio = fm[], fm[], cm[], Float64[], Float64[], fm[], fm[]
+    for kr in krs
+        push!(lines, repr(kr.lines))
+        meas = kr.unkProps
+        push!(mease0, get(meas, :BeamEnergy, missing))
+        push!(meastoa, get(meas, :TakeOffAngle, missing))
+        push!(meascomp, get(meas, :Composition, missing))
+        ref = kr.stdProps
+        push!(refe0, get(ref, :BeamEnergy, missing))
+        push!(reftoa, get(ref, :TakeOffAngle, missing))
+        push!(refcomp, get(ref, :Composition, missing))
+        push!(krv, value(kr.kratio))
+        push!(dkrv, σ(kr.kratio))
+        if withComputedKs
+            elm = element(kr.lines[1])
+            prim = brightest(kr.lines)
+            if any(ismissing.((meascomp[end], mease0[end], meastoa[end], refcomp[end], refe0[end], reftoa[end]))) ||
+               (NeXLCore.nonneg(meascomp[end], elm) < 1.0e-6) ||
+               (NeXLCore.nonneg(refcomp[end], elm) < 1.0e-6) || (energy(inner(prim))>0.95*min(mease0[end],refe0[end]))
+                push!(cks, missing)
+                push!(ratio, missing)
+            else
+                zs = zafcorrection(mc, fc, Coating, meascomp[end], kr.lines, mease0[end])
+                zr = zafcorrection(mc, fc, Coating, refcomp[end], kr.lines, refe0[end])
+                k =
+                    gZAFc(zs, zr, meastoa[end], reftoa[end]) * NeXLCore.nonneg(meascomp[end], elm) /
+                    NeXLCore.nonneg(refcomp[end], elm)
+                push!(cks, k)
+                push!(ratio, value(kr.kratio) / k)
+            end
+        end
+    end
+    res = DataFrame(
+        Lines = lines,
+        E0meas = mease0,
+        TOAmeas = meastoa,
+        Cmeas = meascomp,
+        E0ref = refe0,
+        TOAref = reftoa,
+        Cref = refcomp,
+        K = krv,
+        ΔK = dkrv,
+    )
+    if withComputedKs
+        res[:, :Kxpp] = cks
+        res[:, :Ratio] = ratio
+    end
+    return res
+end
