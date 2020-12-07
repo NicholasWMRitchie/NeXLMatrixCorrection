@@ -13,16 +13,13 @@
 The matrix correction package in the NeXL microanalysis library for Julia.  `NeXLMatrixCorrection` depends upon
 `NeXLUncertainties` and `NeXLCore`.
 
-`NeXLMatrixCorrection` will soon be available on the Julia registry.  In the meanwhile, it must be installed using the URL.
+`NeXLMatrixCorrection` is available through the Julia registry.  You can install it using the package manager from the command prompt.
 
 ```julia
-using Pkg;
-Pkg.add.([
-  "https://github.com/NicholasWMRitchie/NeXLMatrixCorrection.jl.git",
-])
+]add NeXLMatrixCorrection
 ```
 
-Currently `NeXLMatrixCorrection` implements the XPP, CitZAF and Riveros matrix correction and Reed fluorescence correction algorithms for bulk and coated samples.  The library is designed to make it easy to add additional algorithms.
+Currently `NeXLMatrixCorrection` implements the XPP, CitZAF, XPhi and Riveros matrix correction and Reed fluorescence correction algorithms for bulk and coated samples.  The library is designed to make it easy to add additional algorithms.
 
 Primarily the algorithms in `NeXLMatrixCorrection` are designed to take a `Vector{NeXLCore.KRatio}` and return a `NeXLCore.Material`.  Since they are intended for both WDS and EDS, the k-ratio can represent one or more characteristic X-ray lines from a single element.  K-ratios compare a measured intensity with the intensity from a reference (standard) material. Typically, these two materials are measured at the same beam energy but multiple beam energy measurements are also supported.
 
