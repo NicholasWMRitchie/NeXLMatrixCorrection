@@ -118,8 +118,10 @@ function Z(unk::MatrixCorrection, std::MatrixCorrection)
     return F(unk) / F(std)
 end
 
+
 """
-    A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, χcunk=0.0, tcunk=0.0, χcstd=0.0, tcstd=0.0)
+    A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+    A(unk::MatrixCorrection, xray::CharXRay, θ::AbstractFloat)
 
 The absorption correction factors.
 """
@@ -127,6 +129,10 @@ function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
     @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
+end
+
+function A(unk::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat)
+    return Fχ(unk, xray, θunk)/F(unk)
 end
 
 correctcontinuum(mc::MatrixCorrection, θtoa::Real) = Fχ(mc, θtoa) / F(mc)
