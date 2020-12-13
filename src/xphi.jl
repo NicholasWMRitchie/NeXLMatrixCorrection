@@ -57,7 +57,7 @@ function Φm(
     ρzx::Float64,
 )::Float64
     Z, m, U0 = z(elm), mexp(sh), E0 / (0.001 * energy(sh)) # Ok
-    @assert U0 > 1.0  && U0 < 100.0
+    @assert U0 > 1.0  && U0 < 1000.0
     @assert J > 0.021 && J < 1.0 # keV
     Ud = U0 * (1.0 - 1.03e5 * ρzm * Z / (E0^1.61 * J^0.3 * A)) # Ok
     pZ = -0.25 + 0.0787 * Z^0.3 # Ok
