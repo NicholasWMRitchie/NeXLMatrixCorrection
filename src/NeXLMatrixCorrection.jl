@@ -76,6 +76,10 @@ export StepMJZbarb, StepDPT, StepQlaOoS
 include("xphi.jl")
 export XPhi
 
+# Implements the null matrix correction
+include("nullmatrixcorrection.jl")
+export NullCorrection
+
 # Implements Reed's 1991 fluorescence correction
 include("reed.jl")
 export ReedFluorescence

@@ -38,7 +38,7 @@ F(mc::MatrixCorrection) = error("$mc does not implement F(mc::$mc)")
 
 Integral of the area under the absorption corrected ϕ(ρz)-curve from ρz = 0 to ∞.
 """
-Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)  = error("$mc does not implement F(mc::$mc, xray::CharXRay, θtoa::Real)")
+Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)  = error("$mc does not implement Fχ(mc::$mc, xray::CharXRay, θtoa::Real)")
 
 """
     Fχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)
