@@ -110,6 +110,20 @@ struct XPhi <: MatrixCorrection
     α::Float64 # Interior side shape parameter
     β::Float64 # Surface side shape parameter
 
+
+
+    function XPhi(
+        subshell::AtomicSubShell,
+        material::Material,
+        E0::Float64, # Beam energy (eV)
+        Φm::Float64,  # Max amplitude
+        ρzm::Float64, # ρz at max amplitude
+        α::Float64, # Interior side shape parameter
+        β::Float64 # Surface side shape parameter
+    )
+        new(subshell, material, E0, Φm, ρzm, α, β)
+    end
+
     """
         XPhi(mat::Material, sh::AtomicSubShell, e0::Float64)
 
