@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.10
+# v0.12.20
 
 using Markdown
 using InteractiveUtils
@@ -18,6 +18,8 @@ begin
 	using PlutoUI, NeXLMatrixCorrection, Gadfly
 	md"""
 	# Plot the ϕ(ρz) Curve
+	
+	Plot the ϕ(ρz) curve as calculated using various common matrix correction models.
 	"""
 end
 
