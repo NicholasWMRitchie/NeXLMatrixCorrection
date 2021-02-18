@@ -103,20 +103,20 @@ function Gadfly.plot(
     mat::Material,
     cxr::CharXRay,
     beamEnergy::Float64,
-    takeOffAngle,
+    takeOffAngle::Float64=deg2rad(40.0),
 )
     zz, sh, prz, lsty = Float64[], String[], Float64[], Int[]
-    r = 1.1*range(Kanaya1972, mat, beamEnergy, false)
+    r = 1.2*(range(Kanaya1972, mat, beamEnergy, false) - range(Kanaya1972, mat, energy(inner(cxr)), false))
     shell = inner(cxr)
     for z in range(0.0, stop = r, length = 100)
         for tmc in tmcs
             mc = matrixcorrection(tmc, mat, shell, beamEnergy)
             push!(zz, z)
-            push!(sh, repr(tmc))
+            push!(sh, repr(tmc, context=:compact=>true)*":gen")
             push!(prz, ϕ(mc, z))
             push!(lsty, 1)
             push!(zz, z)
-            push!(sh, repr(tmc))
+            push!(sh, repr(tmc, context=:compact=>true)*":abs")
             push!(prz, ϕabs(mc, z, cxr, takeOffAngle))
             push!(lsty, 2)
         end

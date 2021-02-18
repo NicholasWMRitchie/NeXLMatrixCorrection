@@ -1,4 +1,5 @@
 using DataFrames
+using Statistics
 
 """
 The `UnmeasuredElementRule` mechanism provides a method to implement rules for adding unmeasured elements to
@@ -12,11 +13,11 @@ The NullUnmeasuredRule adds no additional elements in the iteration process.
 struct NullUnmeasuredRule <: UnmeasuredElementRule end
 
 """
-    compute(::Type{UnmeasuredElementRule}, inp::Dict{Element,Float64})::Dict{Element,Float64}
+    NeXLUncertainties.compute(::Type{UnmeasuredElementRule}, inp::Dict{Element,Float64})::Dict{Element,Float64}
 
 A null UnmeasuredElementRule.  Just returns the inputs.
 """
-compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64} = inp
+NeXLUncertainties.compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64} = inp
 
 """
 The `UpdateRule` abstract type defines mechanisms to update the best composition estimate between
@@ -321,6 +322,7 @@ NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::Data
     NeXLCore.material(itres::IterationResult)::Material
 """
 NeXLCore.material(itres::IterationResult) = itres.comp
+NeXLCore.material(itress::AbstractVector{IterationResult})  = mean(material.(itress))
 
 _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{CharXRay})::MultiZAF =
     zafcorrection(iter.mctype, iter.fctype, iter.cctype, mat, lines, props[:BeamEnergy], get(props, :Coating, missing))
