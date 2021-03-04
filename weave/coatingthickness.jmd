@@ -72,7 +72,7 @@ frs = mapreduce(ref->filterreference(filt, ref...), append!, refdata)
 
 Now with the fitting filters and the measured SiO₂ spectrum we can perform the fit of Si, O and C to SiO₂.
 ```julia; fig_width=10; fig_height=3; fig_ext=".svg";
-res = fit(sio2, filt, frs)
+res = fit_spectrum(sio2, filt, frs)
 display(plot(res))
 NeXLUncertainties.asa(DataFrame, kratios(res))
 ```

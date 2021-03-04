@@ -302,8 +302,14 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
     return res
 end
 
-NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; withZAF::Bool = true)::DataFrame =
-    asa(DataFrame, map(ir->ir.comp,irs))
+function NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; mode = :MassFraction, nominal = nothing)::DataFrame
+    if isnothing(nominal) 
+        asa(DataFrame, map(ir->ir.comp,irs), mode)
+    else
+        asa(DataFrame, [ ( ir.comp for ir in irs)..., nominal ], mode )
+    end
+end
+
 
 DataFrames.describe(irs::AbstractVector{IterationResult}) =
     describe(asa(DataFrame, irs)[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
