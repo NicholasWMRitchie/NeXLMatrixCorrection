@@ -257,7 +257,7 @@ using Test
 
     coatU = "10 nm C"
     coatingData = uvs( #
-        NeXLMatrixCorrection.tcLabel(coatU) => uv(1.0e-6, 0.5e-6),
+        NeXLMatrixCorrection.tcLabel(unknown) => uv(1.0e-6, 0.5e-6),
         NeXLMatrixCorrection.μoρLabel(coatU, cxr) => uv(11705.0, 2185.0),  # n"O K-L3" in n"C"
     )
 
@@ -400,7 +400,7 @@ using Test
 
     coatS = "11 nm C"
     coatingData = uvs( #
-        NeXLMatrixCorrection.tcLabel(coatS) => uv(1.1e-6, 0.5e-6),
+        NeXLMatrixCorrection.tcLabel(standard) => uv(1.1e-6, 0.5e-6),
         NeXLMatrixCorrection.μoρLabel(coatS, cxr) => uv(mac(pure(n"C"), cxr), 2185.0),  # n"O K-L3" in n"C"
     )
     Frc_input = cat(χFr_res, coatingData)
