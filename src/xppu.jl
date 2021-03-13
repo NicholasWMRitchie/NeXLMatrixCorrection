@@ -41,7 +41,7 @@ Base.show(io::IO, j::JLabel) = print(io, "J[", j.material, "]")
 struct E0Label <: Label
     material::String
 end
-Base.show(io::IO, e0::E0Label) = print(io, "E0[", e0.material, "]")
+Base.show(io::IO, e0::E0Label) = print(io, "E0(eV)[", e0.material, "]")
 
 struct E0keVLabel <: Label
     material::String
@@ -65,8 +65,8 @@ function NeXLUncertainties.compute(mjz::StepMJZbarb, inputs::LabeledValues, with
     jzs = map(elm -> JzLabel(elm), mjz.elements)
     e0l = E0Label(mjz.material)
     # Unpack all the variables
-    c, a, = map(mfl -> inputs[mfl], mfls), map(awl -> inputs[awl], awls)
-    z = map(elm -> convert(Float64, elm.number), mjz.elements)
+    c, a = [inputs[mfl] for mfl in mfls], [inputs[awl] for awl in awls]
+    z = [convert(Float64, elm.number) for elm in mjz.elements]
     keV = 0.001
     j = map(jz -> keV * inputs[jz], jzs) # in keV
     e0 = inputs[e0l]
@@ -664,13 +664,13 @@ end
 Base.show(io::IO, l::FrcLabel) = print(io, "Fᵣᶜ[$(l.material),$(l.xray),$(l.coating)]")
 
 struct tcLabel <: Label
-    coating::String
+    sample::String
 end
-Base.show(io::IO, l::tcLabel) = print(io, "tᶜ[$(l.coating)]")
+Base.show(io::IO, l::tcLabel) = print(io, "tᶜ[$(l.sample)]")
 
 function NeXLUncertainties.compute(st::StepFrc, inputs::LabeledValues, withJac::Bool)::MMResult
     # Build input variable labels
-    θl, tcl = θLabel(st.material), tcLabel(st.coating)
+    θl, tcl = θLabel(st.material), tcLabel(st.material)
     Frl, μoρcl = FrLabel(st.material, st.xray), μoρLabel(st.coating, st.xray)
     # Extract input variables
     θ, tc, Fr, μoρc = inputs[θl], inputs[tcl], inputs[Frl], inputs[μoρcl]
@@ -753,14 +753,14 @@ function NeXLUncertainties.compute(st::StepZA, inputs::LabeledValues, withJac::B
     return (vals, jac)
 end
 
-mjz(sample, elms, all) = StepMJZbarb(sample, elms) | MaintainInputs(mLabel(sample))
-dpt(sample, all) = StepDPT(sample, inner(cxr)) | allinp
-qla(sample, all) = StepQlaOoS(sample, inner(cxr)) | MaintainInputs([E0keVLabel(sample), ZbarbLabel(sample)])
+mjz(sample, elms, shell, all) = StepMJZbarb(sample, elms) | MaintainInputs([mLabel(shell) ])
+dpt(sample, shell, all) = StepDPT(sample, shell) | MaintainInputs([E0keVLabel(sample), JLabel(sample), mLabel(shell), BigMLabel(sample), ZbarbLabel(sample)], all)
+qla(sample, shell, all) = StepQlaOoS(sample, shell) | MaintainInputs([E0keVLabel(sample), ZbarbLabel(sample), BigMLabel(sample)], all)
 rp(sample, shell, all) =
     StepRPhi0(sample, shell) |
     MaintainInputs([E0keVLabel(sample), ZbarbLabel(sample), OoSLabel(sample, shell), QlaLabel(sample, shell)], all)
 frbar(sample, shell, all) =
-    StepFRBar(sample, inner(cxr)) |
+    StepFRBar(sample, shell) |
     MaintainInputs([ZbarbLabel(sample), ϕ0Label(sample, shell), E0keVLabel(sample)], all)
 pb(sample, shell, all) =
     StepPb(sample, shell) |
@@ -769,61 +769,68 @@ aϵ(sample, shell, all) =
     Stepaϵ(sample, shell) |
     MaintainInputs([ϕ0Label(sample, shell), FLabel(sample, shell), PLabel(sample, shell), bLabel(sample, shell)], all)
 AB(sample, shell, all) =
-    NeXLMatrixCorrection.StepAB(unknown, inner(cxr)) |
+    NeXLMatrixCorrection.StepAB(sample, shell) |
     MaintainInputs([bLabel(sample, shell), ϕ0Label(sample, shell), ϵLabel(sample, shell), FLabel(sample, shell)], all)
 
 """
     steps1(sample, elms, shell, all)
 
-steps1 requires as data MassFractionLabel, AtomicWeightLabel, JzLabel, E0Label, mLabel in an UncertainValues
+steps1 requires as data MassFractionLabel, AtomicWeightLabel, JzLabel, E0keVLabel, mLabel in an UncertainValues
 """
 steps1(sample, elms, shell, all = false) =
     AB(sample, shell, all) ∘ aϵ(sample, shell, all) ∘ pb(sample, shell, all) ∘ frbar(sample, shell, all) ∘
-    rp(sample, shell, all) ∘ qla(sample, all) ∘ dpt(sample, all) ∘ mjz(sample, elms, all)
+    rp(sample, shell, all) ∘ qla(sample, shell, all) ∘ dpt(sample, shell, all) ∘ mjz(sample, elms, shell, all)
 
 
-χFr(sample, shell, all) =
-    NeXLMatrixCorrection.StepχFr(sample, shell) | MaintainInputs([θLabel(sample), FLabel(sample, shell)], all)
+χFr(sample, cxr, all) =
+    NeXLMatrixCorrection.StepχFr(sample, cxr) | MaintainInputs([θLabel(sample), FLabel(sample, inner(cxr))], all)
 
 """
     steps2(sample, shell, all)
 
 steps2 requires as data μoρLabel, dzLabel in an UncertainValues
 """
-steps2(sample, shell, all = false) = χFr(sample, shell, all)
-
-Frc(sample, xray, coating, all) = StepFrc(sample, coating, xray) | MaintainInputs([FLabel(sample, inner(xray))], all)
+steps2(sample, cxr, all = false) = χFr(sample, cxr, all) | MaintainInputs([tcLabel(sample)], all)
 
 """
-    steps3(sample, xray, layer, all)
+    steps3(sample, xray, coating, all)
 
 steps3 requires as data tcLabel, μoρLabel for the coating in an UncertainValues
 """
-steps3(sample, xray, layer, all = false) = Frc(sample, xray, layer) | MaintainInputs(FLabel(sample, inner(xray)), all)
-
-
+steps3(sample, xray, coating, all = false) = StepFrc(sample, coating, xray) | MaintainInputs([FLabel(sample, inner(xray)), tcLabel(sample)], all)
 
 function xppu(sample::Material, cxr::CharXRay, coating::Film, e0::UncertainValue, all = false)
     shell = inner(cxr)
-    m = m(shell)
+    m = NeXLMatrixCorrection.m(XPP, shell)
     input1 = uvs(
         (MassFractionLabel(sample.name, elm) => uv(sample[elm], 0.01 * sample[elm]) for elm in keys(sample))...,
         (AtomicWeightLabel(sample.name, elm) => uv(a(elm, sample), 0.001 * a(elm, sample)) for elm in keys(sample))...,
         (JzLabel(elm) => Ju(elm) for elm in keys(sample))...,
-        NeXLMatrixCorrection.E0Label(unknown) => e0,
+        NeXLMatrixCorrection.E0Label(name(sample)) => e0,
         NeXLMatrixCorrection.mLabel(shell) => uv(m, 0.01 * m),
     )
     s1 = steps1(sample.name, [keys(sample)...], shell, all)
-    r1 = s1(inputs)
+    r1 = s1(input1)
 
     input2 = uvs(
-        μoρLabel(coating.material.name) => mac(coating),
-        dzLabel(coating.material.name) => convert(UncertainValue, coating.thickness),
+        μoρLabel(sample.name, cxr) => uv(mac(sample, cxr)),
+        θLabel(sample.name) => uv(deg2rad(40.0),deg2rad(1.0)),
+        dzLabel(sample.name) => uv(0.0, 1.0e-6),
+        tcLabel(sample.name) => uv(coating.thickness, 0.1*coating.thickness), 
     )
-    s2 = steps2(sample.name, shell, coating.material.name, all)
+    s2 = steps2(sample.name, cxr, all)
     r2 = s2(cat(r1, input2))
 
-    s3 = steps3(sample.name, shell, coating.material.name, all)
-    r3 = s3(r2)
+    input3 = uvs(
+        μoρLabel(coating.material.name, cxr) => uv(mac(coating.material, cxr)),
+    )
+    s3 = steps3(sample.name, cxr, coating.material.name, all)
+    r3 = s3(cat(r2,input3))
     return r3
+end
+
+function xppu(unknown::Material, standard::Material, cxr::CharXRay, coatingU::Film, coatingS::Film, e0U::UncertainValue, e0S::UncertainValue, all=false)
+    unk, std = xppu(unknown, cxr, coatingU, e0U), xppu(standard, cxr, coatingS, e0S)
+    sza = StepZA(unknown.name, standard.name, cxr, coatingU.material.name, coatingS.material.name)
+    return sza(cat(unk, std))
 end
