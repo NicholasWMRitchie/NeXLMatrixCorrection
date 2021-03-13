@@ -1,4 +1,4 @@
-# ![](NeXL_sm.png)MatrixCorrection
+# ![](docs/src/NeXL_sm.png)MatrixCorrection
 | **Documentation**                        | **Build Status**                  |
 |:----------------------------------------:|:---------------------------------:|
 | [![][docs-stable-img]][docs-stable-url]  | [![][travis-img]][travis-url]     |
