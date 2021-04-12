@@ -1,5 +1,8 @@
 using DataFrames
 using Statistics
+using ThreadsX
+using Statistics
+using LinearAlgebra
 
 """
 The `UnmeasuredElementRule` mechanism provides a method to implement rules for adding unmeasured elements to
@@ -348,16 +351,18 @@ function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZ
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
 """
-    quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; standards::AbstractVector{KRatio}=KRatio[], maxIter::Int = 100)::IterationResult
-    quantify(iter::Iteration, name::String, measured::Vector{KRatio}; standards::AbstractVector{Standard}=Standard[], maxIter::Int = 100)::IterationResult
+    quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIter::Int = 100, estComp::Union{Nothing,Material}=nothing)::IterationResult
+    quantify(iter::Iteration, name::String, measured::Vector{KRatio}; maxIter::Int = 100, estComp::Union{Nothing,Material}=nothing)::IterationResult
 
 Perform the iteration procedurer as described in `iter` using the `measured` k-ratios to produce the best
 estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the
-k-ratios from filter fit spectra.
+k-ratios from filter fit spectra.  `estComp` is an optional first estimate of the composition.  This can
+be a useful optimization when quantifying many similar k-ratios (like, for example, points on a 
+hyper-spectrum.)
 """
 quantify(iter::Iteration, name::String, measured::Vector{KRatio}; kwargs...) = quantify(iter, label(name), measured; kwargs...)
 
-function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; standards::AbstractVector{Standard}=Standard[], maxIter::Int = 100)::IterationResult
+function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIter::Int = 100, estComp::Union{Nothing,Material}=nothing)::IterationResult
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio})::Dict{Element,Float64} =
         Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
@@ -368,37 +373,40 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; stand
         final = Dict{Element,UncertainValue}(elm=>convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
         for kr in meas
             elm = element(kr)
-            @assert value(final[elm])*fractional(kr.kratio) >= 0.0 "$(final[elm]) $(kr.kratio)"
-            final[elm] = uv(value(final[elm]), value(final[elm])*fractional(kr.kratio))
+            unc = if value(final[elm])>0.0 && value(kr.kratio) > 0.0 && σ(kr.kratio) > 0.0 
+                value(final[elm])*fractional(kr.kratio)
+            else
+                σ(kr.kratio)
+            end
+            final[elm] = uv(value(final[elm]), unc)
         end
         return material(name(estcomp), final)
     end
-    standardized = [ standardize(kr, standards) for kr in measured ]
     # Compute the k-ratio difference metric
-    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in standardized)
+    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
     # Compute the standard matrix correction factors
-    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.lines) for kr in standardized)
-    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in standardized)
+    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.lines) for kr in measured)
+    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in measured)
     # First estimate c_unk = k*c_std
-    estcomp = material(repr(label), compute(iter.unmeasured, firstEstimate(standardized)))
+    estcomp = something(estComp, material(repr(label), compute(iter.unmeasured, firstEstimate(measured))))
     # Compute the associated matrix corrections
     zafs = computeZAFs(iter, estcomp, stdZafs)
     bestComp, bestKrs = estcomp, computeKs(estcomp, zafs, stdComps)
     bestEval, bestIter = 1.0e300, 0
     reset(iter.updater)
     for iters in Base.OneTo(maxIter)
-        # How close are the calculated k-ratios to the standardized version of the measured?
+        # How close are the calculated k-ratios to the measured version of the measured?
         estkrs = computeKs(estcomp, zafs, stdComps)
         if eval(estkrs) < bestEval
             # If no convergence report it but return closest result...
             bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
-            if converged(iter.converged, standardized, bestKrs)
-                fc = computefinal(estcomp, standardized)
-                return IterationResult(label, fc, standardized, bestKrs, true, bestIter, iter)
+            if converged(iter.converged, measured, bestKrs)
+                fc = computefinal(estcomp, measured)
+                return IterationResult(label, fc, measured, bestKrs, true, bestIter, iter)
             end
         end
         # Compute the next estimated mass fractions
-        upd = update(iter.updater, estcomp, standardized, zafs)
+        upd = update(iter.updater, estcomp, measured, zafs)
         # Apply unmeasured element rules
         estcomp = material(repr(label), compute(iter.unmeasured, upd))
         # calculated matrix correction for estcomp
@@ -406,23 +414,48 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; stand
     end
     @warn "$label did not converge in $(maxIter)."
     @warn "   Using best non-converged result from step $(bestIter)."
-    return IterationResult(label, bestComp, standardized, bestKrs, false, bestIter, iter)
+    return IterationResult(label, bestComp, measured, bestKrs, false, bestIter, iter)
 end
 
-quantify(
+function quantify(
     sampleName::String,
     measured::Vector{KRatio};
-    standards::AbstractVector{Standard}=Standard[],
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
-) = quantify(Iteration(mc, fc, cc), label(sampleName), measured, standards=standards)
+) 
+    quantify(Iteration(mc, fc, cc), label(sampleName), measured)
+end
 
-quantify(
+function quantify(
     lbl::Label,
-    measured::Vector{KRatio};
-    standards::AbstractVector{Standard}=Standard[],
+    measured::AbstractVector{KRatio};
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
-) = quantify(Iteration(mc, fc, cc), lbl, measured, standards=standards)
+)
+    quantify(Iteration(mc, fc, cc), lbl, measured)
+end
+
+function quantify(
+    measured::AbstractVector{KRatios};
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection} = NullFluorescence,
+    cc::Type{<:CoatingCorrection} = NullCoating,
+    kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5)
+)
+    @assert all(size(measured[1])==size(krsi) for krsi in measured[2:end]) "All the KRatios need to be the same dimensions."
+    # Pick the best sub-selection of `measured` to quantify
+    optmeasured = brightest.(optimizeks(kro, measured))
+    ThreadsX.map(CartesianIndices(optmeasured[1].kratios)) do ci
+        try
+            krs = KRatio[ kr[ci] for kr in optmeasured]
+            quantify(Iteration(mc, fc, cc), label(ci), krs).comp
+         catch ex
+             @error ex
+             NeXLCore.NULL_MATERIAL
+         end
+    end
+end
+
+

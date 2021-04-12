@@ -133,25 +133,4 @@ function fluorescencecorrection(
     return ReedFluorescence(comp, secondary, e0, ris)
 end
 
-"""
-    fluorescence(fltype::Type{ReedFluorescence}, comp::Material, secondary::AtomicSubShell, e0::Float64)
-
-Construct an instance of a fltype correction structure to compute the
-secondary fluorescence in the specified material and beam energy.
-"""
-function fluorescencecorrection(
-    fltype::Type{<:FluorescenceCorrection},
-    comp::Material,
-    secondary::AtomicSubShell,
-    e0::Float64;
-    eThresh = 2.5e3,
-    wThresh = 0.01,
-)
-    test(cxr, ee, wt) =
-        (energy(cxr) > ee) && (energy(cxr) < ee + eThresh) && (NeXLCore.edgeenergy(cxr) < e0) && (weight(cxr) > wt)
-    char4elm(elm, wt) = characteristic(elm, alltransitions, cxr -> test(cxr, energy(secondary), wt / comp[elm]))
-    primaries = mapreduce(elm -> char4elm(elm, wThresh), append!, keys(comp))
-    return fluorescencecorrection(fltype, comp, primaries, secondary, e0)
-end
-
 NeXLCore.minproperties(::Type{ReedFluorescence}) = (:BeamEnergy, :TakeOffAngle)

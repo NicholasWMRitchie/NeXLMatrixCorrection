@@ -91,10 +91,6 @@ export KRatioOptimizer # Abstract class
 export SimpleKRatioOptimizer # A very simple implmentation of KRatioOptimizer
 export optimizeks # The method required of KRatioOptimizer
 
-include("standard.jl")
-export Standard # Collects k-ratios to be used for standardization.
-export standardize # Apply similar standards to a KRatio
-
 # Performs iteration to estimate the composition from measured k-ratios
 include("iterate.jl")
 # Abstract class for calculating elements by difference or stoichiometry or ???
