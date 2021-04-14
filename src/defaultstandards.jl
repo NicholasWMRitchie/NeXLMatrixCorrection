@@ -1,83 +1,15 @@
-const unavailable = ( n"H", n"He", n"Ne", n"Ar", n"Kr", n"Xe", n"Rn", n"Og", n"Tc", n"Pm", n"Po", n"At", n"Fr", n"Ra", n"Pa" )
+const __default_standards = Set{Material}()
 
-const stoichiometric = Dict(
-  n"Li" => ( mat"LiF", mat"LiNbO₃", mat"LiAlSi₂O₆"),
-  n"Be" =>  ( mat"Be", mat"Na₄BeAlSi₄O₁₂Cl" ),
-  n"B" => ( mat"B", mat"BN", mat"LaB₆" ),
-  n"C" => ( mat"C", mat"SiC", mat"Fe₃C" ),
-  n"N" => ( mat"BN", mat"Si₃N₄" ),
-  n"O" => ( mat"SiO₂", mat"Al₂O₃", mat"LiAlSi₂O₆", mat"Al₂SiO₅", mat"NaAlSi₃O₈", mat"CaCO₃", mat"CaSO₄", mat"KAlSi₃O₈",
-            mat"Mg₃Al₂Si₃O₁₂", mat"MgAl₂O₄", mat"CaSiO₃", mat"CaTiSiO₅", mat"TiO₂", mat"MgO", mat"Mn₃Al₂Si₃O₁₂",
-            mat"BaTiSi₃O₉", mat"LiNbO₃", mat"Cr₂O₃", mat"Fe2O3", mat"BaSO₄", mat"ZrO₂", mat"ThO₂", mat"UO₂" ),
-  n"F" => ( mat"CaF₂", mat"Li", mat"MgF₂", mat"Na₃AlF₆", mat"K₂SiF₆", mat"NaF", mat"SrF₂", mat"LaF₃", mat"CeF₃",
-            mat"PrF₃", mat"NdF₃", mat"Rb₂SnF₆", mat"Cs₂SiF₆", mat"EuF₃", mat"LuF₃", mat"BaF₂", mat"PbF₂",
-            mat"Ca₅(PO₄)₃F" ),
-  n"Na" => ( mat"NaAlSi₃O₃", mat"NaF", mat"NaCl", mat"Na₃AlF₆", mat"Na₄BeAlSi₄O₁₂Cl", mat"NaAlSi₂O₆",
-             mat"O₄₆Si₃₄Na₁₁Ca₈Al₁", ),
-  n"Mg" => ( mat"Mg", mat"MgO", mat"MgF₂", mat"Mg₃Al₂Si₃O₁₂", mat"Mg₃Al₂Si₃O₁₂", ),
-  n"Al" => ( mat"Al₂O₃", mat"MgAl₂O₄", mat"Al₂SiO₅", mat"Y₃Al₅O₁₂", mat"LiAlSi₂O₆", mat"Na₃AlF₆", mat"NaAlSi₂O₆",
-            mat"Fe₃Al₂Si₃O₁₂", mat"Mg₃Al₂Si₃O₁₂", mat"Mn₃Al₂Si₃O₁₂", mat"NaAlSi₃O₈", ),
-  n"Si" => ( mat"Si", mat"SiC", mat"Si₃N₄", mat"SiO₂", mat"NaAlSi₃O₈", mat"KAlSi₃O₈", mat"LiAlSi₂O₆", mat"NaAlSi₂O₆",
-    mat"CaSiO₃", mat"MnSiO₃", mat"CsAlSi₂O₆", mat"BaTiSi₃O₉", mat"KMg₃AlSi₃O₁₀(OH)₂", mat"Mg₃Al₂Si₃O₁₂", mat"Ni₂Si",
-    mat"Fe₃Al₂Si₃O₁₂", mat"Al₂SiO₅", mat"Mn₃Al₂Si₃O₁₂", mat"Ca₃Cr₂Si₃O₁₂", mat"ZrSiO₄", mat"CaTiSiO₅", mat"K₂SiF₆" ),
-  n"P" => ( mat"Ca₅(PO₄)₃F", mat"GaP", mat"YP₅O₁₄", mat"CeP₅O₁₄", mat"PrP₅O₁₄", mat"NdP₅O₁₄", mat"SmP₅O₁₄", mat"EuP₅O₁₄", mat"GdP₅O₁₄",
-    mat"TbP₅O₁₄", mat"DyP₅O₁₄", mat"YP₃O₉", mat"HoP₅O₁₄", mat"ErP₅O₁₄", mat"TmP₅O₁₄", mat"YbP₅O₁₄", mat"LuP₅O₁₄",
-    mat"InP", mat"CePO₄" ),
-  n"S" => ( mat"FeS₂", mat"MoS₂", mat"CuFeS", mat"ZnS", mat"Sb₂S₃", mat"CaSO₄", mat"CdS", mat"SrSO₄", mat"HgS",
-    mat"BaSO₄", mat"PbS", mat"Ag₂S" ),
-  n"Cl" => ( 	mat"NaCl", mat"KCl", mat"Rb₂SnCl₆", mat"Rb₂PtCl₆", mat"RbCl", mat"AgCl", mat"TlCl", mat"Na₄BeAlSi₄O₁₂Cl" ),
-  n"K" => ( mat"KCl", mat"K₂SiF₆", mat"KBr", mat"KAlSi₃O₈", mat"KMg₃AlSi₃O₁₀(OH)₂" ),
-  n"Ca" => ( mat"CaF₂", mat"CaCO₃", mat"Ca₅(PO₄)₃F", mat"CaSiO₃", mat"CaSO₄", mat"Ca₃Cr₂Si₃O₁₂", mat"CaTiSiO₅",
-    mat"CaMoO₄", mat"CaZrTi₂O₇" ),
-  n"Ti" => ( mat"Ti", mat"TiO₂", mat"CaZrTi₂O₇", mat"SrTiO₃", mat"CaTiSiO₅", mat"BaTiSi₃O₉" ),
-  n"Cr" => ( mat"Cr", mat"Cr₂O₃", mat"Ca₃Cr₂Si₃O₁₂"),
-  n"Mn" => ( mat"Mn", mat"Mn₃Al₂Si₃O₁₂", mat"MnSiO₃", mat"MnTa₂O₆" ),
-  n"Fe" => ( mat"Fe", mat"Fe₂O₃", mat"FeS₂", mat"CuFeS₂", mat"Fe₃Al₂Si₃O₁₂", ),
-  n"Ni" => ( mat"Ni", mat"Ni₂Si" ),
-  n"Cu" => ( mat"Cu", mat"Cu₂O", mat"CuFeS₂"),
-  n"Zn" => ( mat"Zn", mat"ZnS", mat"ZnSe", mat"ZnTe" ),
-  n"Ga" => ( mat"GaP", mat"GaAs", mat"GaSb", mat"Gd₃Ga₅O₁₂" ),
-  n"As" => ( mat"As", mat"GaAs", mat"InAs" ),
-  n"Se" => ( mat"Se", mat"ZnSe", mat"In₂Se₃", mat"Sb₂Se₃", mat"CdSe", mat"Bi₂Se₃", mat"PbSe" ),
-  n"Br" => ( mat"KBr", mat"RbBr", mat"CsBr", mat"TlBr" ),
-  n"Rb" => ( mat"RbCl", mat"RbBr", mat"Rb₂SnF₆", mat"RbI", mat"Rb₂SnCl₆", mat"Rb₂PtCl₆" ),
-  n"Sr" => ( mat"SrF₂", mat"SrTiO₃", mat"SrSO₄", mat"SrBaNb₄O₁₂" ),
-  n"Y" => ( mat"Y", mat"Y₃Al₅O₁₂", mat"Y₃Al₅O₁₂", mat"YP₃O₉", mat"YP₅O₁₄" ),
-  n"Zr" => ( mat"Zr", mat"ZrO₂", mat"ZrSiO₄", mat"CaZrTi₂O₇" ),
-  n"Nb" => ( mat"Nb", mat"LiNbO₃", mat"SrBaNb₄O₁₂", mat"Ba₂NaNb₅O₁₅" ),
-  n"Mo" => ( mat"Mo", mat"MoS₂", mat"CaMoO₄"),
-  n"Ag" => ( mat"Ag", mat"Ag₂S", mat"AgCl", mat"Ag₂Te" ),
-  n"Cd" => ( mat"Cd", mat"CdS", mat"CdSe", mat"CdTe" ),
-  n"In" => ( mat"In", mat"InP", mat"InAs", mat"In₂Se₃", mat"InSb", mat"In₂Te₃" ),
-  n"Sn" => ( mat"Sn", mat"SnO₂", mat"Rb₂SnF₆", mat"Rb₂SnCl₆" ),
-  n"Sb" => ( mat"Sb", mat"Sb₂S₃", mat"GaSb", mat"InSb", mat"Sb₂Se₃", mat"Sb₂Te₃" ),
-  n"Te" => ( mat"Te", mat"TeO₂", mat"ZnTe", mat"In₂Te₃", mat"Sb₂Te₃", mat"Sb₂Te₃", mat"CdTe", mat"HgTe", mat"PbTe",
-    mat"Ag₂Te" ),
-  n"I" => ( mat"RbI", mat"PbI₂", mat"CsI" ),
-  n"Ba" => ( mat"BaF₂", mat"BaSO₄", mat"BaTiSi₃O₉", mat"Ba₂NaNb₅O₁₅", mat"SrBaNb₄O₁₂" ),
-  n"La" => ( mat"LaF₃", mat"LaB₆", mat"LaP₅O₁₄" ),
-  n"Ce" => ( mat"CeO₂", mat"CeF₃", mat"CeP₅O₁₄", mat"CePO₄", mat"CePO₄" ),
-  n"Pr" => ( mat"PrF₃", mat"PrP₅O₁₄", mat"CePO₄" ),
-  n"Nd" => ( mat"NdF₃", mat"NdP₅O₁₄" ),
-  n"Sm" => ( mat"Sm", mat"SmP₅O₁₄" ),
-  n"Eu" => ( mat"EuF₃", mat"EuP₅O₁₄" ),
-  n"Gd" => ( mat"Gd", mat"Gd₃Ga₅O₁₂", mat"GdP₅O₁₄" ),
-  n"Tb" => ( mat"Tb", mat"TbP₅O₁₄" ),
-  n"Dy" => ( mat"Dy", mat"DyP₅O₁₄" ),
-  n"Ho" => ( mat"Ho", mat"HoP₅O₁₄" ),
-  n"Er" => ( mat"Er", mat"ErP₅O₁₄" ),
-  n"Tm" => ( mat"Tm", mat"TmP₅O₁₄" ),
-  n"Yb" => ( mat"Yb", mat"YbP₅O₁₄" ),
-  n"Lu" => ( mat"LuF₃", mat"LuP₅O₁₄" ),
-  n"Ta" => ( mat"Ta", mat"LiTaO₃", mat"MnTa₂O₆" ),
-  n"Hg" => ( mat"HgS", mat"HgTe" ),
-  n"Tl" => ( mat"TlCl", mat"TlBr" ),
-  n"Pb" => ( mat"Pb", mat"PbS", mat"PbF₂", mat"PbSe", mat"PbTe", mat"PbI₂" ),
-  n"Bi" => ( mat"Bi", mat"Bi₁₂GeO₂₀", mat"Bi₂Se₃" ),
-  n"Th" => ( mat"Th", mat"ThO₂" ),
-  n"U" => ( mat"U" , mat"UO₂" ),
-)
-
-function getstandards(elm::Element)
-  return elm in unavailable ? ( ) : get(stoichiometric, elm, pure(elm))
+function getstandards(elm::Element, cMin=0.01)
+  if isempty(__default_standards)
+    for line in eachline(joinpath(@__DIR__, "standards.txt"))
+      try
+          mat = parse(Material, line)
+          push!(__default_standards, mat)
+      catch
+          @error "Unable to parse $line in standards.txt as a Material."
+      end
+    end
+  end
+  filter(m -> m[elm] > cMin, __default_standards)
 end
