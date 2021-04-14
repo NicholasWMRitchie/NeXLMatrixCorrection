@@ -1,15 +1,17 @@
+using CSV
 const __default_standards = Set{Material}()
 
 function getstandards(elm::Element, cMin=0.01)
   if isempty(__default_standards)
-    for line in eachline(joinpath(@__DIR__, "standards.txt"))
+    for row in CSV.File(joinpath(@__DIR__, "standard.csv"), header=1)
       try
-          mat = parse(Material, line)
+          mat = parse(Material, row.Formula, name=row.Name, description=row.Comment)
           push!(__default_standards, mat)
-      catch
-          @error "Unable to parse $line in standards.txt as a Material."
+      catch ex
+          @info "getstandards(...)" exception=(ex, catch_backtrace())
+          @error "Unable to parse $(row.Formula) in standard.csv as a Material."
       end
     end
   end
-  filter(m -> m[elm] > cMin, __default_standards)
+  filter(m -> value(m[elm]) > cMin, __default_standards)
 end
