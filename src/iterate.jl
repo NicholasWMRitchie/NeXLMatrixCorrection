@@ -319,8 +319,8 @@ DataFrames.describe(irs::AbstractVector{IterationResult}) =
 
 Base.show(io::IO, itres::IterationResult) = print(
     io,
-    itres.converged ? "Converged to $(itres.comp) in $(itres.iterations) steps\n" :
-        "Failed to converge after $(itres.iterations): Best estimate = $(itres.comp).",
+    itres.converged ? "Converged to $(itres.comp) in $(itres.iterations) steps." :
+        "Failed to converge in $(itres.iterations) iterations: Best estimate = $(itres.comp).",
 )
 
 NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(itres.comp, known)
