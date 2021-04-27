@@ -78,7 +78,7 @@ NeXLUncertainties.asa(DataFrame, kratios(res))
 
 From the k-ratios, we can determine the mass-thickness of the carbon layer on the SiO₂ sample.
 ```julia
-k = value(findlabel(res, n"C K-L2"),res)
+k = value(res, findlabel(res, n"C K-L2"))
 ρz = massthickness(XPP, mat"SiO2", mat"C", n"C K-L2", sio2[:BeamEnergy], sio2[:TakeOffAngle], k)
 print("The thickness is $(round(ρz*1.0e7/density(pure(n"C")); sigdigits=3)) nm.")  # Convert g/cm² to nm of amorphous carbon (1.9 g/cm³)
 ```
