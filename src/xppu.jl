@@ -81,17 +81,17 @@ function NeXLUncertainties.compute(mjz::StepMJZbarb, inputs::LabeledValues, with
         for i in eachindex(z)
             mfl, awl, jz = mfls[i], awls[i], jzs[i]
             # dM/d? (index = 1 for M)
-            jacob[1, indexin(mfl, inputs)] = z[i] / a[i]
-            jacob[1, indexin(awl, inputs)] = -c[i] * z[i] / (a[i]^2)
+            jacob[1, indexin(inputs, mfl)] = z[i] / a[i]
+            jacob[1, indexin(inputs, awl)] = -c[i] * z[i] / (a[i]^2)
             # dJ/d? (index = 2 for J)
             kk = (j[i] * z[i]) / (M * a[i])
-            jacob[2, indexin(jz, inputs)] = keV * kk * (c[i] / j[i])
-            jacob[2, indexin(mfl, inputs)] = kk * (log(j[i]) - log(J))
-            jacob[2, indexin(awl, inputs)] = kk * (c[i] / a[i]) * (log(J) - log(j[i]))
+            jacob[2, indexin(inputs, jz)] = keV * kk * (c[i] / j[i])
+            jacob[2, indexin(inputs, mfl)] = kk * (log(j[i]) - log(J))
+            jacob[2, indexin(inputs, awl)] = kk * (c[i] / a[i]) * (log(J) - log(j[i]))
             # dZ/d? (index = 3 for Zbarb)
-            jacob[3, indexin(mfl, inputs)] = 2.0 * sqrt(z[i] * Zb)
+            jacob[3, indexin(inputs, mfl)] = 2.0 * sqrt(z[i] * Zb)
             # dE0kevdE0 (index = 4 for E0keV)
-            jacob[4, indexin(e0l, inputs)] = keV
+            jacob[4, indexin(inputs, e0l)] = keV
         end
     end
     return (LabeledValues(outputs, values), jacob)
@@ -144,21 +144,21 @@ function NeXLUncertainties.compute(dpt::StepDPT, inputs::LabeledValues, withJac:
     vals = LabeledValues([Dls..., Pls..., Tls...], [D..., P..., T...])
     jacob = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
-        Jli, mli = indexin(Jl, inputs), indexin(ml, inputs)
+        Jli, mli = indexin(inputs, Jl), indexin(inputs, ml)
         # dD/dJ = ( 0.0, 2.0*1.12e-5*-0.45*J), -2.2e-6/(J^2) ))
-        @Assert indexin(Dls[2], vals) == 2
-        jacob[2, Jli] = -1.008e-5 * J   # indexin(Dls[2],vals)==2
-        @Assert indexin(Dls[3], vals) == 3
-        jacob[3, Jli] = (-2.2e-6 / (J^2))# indexin(Dls[3],vals)==3
+        @Assert indexin(vals, Dls[2]) == 2
+        jacob[2, Jli] = -1.008e-5 * J   # indexin(vals, Dls[2])==2
+        @Assert indexin(vals, Dls[3]) == 3
+        jacob[3, Jli] = (-2.2e-6 / (J^2))# indexin(vals, Dls[3])==3
         # dP/dJ = dP/dJ = ( 0.0, 0.0, 0.25 )
-        @Assert indexin(Pls[3], vals) == 3 + 3
-        jacob[3+3, Jli] = 0.25           # indexin(Pls[3],vals) == 3+3
-        @Assert indexin(Tls[3], vals) == 6 + 3
-        jacob[6+3, Jli] = 0.25           # indexin(Tls[3],vals) == 6+3
+        @Assert indexin(vals, Pls[3]) == 3 + 3
+        jacob[3+3, Jli] = 0.25           # indexin(vals, Pls[3]) == 3+3
+        @Assert indexin(vals, Tls[3]) == 6 + 3
+        jacob[6+3, Jli] = 0.25           # indexin(vals, Tls[3]) == 6+3
         # dT/dm = ( -1.0, -1.0, -1.0 )
         for k = 1:3
-            @Assert indexin(Tls[k], vals) == 6 + k
-            jacob[6+k, mli] = -1.0    # indexin(Tls[k],vals)==6+k
+            @Assert indexin(vals, Tls[k]) == 6 + k
+            jacob[6+k, mli] = -1.0    # indexin(vals, Tls[k])==6+k
         end
     end
     return (vals, jacob)
@@ -231,37 +231,37 @@ function NeXLUncertainties.compute(qoos::StepQlaOoS, inputs::LabeledValues, with
     jacob = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
         # Qla (ok!)
-        @Assert indexin(Qlal, vals) == 1
-        jacob[1, indexin(e0l, inputs)] = (1.0 - m * log(U0)) / (U0^(m + 1) * Ea^3)
-        jacob[1, indexin(ml, inputs)] = -Qla * log(U0)
+        @Assert indexin(vals, Qlal) == 1
+        jacob[1, indexin(inputs, e0l)] = (1.0 - m * log(U0)) / (U0^(m + 1) * Ea^3)
+        jacob[1, indexin(inputs, ml)] = -Qla * log(U0)
         # 1/S (ok!)
-        @Assert indexin(OoSl, vals) == 2
+        @Assert indexin(vals, OoSl) == 2
         for k in eachindex(h)
-            jacob[2, indexin(Dls[k], inputs)] = f * (h[k] / D[k])
-            jacob[2, indexin(Pls[k], inputs)] = f * log(Ea / J) * h[k]
-            jacob[2, indexin(Tls[k], inputs)] =
+            jacob[2, indexin(inputs, Dls[k])] = f * (h[k] / D[k])
+            jacob[2, indexin(inputs, Pls[k])] = f * log(Ea / J) * h[k]
+            jacob[2, indexin(inputs, Tls[k])] =
                 f *
                 (1 / T[k]) * #
                 (D[k] * (U0^T[k]) * (Ea / J)^P[k] * log(U0)^2 - 2.0 * h[k])
         end
-        jacob[2, indexin(Ml, inputs)] = -OoS / M
-        jacob[2, indexin(e0l, inputs)] =
+        jacob[2, indexin(inputs, Ml)] = -OoS / M
+        jacob[2, indexin(inputs, e0l)] =
             (f / E0) * log(U0) * sum(D[k] * ((Ea / J)^P[k]) * (U0^T[k]) for k in eachindex(h))
-        jacob[2, indexin(Jl, inputs)] = (-1.0 / (M * Ea)) * sum(P[k] * h[k] for k in eachindex(h))
+        jacob[2, indexin(inputs, Jl)] = (-1.0 / (M * Ea)) * sum(P[k] * h[k] for k in eachindex(h))
         # η (ok!)
-        @Assert indexin(ηl, vals) == 3
+        @Assert indexin(vals, ηl) == 3
         δηδZbarb = 1.75e-3 + 7.215e-3 * exp(-0.015 * Zbarb^1.3) * (Zbarb^0.3)
-        jacob[3, indexin(Zl, inputs)] = δηδZbarb
+        jacob[3, indexin(inputs, Zl)] = δηδZbarb
         # J(U0) (ok!)
-        @Assert indexin(JU0l, vals) == 4
-        jacob[4, indexin(e0l, inputs)] = log(U0) / Ea
+        @Assert indexin(vals, JU0l) == 4
+        jacob[4, indexin(inputs, e0l)] = log(U0) / Ea
         # Wbar (ok!)
-        @Assert indexin(Wbarl, vals) == 5
+        @Assert indexin(vals, Wbarl) == 5
         δWbarδZbarb = (1.0 / 3.7 + 4.55 * η^3.55) * δηδZbarb
-        jacob[5, indexin(Zl, inputs)] = δWbarδZbarb
+        jacob[5, indexin(inputs, Zl)] = δWbarδZbarb
         # q (ok!)
-        @Assert indexin(ql, vals) == 6
-        jacob[6, indexin(Zl, inputs)] = (1.0 / ((Wbar - 1.0)^2)) * δWbarδZbarb
+        @Assert indexin(vals, ql) == 6
+        jacob[6, indexin(inputs, Zl)] = (1.0 / ((Wbar - 1.0)^2)) * δWbarδZbarb
     end
     return (vals, jacob)
 end
@@ -304,15 +304,15 @@ function NeXLUncertainties.compute(rp::StepRPhi0, inputs::LabeledValues, withJac
         δGUδE0 = (1.0 - U0^(-2.0 - q)) / (Ea * JU0 * (2.0 + q))
         δGUδq = ((1.0 - U0^(-1 - q)) / ((1 + q)^2) - (U0^(-1 - q) * log(U0)) / (1 + q) - GU0 * JU0) / (JU0 * (2 + q))
         δGUδJU0 = -GU0 / JU0
-        @Assert indexin(Rl, vals) == 1
-        jac[1, indexin(ηl, inputs)] = Wbar * (GU0 - 1.0) # δRδη (ok)
-        jac[1, indexin(E0l, inputs)] = η * Wbar * δGUδE0 # δRδE0
-        jac[1, indexin(ql, inputs)] = η * Wbar * δGUδq   # δRδq
-        jac[1, indexin(JU0l, inputs)] = η * Wbar * δGUδJU0   # δRδU0
-        jac[1, indexin(Wbarl, inputs)] = η * (GU0 - 1.0) # δRδWbar
-        @Assert indexin(ϕ0l, vals) == 2
-        jac[2, indexin(ηl, inputs)] = 3.96 * η^0.2 * (1.0 - U0^(2.3η - 2.0)) - 7.59 * η * U0^(2.3η - 2.0) * log(U0) # δϕ0δη
-        jac[2, indexin(E0l, inputs)] = (7.59 * η^1.2 * (0.869565 - η) * U0^(2.3η - 3.0)) / Ea # δϕ0δE0
+        @Assert indexin(vals, Rl) == 1
+        jac[1, indexin(inputs, ηl)] = Wbar * (GU0 - 1.0) # δRδη (ok)
+        jac[1, indexin(inputs, E0l)] = η * Wbar * δGUδE0 # δRδE0
+        jac[1, indexin(inputs, ql)] = η * Wbar * δGUδq   # δRδq
+        jac[1, indexin(inputs, JU0l)] = η * Wbar * δGUδJU0   # δRδU0
+        jac[1, indexin(inputs, Wbarl)] = η * (GU0 - 1.0) # δRδWbar
+        @Assert indexin(vals, ϕ0l) == 2
+        jac[2, indexin(inputs, ηl)] = 3.96 * η^0.2 * (1.0 - U0^(2.3η - 2.0)) - 7.59 * η * U0^(2.3η - 2.0) * log(U0) # δϕ0δη
+        jac[2, indexin(inputs, E0l)] = (7.59 * η^1.2 * (0.869565 - η) * U0^(2.3η - 3.0)) / Ea # δϕ0δE0
     end
     return (vals, jac)
 end
@@ -379,20 +379,20 @@ function NeXLUncertainties.compute(st::StepFRBar, inputs::LabeledValues, withJac
             δRbarδϕ0 = -F / ϕ0^2
             δRbarδFoRbar = 0.0
         end
-        @Assert indexin(fl, vals) == 1
-        jac[1, indexin(Qlal, inputs)] = δFδQla
-        jac[1, indexin(OoSl, inputs)] = δFδOoS
-        jac[1, indexin(Rl, inputs)] = δFδR
-        jac[1, indexin(Zbl, inputs)] = δRbarδFoRbar * δFoRbδZb
-        jac[1, indexin(ϕ0l, inputs)] = 0.0
-        jac[1, indexin(e0l, inputs)] = 0.0
-        @Assert indexin(rbarl, vals) == 2
-        jac[2, indexin(Qlal, inputs)] = δRbarδF * δFδQla
-        jac[2, indexin(OoSl, inputs)] = δRbarδF * δFδOoS
-        jac[2, indexin(Rl, inputs)] = δRbarδF * δFδR
-        jac[2, indexin(Zbl, inputs)] = δRbarδFoRbar * δFoRbδZb
-        jac[2, indexin(ϕ0l, inputs)] = δRbarδϕ0
-        jac[2, indexin(e0l, inputs)] = δRbarδFoRbar * δFoRbδU0 / Ea
+        @Assert indexin(vals, fl) == 1
+        jac[1, indexin(inputs, Qlal)] = δFδQla
+        jac[1, indexin(inputs, OoSl)] = δFδOoS
+        jac[1, indexin(inputs, Rl)] = δFδR
+        jac[1, indexin(inputs, Zbl)] = δRbarδFoRbar * δFoRbδZb
+        jac[1, indexin(inputs, ϕ0l)] = 0.0
+        jac[1, indexin(inputs, e0l)] = 0.0
+        @Assert indexin(vals, rbarl) == 2
+        jac[2, indexin(inputs, Qlal)] = δRbarδF * δFδQla
+        jac[2, indexin(inputs, OoSl)] = δRbarδF * δFδOoS
+        jac[2, indexin(inputs, Rl)] = δRbarδF * δFδR
+        jac[2, indexin(inputs, Zbl)] = δRbarδFoRbar * δFoRbδZb
+        jac[2, indexin(inputs, ϕ0l)] = δRbarδϕ0
+        jac[2, indexin(inputs, e0l)] = δRbarδFoRbar * δFoRbδU0 / Ea
     end
     return (vals, jac)
 end
@@ -447,26 +447,26 @@ function NeXLUncertainties.compute(st::StepPb, inputs::LabeledValues, withJac::B
 
         δPδg, δPδh, δPδF, δPδRbar = P / g, 4.0P / h, P / F, -2.0 * P / Rbar
 
-        @Assert indexin(bLabel(args...), vals) == 1
-        jac[1, indexin(Rbarl, inputs)] = δbδRbar
-        jac[1, indexin(Fl, inputs)] = δbδF
-        jac[1, indexin(ϕ0l, inputs)] = δbδϕ0
-        # jac[1, indexin(Zbarl, inputs)] = 0.0
-        # jac[1, indexin(e0l, inputs)] = 0.0
-        @Assert indexin(PLabel(args...), vals) == 2
+        @Assert indexin(vals, bLabel(args...)) == 1
+        jac[1, indexin(inputs, Rbarl)] = δbδRbar
+        jac[1, indexin(inputs, Fl)] = δbδF
+        jac[1, indexin(inputs, ϕ0l)] = δbδϕ0
+        # jac[1, indexin(inputs, Zbarl)] = 0.0
+        # jac[1, indexin(inputs, e0l)] = 0.0
+        @Assert indexin(vals, PLabel(args...)) == 2
         if g * (h^4) < gh4max
-            jac[2, indexin(Rbarl, inputs)] = δPδRbar
-            jac[2, indexin(Fl, inputs)] = δPδF
-            # jac[2, indexin(ϕ0l, inputs)] = 0.0
-            jac[2, indexin(Zbarl, inputs)] = δPδg * δgδZb + δPδh * δhδZb
-            jac[2, indexin(e0l, inputs)] = (δPδg * δgδU0 + δPδh * δhδU0) / Ea
+            jac[2, indexin(inputs, Rbarl)] = δPδRbar
+            jac[2, indexin(inputs, Fl)] = δPδF
+            # jac[2, indexin(inputs, ϕ0l)] = 0.0
+            jac[2, indexin(inputs, Zbarl)] = δPδg * δgδZb + δPδh * δhδZb
+            jac[2, indexin(inputs, e0l)] = (δPδg * δgδU0 + δPδh * δhδU0) / Ea
         else
             δPδϕ0 = ((1.8 * Rbar) / F) * ((F * b - ϕ0) * δbδϕ0 - b)
-            #jac[2, indexin(Rbarl, inputs)] = 0.0
-            jac[2, indexin(Fl, inputs)] = 0.9 * b^2
-            jac[2, indexin(ϕ0l, inputs)] = δPδϕ0
-            #jac[2, indexin(Zbarl, inputs)] = 0.0
-            #jac[2, indexin(e0l, inputs)] = 0.0
+            #jac[2, indexin(inputs, Rbarl)] = 0.0
+            jac[2, indexin(inputs, Fl)] = 0.9 * b^2
+            jac[2, indexin(inputs, ϕ0l)] = δPδϕ0
+            #jac[2, indexin(inputs, Zbarl)] = 0.0
+            #jac[2, indexin(inputs, e0l)] = 0.0
         end
     end
     return (vals, jac)
@@ -515,18 +515,18 @@ function NeXLUncertainties.compute(st::Stepaϵ, inputs::LabeledValues, withJac::
         δϵδa = 1.0 / b # Ok
         δϵδb = -a / (b^2) # Ok
 
-        @Assert indexin(aLabel(args...), vals) == 1
-        jac[1, indexin(Rbarl, inputs)] = δaδRbar
-        jac[1, indexin(Fl, inputs)] = δaδF
-        jac[1, indexin(ϕ0l, inputs)] = δaδϕ0
-        jac[1, indexin(Pl, inputs)] = δaδP
-        jac[1, indexin(bl, inputs)] = δaδb
-        @Assert indexin(ϵLabel(args...), vals) == 2
-        jac[2, indexin(Rbarl, inputs)] = δϵδa * δaδRbar
-        jac[2, indexin(Fl, inputs)] = δϵδa * δaδF
-        jac[2, indexin(ϕ0l, inputs)] = δϵδa * δaδϕ0
-        jac[2, indexin(Pl, inputs)] = δϵδa * δaδP
-        jac[2, indexin(bl, inputs)] = (b * δaδb - a) / (b^2)
+        @Assert indexin(vals, aLabel(args...)) == 1
+        jac[1, indexin(inputs, Rbarl)] = δaδRbar
+        jac[1, indexin(inputs, Fl)] = δaδF
+        jac[1, indexin(inputs, ϕ0l)] = δaδϕ0
+        jac[1, indexin(inputs, Pl)] = δaδP
+        jac[1, indexin(inputs, bl)] = δaδb
+        @Assert indexin(vals, ϵLabel(args...)) == 2
+        jac[2, indexin(inputs, Rbarl)] = δϵδa * δaδRbar
+        jac[2, indexin(inputs, Fl)] = δϵδa * δaδF
+        jac[2, indexin(inputs, ϕ0l)] = δϵδa * δaδϕ0
+        jac[2, indexin(inputs, Pl)] = δϵδa * δaδP
+        jac[2, indexin(inputs, bl)] = (b * δaδb - a) / (b^2)
     end
     return (vals, jac)
 end
@@ -573,18 +573,18 @@ function NeXLUncertainties.compute(st::StepAB, inputs::LabeledValues, withJac::B
         δAδϕ0 = ((b + δBδϕ0) / b) * ((1.0 + ϵ) / ϵ)
         δAδP = (δBδP / b) * ((1.0 + ϵ) / ϵ)
 
-        Ai, Bi = indexin(Al, vals), indexin(Bl, vals)
-        jac[Ai, indexin(ϵl, inputs)] = δAδϵ
-        jac[Ai, indexin(bl, inputs)] = δAδb
-        jac[Ai, indexin(Fl, inputs)] = δAδF
-        jac[Ai, indexin(Pl, inputs)] = δAδP
-        jac[Ai, indexin(ϕ0l, inputs)] = δAδϕ0
+        Ai, Bi = indexin(vals, Al), indexin(vals, Bl)
+        jac[Ai, indexin(inputs, ϵl)] = δAδϵ
+        jac[Ai, indexin(inputs, bl)] = δAδb
+        jac[Ai, indexin(inputs, Fl)] = δAδF
+        jac[Ai, indexin(inputs, Pl)] = δAδP
+        jac[Ai, indexin(inputs, ϕ0l)] = δAδϕ0
 
-        jac[Bi, indexin(ϵl, inputs)] = δBδϵ
-        jac[Bi, indexin(bl, inputs)] = δBδb
-        jac[Bi, indexin(Fl, inputs)] = δBδF
-        jac[Bi, indexin(Pl, inputs)] = δBδP
-        jac[Bi, indexin(ϕ0l, inputs)] = δBδϕ0
+        jac[Bi, indexin(inputs, ϵl)] = δBδϵ
+        jac[Bi, indexin(inputs, bl)] = δBδb
+        jac[Bi, indexin(inputs, Fl)] = δBδF
+        jac[Bi, indexin(inputs, Pl)] = δBδP
+        jac[Bi, indexin(inputs, ϕ0l)] = δBδϕ0
     end
     return (vals, jac)
 end
@@ -635,17 +635,17 @@ function NeXLUncertainties.compute(st::StepχFr, inputs::LabeledValues, withJac:
         δχδμoρl = χ / μoρ
         δχδθ = -χ * cot(θ)
         δFrδχ = (-2.0 * B + (bχ * A * b * ϵ * (2.0 * χ + b * (2.0 + ϵ)) - b1ϵχ^2 * ϕ0) / (b1ϵχ^2)) / (bχ^3)
-        χi, Fri = indexin(χl, vals), indexin(Frl, vals)
-        jac[χi, indexin(μoρl, inputs)] = δχδμoρl
-        jac[χi, indexin(θl, inputs)] = δχδθ
-        jac[Fri, indexin(μoρl, inputs)] = δFrδχ * δχδμoρl
-        jac[Fri, indexin(θl, inputs)] = δFrδχ * δχδθ
-        jac[Fri, indexin(dzl, inputs)] = -χ * Fr
-        jac[Fri, indexin(Bl, inputs)] = 1.0 / (bχ^2)
-        jac[Fri, indexin(bl, inputs)] = (-B / (bχ^2) + (-A * χ * ϵ) / (b1ϵχ^2) - Fr) / bχ
-        jac[Fri, indexin(Al, inputs)] = (-b * ϵ) / (bχ * b1ϵχ)
-        jac[Fri, indexin(ϕ0l, inputs)] = 1.0 / bχ
-        jac[Fri, indexin(ϵl, inputs)] = (-A * b) / (b1ϵχ^2)
+        χi, Fri = indexin(vals, χl), indexin(vals, Frl)
+        jac[χi, indexin(inputs, μoρl)] = δχδμoρl
+        jac[χi, indexin(inputs, θl)] = δχδθ
+        jac[Fri, indexin(inputs, μoρl)] = δFrδχ * δχδμoρl
+        jac[Fri, indexin(inputs, θl)] = δFrδχ * δχδθ
+        jac[Fri, indexin(inputs, dzl)] = -χ * Fr
+        jac[Fri, indexin(inputs, Bl)] = 1.0 / (bχ^2)
+        jac[Fri, indexin(inputs, bl)] = (-B / (bχ^2) + (-A * χ * ϵ) / (b1ϵχ^2) - Fr) / bχ
+        jac[Fri, indexin(inputs, Al)] = (-b * ϵ) / (bχ * b1ϵχ)
+        jac[Fri, indexin(inputs, ϕ0l)] = 1.0 / bχ
+        jac[Fri, indexin(inputs, ϵl)] = (-A * b) / (b1ϵχ^2)
     end
     return (vals, jac)
 end
@@ -680,12 +680,12 @@ function NeXLUncertainties.compute(st::StepFrc, inputs::LabeledValues, withJac::
     vals = LabeledValues([Frcl], [Frc])
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
-        Frci = indexin(Frcl, vals)
+        Frci = indexin(vals, Frcl)
         @Assert Frci == 1
-        jac[Frci, indexin(tcl, inputs)] = -Frc * μoρc * csc(θ)
-        jac[Frci, indexin(θl, inputs)] = Frc * μoρc * tc * csc(θ) * cot(θ)
-        jac[Frci, indexin(μoρcl, inputs)] = -Frc * tc * csc(θ)
-        jac[Frci, indexin(Frl, inputs)] = Frc / Fr
+        jac[Frci, indexin(inputs, tcl)] = -Frc * μoρc * csc(θ)
+        jac[Frci, indexin(inputs, θl)] = Frc * μoρc * tc * csc(θ) * cot(θ)
+        jac[Frci, indexin(inputs, μoρcl)] = -Frc * tc * csc(θ)
+        jac[Frci, indexin(inputs, Frl)] = Frc / Fr
     end
     return (vals, jac)
 end
@@ -738,17 +738,17 @@ function NeXLUncertainties.compute(st::StepZA, inputs::LabeledValues, withJac::B
     vals = LabeledValues([Zl, Al, ZAl], [Z, A, ZA])
     jac = withJac ? zeros(Float64, length(vals), length(inputs)) : missing
     if withJac
-        Zi = indexin(Zl, vals)
-        jac[Zi, indexin(Ful, inputs)] = 1.0 / Fs
-        jac[Zi, indexin(Fsl, inputs)] = -Z / Fs
-        Ai = indexin(Al, vals)
-        jac[Ai, indexin(Ful, inputs)] = -A / Fu
-        jac[Ai, indexin(Fsl, inputs)] = A / Fs
-        jac[Ai, indexin(Frcul, inputs)] = A / Frcu
-        jac[Ai, indexin(Frcsl, inputs)] = -A / Frcs
-        ZAi = indexin(ZAl, vals)
-        jac[ZAi, indexin(Frcul, inputs)] = 1.0 / Frcs
-        jac[ZAi, indexin(Frcsl, inputs)] = -ZA / Frcs
+        Zi = indexin(vals, Zl)
+        jac[Zi, indexin(inputs, Ful)] = 1.0 / Fs
+        jac[Zi, indexin(inputs, Fsl)] = -Z / Fs
+        Ai = indexin(vals, Al)
+        jac[Ai, indexin(inputs, Ful)] = -A / Fu
+        jac[Ai, indexin(inputs, Fsl)] = A / Fs
+        jac[Ai, indexin(inputs, Frcul)] = A / Frcu
+        jac[Ai, indexin(inputs, Frcsl)] = -A / Frcs
+        ZAi = indexin(vals, ZAl)
+        jac[ZAi, indexin(inputs, Frcul)] = 1.0 / Frcs
+        jac[ZAi, indexin(inputs, Frcsl)] = -ZA / Frcs
     end
     return (vals, jac)
 end
