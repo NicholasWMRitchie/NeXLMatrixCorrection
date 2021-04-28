@@ -26,18 +26,18 @@ Base.show(io::IO, skro::SimpleKRatioOptimizer) = print(io,"SimpleKRatioOptimizer
 
 function optimizeks(skro::SimpleKRatioOptimizer, krs::AbstractVector{T})::Vector{T} where  T <: Union{KRatio, KRatios}
     function score(kr) # Larger is better....
-        if brightest(kr.lines) in skro.favor
+        if brightest(kr.xrays) in skro.favor
             sc = 1.0e100
         else
-            sc =  get(skro.scores, kr.lines, -1.0)
+            sc =  get(skro.scores, kr.xrays, -1.0)
         end
         if sc==-1.0
-            br = brightest(kr.lines)
+            br = brightest(kr.xrays)
             ov = min(kr.stdProps[:BeamEnergy], kr.unkProps[:BeamEnergy]) / edgeenergy(br)
             sc = convert(Float64, 5 - n(shell(br))) - # Line K->4, L->3, M->2, N->1
                 skro.overvoltage / ov + # Overvoltage (<1 if ov > over)
-                0.1*sum(weight.(kr.lines)) # line weight (favor brighter)
-            skro.scores[kr.lines]=sc
+                0.1*sum(weight.(kr.xrays)) # line weight (favor brighter)
+            skro.scores[kr.xrays]=sc
         end
         return sc
     end

@@ -53,10 +53,10 @@ function NeXLUncertainties.asa(
     fc::Type{<:FluorescenceCorrection}=ReedFluorescence
 )
     fm, sm, cm = Union{Float64,Missing}, Union{String,Missing}, Union{Material,Missing}
-    lines, mease0, meastoa, meascomp = String[], fm[], fm[], cm[]
+    xrays, mease0, meastoa, meascomp = String[], fm[], fm[], cm[]
     refe0, reftoa, refcomp, krv, dkrv, cks, ratio = fm[], fm[], cm[], Float64[], Float64[], fm[], fm[]
     for kr in krs
-        push!(lines, repr(kr.lines))
+        push!(xrays, repr(kr.xrays))
         meas = kr.unkProps
         push!(mease0, get(meas, :BeamEnergy, missing))
         push!(meastoa, get(meas, :TakeOffAngle, missing))
@@ -68,16 +68,16 @@ function NeXLUncertainties.asa(
         push!(krv, value(kr.kratio))
         push!(dkrv, σ(kr.kratio))
         if withComputedKs
-            elm = element(kr.lines[1])
-            prim = brightest(kr.lines)
+            elm = element(kr.xrays[1])
+            prim = brightest(kr.xrays)
             if any(ismissing.((meascomp[end], mease0[end], meastoa[end], refcomp[end], refe0[end], reftoa[end]))) ||
                (NeXLCore.nonneg(meascomp[end], elm) < 1.0e-6) ||
                (NeXLCore.nonneg(refcomp[end], elm) < 1.0e-6) || (energy(inner(prim))>0.95*min(mease0[end],refe0[end]))
                 push!(cks, missing)
                 push!(ratio, missing)
             else
-                zs = zafcorrection(mc, fc, Coating, meascomp[end], kr.lines, mease0[end])
-                zr = zafcorrection(mc, fc, Coating, refcomp[end], kr.lines, refe0[end])
+                zs = zafcorrection(mc, fc, Coating, meascomp[end], kr.xrays, mease0[end])
+                zr = zafcorrection(mc, fc, Coating, refcomp[end], kr.xrays, refe0[end])
                 k =
                     gZAFc(zs, zr, meastoa[end], reftoa[end]) * NeXLCore.nonneg(meascomp[end], elm) /
                     NeXLCore.nonneg(refcomp[end], elm)
@@ -87,7 +87,7 @@ function NeXLUncertainties.asa(
         end
     end
     res = DataFrame(
-        Lines = lines,
+        Xrays = xrays,
         E0meas = mease0,
         TOAmeas = meastoa,
         Cmeas = meascomp,

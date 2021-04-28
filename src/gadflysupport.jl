@@ -151,7 +151,7 @@ function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material; palette=NeXL
            (value(kr.standard[kr.element]) > 0.0)
             # Compute the k-ratio
             kc = gZAFc(kr, unkComp) * (value(unkComp[kr.element]) / value(kr.standard[kr.element]))
-            push!(mfs, name(shell(brightest(kr.lines)))) # value(unkComp[kr.element]))
+            push!(mfs, name(shell(brightest(kr.xrays)))) # value(unkComp[kr.element]))
             push!(kok, value(kr.kratio) / kc)
             push!(dkok, σ(kr.kratio) / kc)
             matname = "$(name(unkComp)) $(kr.unkProps[:BeamEnergy]/1000.0) keV"

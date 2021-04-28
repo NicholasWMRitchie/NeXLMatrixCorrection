@@ -79,10 +79,10 @@ function zafcorrection(
     unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
     stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
 )
-    lines = filter(cxr->energy(inner(cxr))<e0, cxrs)
+    xrays = filter(cxr->energy(inner(cxr))<e0, cxrs)
     return (
-        zafcorrection(mctype, fctype, cctype, unk, lines, e0, unkCoating),
-        zafcorrection(mctype, fctype, cctype, std, lines, e0, stdCoating),
+        zafcorrection(mctype, fctype, cctype, unk, xrays, e0, unkCoating),
+        zafcorrection(mctype, fctype, cctype, std, xrays, e0, stdCoating),
     )
 end
 
@@ -237,9 +237,9 @@ function gZAFc(
     cc::Type{<:CoatingCorrection} = Coating,
 )
     elm = kr.element
-    lines = filter(cxr->energy(inner(cxr))<min(kr.unkProps[:BeamEnergy],kr.stdProps[:BeamEnergy]), kr.lines)
-    zu = zafcorrection(mc, fc, cc, unkComp, lines, kr.unkProps[:BeamEnergy])
-    zs = zafcorrection(mc, fc, cc, kr.standard, lines, kr.stdProps[:BeamEnergy])
+    xrays = filter(cxr->energy(inner(cxr))<min(kr.unkProps[:BeamEnergy],kr.stdProps[:BeamEnergy]), kr.xrays)
+    zu = zafcorrection(mc, fc, cc, unkComp, xrays, kr.unkProps[:BeamEnergy])
+    zs = zafcorrection(mc, fc, cc, kr.standard, xrays, kr.stdProps[:BeamEnergy])
     return gZAFc(zu, zs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
 end
 
@@ -356,14 +356,14 @@ function NeXLUncertainties.asa(
     ::Type{DataFrame},
     unk::Material,
     std::Material,
-    lines::Vector{CharXRay},
+    xrays::Vector{CharXRay},
     e0::Float64,
     toa::Float64;
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     coating::Type{<:CoatingCorrection} = Coating,
 )
-    flines = filter(cxr->energy(inner(cxr)) < e0, lines)
+    flines = filter(cxr->energy(inner(cxr)) < e0, xrays)
     zafs = zafcorrection(mc, fc, coating, unk, std, flines, e0)
     asa(DataFrame, zafs..., toa, toa)
 end

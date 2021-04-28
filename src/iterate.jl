@@ -238,7 +238,7 @@ source(ir::IterationResult)::Label = ir.label
 function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::Bool = true)
     elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], Label[]
     g, z, a, f = Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[]
-    c, gzafc, stds, dmfs, lines = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[], String[]
+    c, gzafc, stds, dmfs, xrays = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[], String[]
     for elm in keys(ir.comp)
         push!(labels, ir.label)
         push!(elms, elm.symbol)
@@ -249,10 +249,10 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         for kr in ir.kratios
             if elm == kr.element
                 push!(ks, value(kr.kratio))
-                push!(lines, repr(kr.lines))
+                push!(xrays, repr(kr.xrays))
                 if withZAF
-                    zafs = _ZAF(ir.iterate, kr.standard, kr.stdProps, kr.lines)
-                    zafu = _ZAF(ir.iterate, ir.comp, kr.unkProps, kr.lines)
+                    zafs = _ZAF(ir.iterate, kr.standard, kr.stdProps, kr.xrays)
+                    zafu = _ZAF(ir.iterate, ir.comp, kr.unkProps, kr.xrays)
                     push!(cks, σ(kr.kratio))
                     push!(stds, name(kr.standard))
                     push!(c, coating(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
@@ -270,7 +270,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         end
         if !added
             push!(ks, missing), push!(cks, missing), push!(stds, missing), push!(c, missing), push!(z, missing),
-            push!(a, missing), push!(f, missing), push!(g, missing), push!(gzafc, missing), push!(lines, missing)
+            push!(a, missing), push!(f, missing), push!(g, missing), push!(gzafc, missing), push!(xrays, missing)
         end
     end
     return withZAF ?
@@ -278,7 +278,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         :Label => labels,
         :Element => elms,
         :Standard => stds,
-        :Lines => lines,
+        :Xrays => xrays,
         #:Converged => [ir.converged for elm in keys(ir.comp)],
         #:Iterations => [ir.iterations for elm in keys(ir.comp)],
         Symbol("Mass Frac.") => mfs,
@@ -333,8 +333,8 @@ NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::Data
 NeXLCore.material(itres::IterationResult) = itres.comp
 NeXLCore.material(itress::AbstractVector{IterationResult})  = mean(material.(itress))
 
-_ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, lines::Vector{CharXRay})::MultiZAF =
-    zafcorrection(iter.mctype, iter.fctype, iter.cctype, mat, lines, props[:BeamEnergy], get(props, :Coating, missing))
+_ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, xrays::Vector{CharXRay})::MultiZAF =
+    zafcorrection(iter.mctype, iter.fctype, iter.cctype, mat, xrays, props[:BeamEnergy], get(props, :Coating, missing))
 
 """
     computeZAFs(
@@ -347,7 +347,7 @@ Given an estimate of the composition compute the corresponding k-ratios.
 """
 function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZAF})::Dict{Element,Float64}
     zaf(kr, zafs) =
-        gZAFc(_ZAF(iter, est, kr.unkProps, kr.lines), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
+        gZAFc(_ZAF(iter, est, kr.unkProps, kr.xrays), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
 """
@@ -385,7 +385,7 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIt
     # Compute the k-ratio difference metric
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
     # Compute the standard matrix correction factors
-    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.lines) for kr in measured)
+    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.xrays) for kr in measured)
     stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in measured)
     # First estimate c_unk = k*c_std
     estcomp = something(estComp, material(repr(label), compute(iter.unmeasured, firstEstimate(measured))))

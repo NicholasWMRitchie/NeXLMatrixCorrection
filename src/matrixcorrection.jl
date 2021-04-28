@@ -203,8 +203,8 @@ function correctkratios(krs::AbstractVector{KRatio}, coating::Material, ρz::Rea
     res = KRatio[]
     for kr in krs
         if !(kr.element in keys(coating))
-            kratio = kr.kratio / exp(-χ(coating, brightest(kr.lines), kr.unkProps[:TakeOffAngle]) * ρz)
-            push!(res, KRatio(kr.lines, kr.unkProps, kr.stdProps, kr.standard, kratio))
+            kratio = kr.kratio / exp(-χ(coating, brightest(kr.xrays), kr.unkProps[:TakeOffAngle]) * ρz)
+            push!(res, KRatio(kr.xrays, kr.unkProps, kr.stdProps, kr.standard, kratio))
         else
             push!(res, kr)
         end

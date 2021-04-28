@@ -19,10 +19,10 @@ for r in eachrow(pap)
     a, b = elements[r.A], elements[r.B]
     e0, θ  = 1.0e3*r.E0, deg2rad(r.TOA)
     std, unk = pure(a), material("Unknown",Dict(a=>r.WgtFracA, b=>1.0-r.WgtFracA))
-    kk, lines = r.kA, mapline(a, r.Line)
-    algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
+    kk, xrays = r.kA, mapline(a, r.Line)
+    algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, xrays, e0)
     push!(xppres, k(algs..., θ, θ)/kk)
-    algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
+    algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, xrays, e0)
     push!(czres, k(algs..., θ, θ)/kk)
   catch
     push!(xppres, missing)

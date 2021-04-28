@@ -23,30 +23,30 @@ for r in eachrow(heinrich)
     a, b = parse(Element,r.Z1), parse(Element,r.Z2)
     e0, θ  = convert(Float64,r.E0), deg2rad(r.TOA)
     std, unk = pure(a), material("Unknown",Dict(a=>r.C1, b=>1.0-r.C1))
-    kk, lines = r.Kexp, [ brightest(characteristic(a, trss[r.Line])), ]
+    kk, xrays = r.Kexp, [ brightest(characteristic(a, trss[r.Line])), ]
     try
-      algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, xrays, e0)
       push!(xppres, k(algs..., θ, θ)/kk)
     catch c
       @show c
       push!(xppres, missing)
     end
     try
-      algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, xrays, e0)
       push!(czres, k(algs..., θ, θ)/kk)
     catch c
       @show c
       push!(czres, missing)
     end
     try
-      algs = zafcorrection(Riveros1993, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      algs = zafcorrection(Riveros1993, ReedFluorescence, NullCoating, unk, std, xrays, e0)
       push!(rivres, k(algs..., θ, θ)/kk)
     catch c
       @show c
       push!(rivres, missing)
     end
     try
-      algs = zafcorrection(XPhi, ReedFluorescence, NullCoating, unk, std, lines, e0)
+      algs = zafcorrection(XPhi, ReedFluorescence, NullCoating, unk, std, xrays, e0)
       push!(xphires, k(algs..., θ, θ)/kk)
     catch c
       @show c

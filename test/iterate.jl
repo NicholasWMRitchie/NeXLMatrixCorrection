@@ -6,12 +6,12 @@ function testIterate(unk, stds, e0, θ)
     toa = deg2rad(θ)
     props = Dict{Symbol,Any}(:BeamEnergy => e0, :TakeOffAngle => toa)
     krs = KRatio[]
-    for (lines, std) in stds
-        elm = element(lines[1])
-        zu = zafcorrection(XPP, ReedFluorescence, Coating, unk, lines, e0)
-        zs = zafcorrection(XPP, ReedFluorescence, Coating, std, lines, e0)
+    for (xrays, std) in stds
+        elm = element(xrays[1])
+        zu = zafcorrection(XPP, ReedFluorescence, Coating, unk, xrays, e0)
+        zs = zafcorrection(XPP, ReedFluorescence, Coating, std, xrays, e0)
         k = gZAFc(zu, zs, toa, toa) * unk[elm] / std[elm]
-        push!(krs, KRatio(lines, props, props, std, k))
+        push!(krs, KRatio(xrays, props, props, std, k))
     end
     up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
     iter = Iteration(XPP, ReedFluorescence, Coating, updater = up)
