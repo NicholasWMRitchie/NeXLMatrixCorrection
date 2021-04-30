@@ -5,24 +5,6 @@ using Statistics
 using LinearAlgebra
 
 """
-The `UnmeasuredElementRule` mechanism provides a method to implement rules for adding unmeasured elements to
-the fitting process.  Examples include element-by-stoichiometry or element-by-difference.
-"""
-abstract type UnmeasuredElementRule end
-
-"""
-The NullUnmeasuredRule adds no additional elements in the iteration process.
-"""
-struct NullUnmeasuredRule <: UnmeasuredElementRule end
-
-"""
-    NeXLUncertainties.compute(::Type{UnmeasuredElementRule}, inp::Dict{Element,Float64})::Dict{Element,Float64}
-
-A null UnmeasuredElementRule.  Just returns the inputs.
-"""
-NeXLUncertainties.compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64} = inp
-
-"""
 The `UpdateRule` abstract type defines mechanisms to update the best composition estimate between
 iteration steps.
 """
@@ -336,6 +318,13 @@ NeXLCore.material(itress::AbstractVector{IterationResult})  = mean(material.(itr
 _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, xrays::Vector{CharXRay})::MultiZAF =
     zafcorrection(iter.mctype, iter.fctype, iter.cctype, mat, xrays, props[:BeamEnergy], get(props, :Coating, missing))
 
+
+function iscoatingelement(kr::KRatio)
+    yup(film::Film) = element(kr) in keys(film.material)
+    yup(films::AbstractArray{Film}) = any(yup, films) 
+    return haskey(kr.unkProps, :Coating) && yup(kr.unkProps[:Coating])
+end
+
 """
     computeZAFs(
         iter::Iteration,
@@ -381,6 +370,10 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIt
             final[elm] = uv(value(final[elm]), unc)
         end
         return material(name(estcomp), final)
+    end
+    # Remove k-ratios for unmeasured and coating elements
+    measured = filter(measured) do kr
+        b = !(isunmeasured(iter.unmeasured, element(kr)) || iscoatingelement(kr))
     end
     # Compute the k-ratio difference metric
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)

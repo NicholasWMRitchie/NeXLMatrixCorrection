@@ -44,7 +44,7 @@ ZA(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, 
 Computes the coating correction.
 """
 coating(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
-    transmission(std.coating, cxr, θunk) / transmission(unk.coating, cxr, θstd)
+    transmission(unk.coating, cxr, θunk) / transmission(std.coating, cxr, θstd)
 
 """
     generation(unk::ZAFCorrection, std::ZAFCorrection, ass::AtomicSubShell)

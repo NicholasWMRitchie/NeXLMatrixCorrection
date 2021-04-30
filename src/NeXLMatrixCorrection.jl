@@ -91,12 +91,18 @@ export KRatioOptimizer # Abstract class
 export SimpleKRatioOptimizer # A very simple implmentation of KRatioOptimizer
 export optimizeks # The method required of KRatioOptimizer
 
-# Performs iteration to estimate the composition from measured k-ratios
-include("iterate.jl")
+include("unmeasuredelement.jl")
 # Abstract class for calculating elements by difference or stoichiometry or ???
 export UnmeasuredElementRule
+export isunmeasured # Does this UnmeasuredElementRule handle this element?
 export NullUnmeasuredRule # Don't do anything..
+export ElementByStoichiometry # Any element by stoichiometry
+export OByStoichiometry # O by stoichiometry
+export ElementByFiat # Just say it..
+export MultiUnmeasuredElementRule # Combine rules sequentially
 
+# Performs iteration to estimate the composition from measured k-ratios
+include("iterate.jl")
 # Abstract class for updating between iteration steps
 export UpdateRule # A rule implementing update(...)
 export NaiveUpdateRule # Simple iteration
@@ -110,6 +116,7 @@ export Iteration # Defines the iteration procedure
 export IterationResult # The output from quantify(...)
 
 export quantify # Perform the iteration on KRatio(s) or FilterFitResult
+
 
 include("supportedthinfilms.jl")
 export SupportedThinFilms

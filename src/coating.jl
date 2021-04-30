@@ -9,6 +9,7 @@ NeXLCore.minproperties(::Type{<:CoatingCorrection}) = ( )  # None are necessary 
 
 """
     Coating
+    
 Implements a simple multi-layer coating correction.
 """
 struct Coating <: CoatingCorrection
