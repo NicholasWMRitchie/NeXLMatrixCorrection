@@ -8,43 +8,50 @@ of k-ratios with one KRatio per element.
 abstract type KRatioOptimizer end
 
 """
-    SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[])
+    SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[], minOvervoltage=1.2)
 
 Implements a simple optimizer based on shell first, overvoltage next and brightness last.  Once it picks
 an optimum set of lines for an element, it will not change.  You can force the selection of specific
-lines by including the brightest in a family in `favor`.
+lines by including the brightest in a family in `favor`.  Lines with overvoltages less than `minOvervoltage`
+are not considered as available.
 """
 struct SimpleKRatioOptimizer <: KRatioOptimizer
     overvoltage::Float64
     scores::Dict{Vector{CharXRay},AbstractFloat}
     favor::Vector{CharXRay}
+    minOver::Float64
 
-    SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[]) = new(overvoltage, Dict{Vector{CharXRay}, AbstractFloat}(), favor)
+    function SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[], minOvervoltage=1.2) 
+        elms = map(element, favor)
+        @assert length(unique(elms)) == length(elms) "SimpleKRatioOptimizer: Please specify only one characteristic X-ray per element to favor."
+        new(overvoltage, Dict{Vector{CharXRay}, AbstractFloat}(), favor, minOvervoltage)
+    end
 end
 
-Base.show(io::IO, skro::SimpleKRatioOptimizer) = print(io,"SimpleKRatioOptimizer[U>$(skro.overvoltage), favor=$(skro.favor)")
+Base.show(io::IO, skro::SimpleKRatioOptimizer) = print(io,"SimpleKRatioOptimizer[U>$(skro.overvoltage), favor=[$(skro.favor)]]")
 
 function optimizeks(skro::SimpleKRatioOptimizer, krs::AbstractVector{T})::Vector{T} where  T <: Union{KRatio, KRatios}
     function score(kr) # Larger is better....
-        if brightest(kr.xrays) in skro.favor
-            sc = 1.0e100
-        else
-            sc =  get(skro.scores, kr.xrays, -1.0)
-        end
-        if sc==-1.0
-            br = brightest(kr.xrays)
+        br = brightest(kr.xrays)
+        sc = any(f->f in kr.xrays, skro.favor) && (kr.unkProps[:BeamEnergy] / edgeenergy(br) > skro.minOver) ? # 
+            1.0e100 : get(skro.scores, kr.xrays, -1.0)
+        if sc == -1.0
             ov = min(kr.stdProps[:BeamEnergy], kr.unkProps[:BeamEnergy]) / edgeenergy(br)
-            sc = convert(Float64, 5 - n(shell(br))) - # Line K->4, L->3, M->2, N->1
-                skro.overvoltage / ov + # Overvoltage (<1 if ov > over)
-                0.1*sum(weight.(kr.xrays)) # line weight (favor brighter)
+            sc = if ov > skro.minOver
+                5.0 - n(shell(br)) - # Line K->8, L->6, M->4, N->2
+                    skro.overvoltage / ov + # Overvoltage (<1 if ov > over)
+                    0.1*sum(weight.(kr.xrays)) # line weight (favor brighter)
+            else
+                0.0 # Avoid it...
+            end
             skro.scores[kr.xrays]=sc
         end
         return sc
     end
-    res = Vector{T}()
-    for elm in elms(krs)
+    return map(collect(elms(krs))) do elm
         elmkrs=filter(k->k.element==elm, krs)
-        push!(res, elmkrs[findmax(score.(elmkrs))[2]])
+        maxi = findmax(score.(elmkrs))
+        maxi[1] == 0.0 && @warn "There is no k-ratio with an overvoltage greater than $(skro.minOver) for $elm."
+        elmkrs[maxi[2]]
     end
-    return res
 end
