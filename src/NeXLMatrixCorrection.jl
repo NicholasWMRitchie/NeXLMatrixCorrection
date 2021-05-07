@@ -53,7 +53,7 @@ include("multizaf.jl")
 export MultiZAF # Represents a multiline ZAF correction
 export gZAFc # Combined correction factor (generation + ZAF + coating)
 export k # Computed k-ratio
-export aspure # The k-ratio for this X-ray relative to a pure element (use with NeXLSpectrum.VectorQuant)
+export aspure # The k-ratio for this X-ray relative to a pure element
 
 # Implements Pouchou & Pichoir's XPP  ϕ(ρz) model
 include("xpp.jl")
@@ -117,6 +117,8 @@ export IterationResult # The output from quantify(...)
 
 export quantify # Perform the iteration on KRatio(s) or FilterFitResult
 
+include("aspure.jl")
+#export aspure
 
 include("supportedthinfilms.jl")
 export SupportedThinFilms
