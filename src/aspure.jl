@@ -34,7 +34,7 @@ function aspure(
         pure = zafcorrection(mc, fc, cc, purestd, krs.xrays, pureprops[:BeamEnergy], missing)
         std = zafcorrection(mc, fc, cc, krs.standard, krs.xrays, krs.stdProps[:BeamEnergy], get(krs.stdProps, :Coating, missing))        
         kpure = k(pure, std, pureprops[:TakeOffAngle], krs.stdProps[:TakeOffAngle])
-        res = KRatios(krs.xrays, krs.unkProps, pureprops, purestd, krs.kratios ./ kpure)
+        res = KRatios(krs.xrays, krs.unkProps, pureprops, purestd, krs.kratios / kpure)
     end
     return res
 end
