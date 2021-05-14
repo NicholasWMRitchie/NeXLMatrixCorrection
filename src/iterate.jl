@@ -318,13 +318,6 @@ NeXLCore.material(itress::AbstractVector{IterationResult})  = mean(material.(itr
 _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, xrays::Vector{CharXRay})::MultiZAF =
     zafcorrection(iter.mctype, iter.fctype, iter.cctype, mat, xrays, props[:BeamEnergy], get(props, :Coating, missing))
 
-
-function iscoatingelement(kr::KRatio)
-    yup(film::Film) = element(kr) in keys(film.material)
-    yup(films::AbstractArray{Film}) = any(yup, films) 
-    return haskey(kr.unkProps, :Coating) && yup(kr.unkProps[:Coating])
-end
-
 """
     computeZAFs(
         iter::Iteration,
@@ -339,19 +332,59 @@ function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZ
         gZAFc(_ZAF(iter, est, kr.unkProps, kr.xrays), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
 end
+
+
 """
-    quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIter::Int = 100, estComp::Union{Nothing,Material}=nothing)::IterationResult
-    quantify(iter::Iteration, name::String, measured::Vector{KRatio}; maxIter::Int = 100, estComp::Union{Nothing,Material}=nothing)::IterationResult
+    computecoating(iter::Iteration, substrate::Material, coating::Material, kcoating::KRatio)
+
+Assumptions:
+  * The coating is the same for all measurements of the unknown
+  * Each element is handled as an independent layer for multi-element coatings
+  * The coating element k-ratio is assumed to be assigned to the brightest line
+"""
+function computecoating(iter::Iteration, substrate::Material, coating::Material, kcoating::KRatio)::Film
+    coatingasfilm(iter.mctype, substrate, coating, #
+            brightest(kcoating.xrays), kcoating.unkProps[:BeamEnergy], # 
+            kcoating.unkProps[:TakeOffAngle], value(kcoating.kratio))
+end
+
+"""
+    quantify(
+        iter::Iteration, 
+        label::Label, 
+        measured::Vector{KRatio}; 
+        maxIter::Int = 100, 
+        estComp::Union{Nothing,Material}=nothing,
+        coating::Union{Nothing, Material}=nothing
+    )::IterationResult
+    quantify(
+        iter::Iteration, 
+        name::String, 
+        measured::Vector{KRatio}; 
+        maxIter::Int = 100, 
+        estComp::Union{Nothing,Material}=nothing
+        coating::Union{Nothing, Material}=nothing
+    )::IterationResult
 
 Perform the iteration procedurer as described in `iter` using the `measured` k-ratios to produce the best
 estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the
 k-ratios from filter fit spectra.  `estComp` is an optional first estimate of the composition.  This can
 be a useful optimization when quantifying many similar k-ratios (like, for example, points on a 
 hyper-spectrum.)
+
+If `coating` is defined then 
+
 """
 quantify(iter::Iteration, name::String, measured::Vector{KRatio}; kwargs...) = quantify(iter, label(name), measured; kwargs...)
 
-function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIter::Int = 100, estComp::Union{Nothing,Material}=nothing)::IterationResult
+function quantify(
+    iter::Iteration, 
+    label::Label, 
+    measured::Vector{KRatio}; 
+    maxIter::Int = 100, 
+    estComp::Union{Nothing,Material}=nothing, 
+    coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
+)::IterationResult
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio})::Dict{Element,Float64} =
         Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
@@ -371,35 +404,45 @@ function quantify(iter::Iteration, label::Label, measured::Vector{KRatio}; maxIt
         end
         return material(name(estcomp), final)
     end
-    # Remove k-ratios for unmeasured and coating elements
-    measured = filter(measured) do kr
-        b = !(isunmeasured(iter.unmeasured, element(kr)) || iscoatingelement(kr))
+    @assert isnothing(coating) || (get(last(coating), :Density, -1.0) > 0.0) "You must provide a positive density for the coating material."
+    # Is this k-ratio part of the coating?
+    iscoating(k, coatmat) =  (!isnothing(coatmat)) && (first(coatmat) in k.xrays) && (element(k) in keys(last(coatmat)))
+    # k-ratios from measured elements in the unknown - Remove k-ratios for unmeasured and coating elements
+    kunk = filter(measured) do kr
+        !(isunmeasured(iter.unmeasured, element(kr)) || iscoating(kr, coating))
     end
+    # k-ratios associated with the coating
+    kcoat = filter(kr->iscoating(kr, coating), measured)
     # Compute the k-ratio difference metric
-    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in measured)
+    eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in kunk)
     # Compute the standard matrix correction factors
-    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.xrays) for kr in measured)
-    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in measured)
+    stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.xrays) for kr in kunk)
+    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in kunk)
     # First estimate c_unk = k*c_std
-    estcomp = something(estComp, material(repr(label), compute(iter.unmeasured, firstEstimate(measured))))
+    estcomp = something(estComp, material(repr(label), compute(iter.unmeasured, firstEstimate(kunk))))
     # Compute the associated matrix corrections
     zafs = computeZAFs(iter, estcomp, stdZafs)
     bestComp, bestKrs = estcomp, computeKs(estcomp, zafs, stdComps)
     bestEval, bestIter = 1.0e300, 0
     reset(iter.updater)
     for iters in Base.OneTo(maxIter)
-        # How close are the calculated k-ratios to the measured version of the measured?
+        if length(kcoat) >= 1
+            coatings = computecoating(iter, estcomp, last(coating), first(kcoat))
+            # Previous coatings are replaced on all the unknown's k-ratios
+            foreach(k->k.unkProps[:Coating] = coatings, kunk)
+        end
+        # How close are the calculated k-ratios to the measured version of the k-ratios?
         estkrs = computeKs(estcomp, zafs, stdComps)
         if eval(estkrs) < bestEval
             # If no convergence report it but return closest result...
             bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
-            if converged(iter.converged, measured, bestKrs)
-                fc = computefinal(estcomp, measured)
+            if converged(iter.converged, kunk, bestKrs)
+                fc = computefinal(estcomp, kunk)
                 return IterationResult(label, fc, measured, bestKrs, true, bestIter, iter)
             end
         end
         # Compute the next estimated mass fractions
-        upd = update(iter.updater, estcomp, measured, zafs)
+        upd = update(iter.updater, estcomp, kunk, zafs)
         # Apply unmeasured element rules
         estcomp = material(repr(label), compute(iter.unmeasured, upd))
         # calculated matrix correction for estcomp
@@ -416,8 +459,9 @@ function quantify(
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
+    coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
 ) 
-    quantify(Iteration(mc, fc, cc), label(sampleName), measured)
+    quantify(Iteration(mc, fc, cc), label(sampleName), measured, coating=coating)
 end
 
 function quantify(
@@ -426,8 +470,9 @@ function quantify(
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
+    coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
 )
-    quantify(Iteration(mc, fc, cc), lbl, measured)
+    quantify(Iteration(mc, fc, cc), lbl, measured, coating=coating)
 end
 
 function quantify(
@@ -435,7 +480,8 @@ function quantify(
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = NullFluorescence,
     cc::Type{<:CoatingCorrection} = NullCoating,
-    kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5)
+    kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
+    coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
 )
     @assert all(size(measured[1])==size(krsi) for krsi in measured[2:end]) "All the KRatios need to be the same dimensions."
     # Pick the best sub-selection of `measured` to quantify
@@ -443,12 +489,10 @@ function quantify(
     ThreadsX.map(CartesianIndices(optmeasured[1].kratios)) do ci
         try
             krs = KRatio[ kr[ci] for kr in optmeasured]
-            quantify(Iteration(mc, fc, cc), label(ci), krs).comp
+            quantify(Iteration(mc, fc, cc), label(ci), krs, coating=coating).comp
          catch ex
              @error ex
              NeXLCore.NULL_MATERIAL
          end
     end
 end
-
-
