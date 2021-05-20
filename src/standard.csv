@@ -1,23 +1,23 @@
 "Formula","Name","Comment"
 "Ag","Silver","Forms oxide, sulfide and chloride layers in air"
-"Ag2O",,
-"Ag2S",,
+"Ag2O",,"Used as a conductive paste filler"
+"Ag2S",,"Non soluble in water"
 "Ag2Te",,
-"AgCl",,
+"AgCl",,"Very low water solubility"
 "Al",,"Oxidizes to 4 nm"
 "Al2O3",,
 "Al2SiO5",,
-"AlF3",,
-"AlN",,
+"AlF3",,"Soluble in water"
+"AlN",,"Hydrolyzes slowly in water"
 "Au",,
 "B",,
 "B4C",,
-"BN",,
+"BN",,"Insoluble"
 "B2O3",,
-"BP",,
+"BP",,"BP is not attacked by acids or boiling aqueous alkali water solutions. It is only attacked by molten alkalis."
 "Ba(NO3)2",,
 "Ba2NaNb5O15",,
-"BaCl2",,
+"BaCl2",,"Water soluble"
 "BaF2",,
 "BaSO4",,
 "BaTi4O9",,
@@ -67,7 +67,7 @@
 "CsAlSi2O6",,
 "CsBr",,
 "CsNO2",,
-"CsI",,
+"CsI",,"Water soluble"
 "Cu",,
 "Cu2O",,
 "Cu2S",,
@@ -120,6 +120,7 @@
 "HfO2",,
 "HgS",,
 "HgTe",,
+"HgSe",,
 "Ho",,
 "HoP5O14",,
 "HoF3",,
@@ -136,14 +137,14 @@
 "K2SiF6",,
 "KAlSi3O8",,
 "KBr",,
-"KCl",,
-"KI",,
+"KCl",,"Water soluble"
+"KI",,"Water soluble"
 "LaB6",,
 "LaF3",,
 "LaPO4",,
 "La2O3",,
 "LiAlSi2O6",,
-"LiF",,
+"LiF",,"Somewhat water soluble"
 "LiNbO3",,
 "LiTaO3",,
 "Lu",,
@@ -176,8 +177,8 @@
 "Na4BeAlSi4O12Cl",,
 "NaAlSi2O6",,
 "NaAlSi3O8",,
-"NaCl",,
-"NaF",,
+"NaCl",,"Water soluble"
+"NaF",,"Water soluble"
 "Nb",,
 "Nb2O5",,
 "Nb2O3",,
@@ -198,7 +199,7 @@
 "NiO",,
 "NiSi2",,
 "Os",,
-"Pb",,
+"Pb",,"Oxidizes thoroughly in air"
 "PbF2",,
 "PbI2",,
 "PbO",,
@@ -215,9 +216,9 @@
 "Rb2SnCl6",,
 "Rb2SnF6",,
 "Rb2SO4",,
-"RbBr",,
-"RbCl",,
-"RbI",,
+"RbBr",,"Water soluble"
+"RbCl",,"Water soluble"
+"RbI",,"Water soluble"
 "Re",,
 "ReO3",,
 "Rh",,
