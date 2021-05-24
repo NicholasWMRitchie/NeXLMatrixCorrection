@@ -335,15 +335,18 @@ end
 
 
 """
-    computecoating(iter::Iteration, substrate::Material, coating::Material, kcoating::KRatio)
+    estimatecoating(substrate::Material, coating::Material, kcoating::KRatio, mc::Type{<:MatrixCorrection}=XPP)::Film
+
+Use the measured k-ratio to estimate the mass-thickness of the coating material on the specified substrate.
+Return the result as a Film which may be assigned to the :Coating property for k-ratios associated with the
+substrate.
 
 Assumptions:
   * The coating is the same for all measurements of the unknown
-  * Each element is handled as an independent layer for multi-element coatings
   * The coating element k-ratio is assumed to be assigned to the brightest line
 """
-function computecoating(iter::Iteration, substrate::Material, coating::Material, kcoating::KRatio)::Film
-    coatingasfilm(iter.mctype, substrate, coating, #
+function estimatecoating(substrate::Material, coating::Material, kcoating::KRatio, mc::Type{<:MatrixCorrection}=XPP)::Film
+    coatingasfilm(mc, substrate, coating, #
             brightest(kcoating.xrays), kcoating.unkProps[:BeamEnergy], # 
             kcoating.unkProps[:TakeOffAngle], value(kcoating.kratio))
 end
@@ -427,7 +430,7 @@ function quantify(
     reset(iter.updater)
     for iters in Base.OneTo(maxIter)
         if length(kcoat) >= 1
-            coatings = computecoating(iter, estcomp, last(coating), first(kcoat))
+            coatings = estimatecoating(estcomp, last(coating), first(kcoat), iter.mctype)
             # Previous coatings are replaced on all the unknown's k-ratios
             foreach(k->k.unkProps[:Coating] = coatings, kunk)
         end

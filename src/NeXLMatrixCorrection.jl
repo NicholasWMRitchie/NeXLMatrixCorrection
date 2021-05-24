@@ -116,6 +116,7 @@ export Iteration # Defines the iteration procedure
 export IterationResult # The output from quantify(...)
 
 export quantify # Perform the iteration on KRatio(s) or FilterFitResult
+export estimatecoating # Use a measured k-ratio to estimate the coating thickness on a material
 
 include("aspure.jl")
 #export aspure
