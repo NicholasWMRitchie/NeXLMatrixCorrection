@@ -52,15 +52,15 @@ KRatio(
 
 ### An example
 ```julia
-julia> lbl = label("K458")
-julia> unkProps = Dict(:BeamEnergy=>15.0e3, :TakeOffAngle=>deg2rad(40.0))
-julia> stdProps = unkProps # Same for both (in this case...)
-julia> krs = [
+> lbl = label("K458")
+> unkProps = Dict(:BeamEnergy=>15.0e3, :TakeOffAngle=>deg2rad(40.0))
+> stdProps = unkProps # Same for both (in this case...)
+> krs = [
     KRatio([n"O K-L3"], unkProps, stdProps, mat"SiO2", 0.746227 ),
     KRatio([n"Si K-L3"], unkProps, stdProps, mat"SiO2", 0.441263 ),
     KRatio([n"Zn K-L3"], unkProps, stdProps, mat"Zn", 0.027776 ),
     KRatio([n"Ba L3-M5"], unkProps, stdProps, mat"BaCl", 0.447794 )
 ]
-julia> res = quantify(lbl, krs)
-```
+> res = quantify(lbl, krs)
 Converged to K458[Si=0.2311,Ba=0.4212,O=0.3192,Zn=0.0307] in 7 steps
+```
