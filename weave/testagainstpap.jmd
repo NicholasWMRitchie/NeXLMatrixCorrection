@@ -12,25 +12,35 @@ function mapline(elm, index)
   return [ brightest(characteristic(elm, trs)) ]
 end
 
-pap = CSV.read("papkratios.csv", DataFrame, header=3, skipto=4)
-xppres, czres = Union{Float64,Missing}[], Union{Float64,Missing}[]
+pap = CSV.read(joinpath(@__DIR__,"papkratios.csv"), DataFrame, header=3, skipto=4)
+xppres, czres, rivres = Union{Float64,Missing}[], Union{Float64,Missing}[], Union{Float64,Missing}[]
 for r in eachrow(pap)
-  try
     a, b = elements[r.A], elements[r.B]
     e0, θ  = 1.0e3*r.E0, deg2rad(r.TOA)
     std, unk = pure(a), material("Unknown",Dict(a=>r.WgtFracA, b=>1.0-r.WgtFracA))
     kk, xrays = r.kA, mapline(a, r.Line)
+  try
     algs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, std, xrays, e0)
     push!(xppres, k(algs..., θ, θ)/kk)
+  catch
+    push!(xppres, missing)
+  end
+  try
     algs = zafcorrection(CitZAF, ReedFluorescence, NullCoating, unk, std, xrays, e0)
     push!(czres, k(algs..., θ, θ)/kk)
   catch
-    push!(xppres, missing)
     push!(czres, missing)
+  end
+  try
+    algs = zafcorrection(Riveros1993, ReedFluorescence, NullCoating, unk, std, xrays, e0)
+    push!(rivres, k(algs..., θ, θ)/kk)
+  catch
+    push!(rivres, missing)
   end
 end
 insertcols!(pap, ncol(pap)+1, :XPP=>xppres)
 insertcols!(pap, ncol(pap)+1, :CitZAF=>czres)
+insertcols!(pap, ncol(pap)+1, :Riveros=>rivres)
 display(pap)
 ```
 
@@ -46,7 +56,12 @@ plot(pap, x=:XPP, y=:XPP, Stat.histogram(bincount=50), Geom.bar, Guide.title("XP
 plot(pap, x=:CitZAF, y=:CitZAF, Stat.histogram(bincount=50), Geom.bar, Guide.title("CitZAF"))
 ```
 
+##### Riveros
+```julia; fig_width=8; fig_height=4; fig_ext=".svg";
+plot(pap, x=:Riveros, y=:Riveros, Stat.histogram(bincount=200), Geom.bar, Guide.title("Riveros 1993"), Coord.cartesian(xmin=0.8, xmax=1.2))
+```
+
 ##### Summary Statistics
 ```julia
-describe(pap[:,end-1:end], :mean, :std, :min, :q25, :median, :q75, :max)
+describe(pap[:,end-2:end], :mean, :std, :min, :q25, :median, :q75, :max)
 ```
