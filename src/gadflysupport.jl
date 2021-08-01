@@ -137,20 +137,56 @@ function Gadfly.plot(
     )
 end
 
-function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material; palette=NeXLPalette)
+
+function Gadfly.plot(krs::AbstractArray{KRatio}, mc=XPP, fc=ReedFluorescence, cc=Coating; palette=NeXLPalette)
     mfs, kok, dkok, color = String[], Float64[], Float64[], Color[]
     next = 1
     matcolors = Dict{String,RGB{Float64}}()
-    for kr in krs
-        if hasminrequired(XPP, kr.unkProps) &&
-           hasminrequired(ReedFluorescence, kr.unkProps) && #
-           hasminrequired(XPP, kr.stdProps) &&
-           hasminrequired(ReedFluorescence, kr.stdProps) && #
-           (!isnothing(unkComp)) &&
+    for kr in filter(kr->haskey(kr.unkProps, :Composition), krs)
+        unkComp = kr.unkProps[:Composition]
+        if hasminrequired(mc, kr.unkProps) && hasminrequired(fc, kr.unkProps) && #
+           hasminrequired(mc, kr.stdProps) && hasminrequired(fc, kr.stdProps) && #
+           (value(unkComp[kr.element]) > 0.0) && (value(kr.standard[kr.element]) > 0.0)
+             # Compute the k-ratio
+             kc = gZAFc(kr, unkComp, mc, fc, cc) * (value(unkComp[kr.element]) / value(kr.standard[kr.element]))
+             push!(mfs, name(shell(brightest(kr.xrays)))) # value(unkComp[kr.element]))
+             push!(kok, value(kr.kratio) / kc)
+             push!(dkok, σ(kr.kratio) / kc)
+             matname = "C($(symbol(kr.element)), $(name(unkComp)), $(kr.unkProps[:BeamEnergy]/1000.0) keV, $(name(kr.stdProps[:Composition])))"
+             if !haskey(matcolors, matname)
+                 matcolors[matname] = palette[next]
+                 next += 1
+             end
+             push!(color, matcolors[matname])
+        end
+    end
+    plot(
+        x = mfs,
+        y = kok,
+        ymin = kok .- dkok,
+        ymax = kok .+ dkok,
+        color = color,
+        Geom.errorbar,
+        Stat.x_jitter(range = 0.8),
+        Guide.manual_color_key("Material", [keys(matcolors)...], [values(matcolors)...]), # Guide.yrug,
+        Guide.xlabel("Shell"),
+        Guide.ylabel("k[Measured]/k[Calculated]"),
+    )
+end
+
+function Gadfly.plot(krs::AbstractArray{KRatio}, unkComp::Material, mc=XPP, fc=ReedFluorescence, cc=Coating; palette=NeXLPalette)
+    mfs, kok, dkok, color = String[], Float64[], Float64[], Color[]
+    next = 1
+    matcolors = Dict{String,RGB{Float64}}()
+    for kr in filter(kr->name(get(kr.unkProps, :Composition, unkComp)) == name(unkComp), krs)
+        if hasminrequired(mc, kr.unkProps) &&
+           hasminrequired(fc, kr.unkProps) && #
+           hasminrequired(mc, kr.stdProps) &&
+           hasminrequired(fc, kr.stdProps) && #
            (value(unkComp[kr.element]) > 0.0) &&
            (value(kr.standard[kr.element]) > 0.0)
             # Compute the k-ratio
-            kc = gZAFc(kr, unkComp) * (value(unkComp[kr.element]) / value(kr.standard[kr.element]))
+            kc = gZAFc(kr, unkComp, mc, fc, cc) * (value(unkComp[kr.element]) / value(kr.standard[kr.element]))
             push!(mfs, name(shell(brightest(kr.xrays)))) # value(unkComp[kr.element]))
             push!(kok, value(kr.kratio) / kc)
             push!(dkok, σ(kr.kratio) / kc)
