@@ -479,7 +479,7 @@ function quantify(
 end
 
 function quantify(
-    measured::AbstractVector{KRatios};
+    measured::AbstractVector{<:KRatios};
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection} = NullFluorescence,
     cc::Type{<:CoatingCorrection} = NullCoating,

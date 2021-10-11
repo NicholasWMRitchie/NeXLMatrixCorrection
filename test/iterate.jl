@@ -22,8 +22,15 @@ randomize(mat::Material, qty::Float64)::Material =
     material(mat.name, (elm => mat[elm] * (1.0 + qty * randn()) for elm in keys(mat))...)
 
 function evaluate(mat, stds, e0, θ, tol = 0.0001)
+    tr(x) = x>zero(typeof(x)) ? x : zero(typeof(x))
     res = testIterate(mat, stds, e0, θ)
-    return res.converged && all(abs(value(res.comp[elm]) - value(mat[elm])) < tol for elm in keys(mat))
+    res.converged || println("$mat: Not converged.")
+    for elm in filter(elm->abs(value(res.comp[elm]) - tr(value(mat[elm]))) >= tol, keys(mat))
+        println("$elm in $mat: $(value(res.comp[elm])) - $(tr(value(mat[elm]))) > $tol")
+    end 
+    return res.converged && # 
+        all(abs(value(res.comp[elm]) - tr(value(mat[elm]))) < tol for elm in keys(mat)) && #
+        all(value(res.comp[elm]) >= 0 for elm in keys(mat))
 end
 
 Base.eps(::Type{UncertainValue}) = eps(Float64)
@@ -276,7 +283,7 @@ Base.isapprox(v1::Real, uv2::UncertainValue; atol::Real=0.0) =
         @test isapprox(res.comp[n"Ba"],0.1410,atol=0.0001) # 0.1402
         @test isapprox(res.comp[n"O"],0.3885,atol=0.0001)  # 0.3899
         @test isapprox(res.comp[n"Ca"],0.1060,atol=0.0001) # 0.1036
-        @test isapprox(analyticaltotal(res.comp),0.997797,atol=0.000001) # 0.9986
+        @test isapprox(analyticaltotal(res.comp),0.997799,atol=0.000001) # 0.9986
     end
     @testset "20 nm C on SiO2 at 5 keV" begin
         props = Dict(:BeamEnergy=>5.0e3, :TakeOffAngle=>deg2rad(40.0))
