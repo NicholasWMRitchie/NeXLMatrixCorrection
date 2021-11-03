@@ -279,8 +279,6 @@ Fχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ) =
 Represents the essential intermediary values for an XPP matrix correction of
 characteristic X-rays from a particular atomic sub-shell in a particular material.
 """
-
-
 function NeXLUncertainties.asa(::Type{DataFrame}, xpps::XPP...)
     return DataFrame(
         SubShell = [xpp.subshell for xpp in xpps],
@@ -294,7 +292,6 @@ function NeXLUncertainties.asa(::Type{DataFrame}, xpps::XPP...)
         F = [xpp.F for xpp in xpps],
     )
 end
-
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
