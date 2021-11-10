@@ -72,11 +72,10 @@ struct ReedInternal
         ss = ionizationdepthratio(inner(primary), secondary, e0)
         f = familyfactor(secondary, inner(primary))
         k = f * 0.5 * cB * (muB_A / muB) * ionizeF * fluorB * (a(aElm) / a(bElm)) * ss
+        @assert k >= 0.0 "k<0 in RI[$comp, $primary, $secondary, $e0] - $k"
         return new(primary, k, v, muB)
     end
 end
-
-Base.show(io::IO, ri::ReedInternal) = print(io, repr(ri.primary))
 
 """
 The `ReedFluorescence` structure implements `FluorescenceCorrection` for the Reed fluorescence model.
@@ -100,13 +99,13 @@ primaries specified in reed.
 """
 function F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64)
     function finternal(ri::ReedInternal, secondary::CharXRay, toa::Float64, comp::Material)
-        @assert ri.kk >= 0.0 "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp)"
-        u = mac(comp, secondary) / (sin(toa) * ri.muB)
+        @assert ri.kk >= 0.0 "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp) - $ri"
+        u = max(mac(comp, secondary) / (sin(toa) * ri.muB), 1.0e-6)
         # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
         return normweight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
     end
     return isempty(reed.exciters) ? 1.0 :
-           1.0 + mapreduce(ex -> finternal(ex, secondary, toa, reed.comp), +, reed.exciters)
+           1.0 + sum(ex -> finternal(ex, secondary, toa, reed.comp), reed.exciters)
 end
 """
     fluorescencecorrection(::Type{ReedFluorescence}, comp::Material, primary::Vector{CharXRay}, secondary::AtomicSubShell, e0::Float64)
@@ -124,10 +123,8 @@ function fluorescencecorrection(
 )
     ris = Vector{ReedInternal}()
     if element(secondary) in keys(comp)
-        for primary in primarys
-            if (energy(primary) >= energy(secondary)) && (element(primary) in keys(comp))
-                push!(ris, ReedInternal(comp, primary, secondary, e0))
-            end
+        for primary in filter(p->(energy(p) >= energy(secondary)) && (element(p) in keys(comp)), primarys)
+            push!(ris, ReedInternal(comp, primary, secondary, e0))
         end
     end
     return ReedFluorescence(comp, secondary, e0, ris)
