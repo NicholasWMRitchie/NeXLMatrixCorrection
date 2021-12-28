@@ -40,7 +40,7 @@ function optimizeks(skro::SimpleKRatioOptimizer, krs::AbstractVector{T})::Vector
             sc = if ov > skro.minOver
                 5.0 - n(shell(br)) - # Line K->8, L->6, M->4, N->2
                     skro.overvoltage / ov + # Overvoltage (<1 if ov > over)
-                    0.1*sum(weight.(kr.xrays)) # line weight (favor brighter)
+                    0.1*sum(weight.(NormalizeToUnity, kr.xrays)) # line weight (favor brighter)
             else
                 0.0 # Avoid it...
             end

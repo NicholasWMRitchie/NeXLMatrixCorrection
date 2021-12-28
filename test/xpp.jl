@@ -90,6 +90,22 @@ using Test
         zafZr = zafcorrection(XPP, ReedFluorescence, Coating, k240, zr, n"Zr L3", e0)
         zafO = zafcorrection(XPP, ReedFluorescence, Coating, k240, sio2, n"O K", e0)
 
+        @test isapprox(Z(zafSi...), 1.1345, atol = 0.001) # 1.1411
+        @test isapprox(Z(zafMg...), 1.1280, atol = 0.001) # 1.1279
+        @test isapprox(Z(zafBa...), 0.8259, atol = 0.001) # 0.8261
+        @test isapprox(Z(zafTi...), 0.9446, atol = 0.001) # 0.9439
+        @test isapprox(Z(zafZn...), 0.8976, atol = 0.001) # 0.8978
+        @test isapprox(Z(zafZr...), 0.8442, atol = 0.001) # 0.8443
+        @test isapprox(Z(zafO...), 1.1316, atol = 0.001) # 1.1382
+
+        @test isapprox(A(zafSi..., n"Si K-L3", θ, θ), 0.7652, atol = 0.001) # 0.7407
+        @test isapprox(A(zafMg..., n"Mg K-L3", θ, θ), 0.5996, atol = 0.001) # 0.6021
+        @test isapprox(A(zafBa..., n"Ba L3-M5", θ, θ), 1.0124, atol = 0.001) # 1.0128
+        @test isapprox(A(zafTi..., n"Ti K-L3", θ, θ), 0.9607, atol = 0.001) # 0.9567
+        @test isapprox(A(zafZn..., n"Zn K-L3", θ, θ), 0.9842, atol = 0.001) # 0.9837
+        @test isapprox(A(zafZr..., n"Zr L3-M5", θ, θ), 0.7929, atol = 0.001) # 0.6826
+        @test isapprox(A(zafO..., n"O K-L3", θ, θ), 0.7750, atol = 0.001) # 0.8310
+
         @test isapprox(ZA(zafSi..., n"Si K-L3", θ, θ), 1.1345 * 0.7652, atol = 0.001)
         @test isapprox(ZA(zafMg..., n"Mg K-L3", θ, θ), 1.1280 * 0.5996, atol = 0.001)
         @test isapprox(ZA(zafBa..., n"Ba L3-M5", θ, θ), 0.8259 * 1.0124, atol = 0.001)
@@ -98,30 +114,31 @@ using Test
         @test isapprox(ZA(zafZr..., n"Zr L3-M5", θ, θ), 0.8442 * 0.7929, atol = 0.001)
         @test isapprox(ZA(zafO..., n"O K-L3", θ, θ), 1.1316 * 0.7750, atol = 0.001)
 
-        @test isapprox(Z(zafSi...), 1.1345, atol = 0.001)
-        @test isapprox(Z(zafMg...), 1.1280, atol = 0.001)
-        @test isapprox(Z(zafBa...), 0.8259, atol = 0.001)
-        @test isapprox(Z(zafTi...), 0.9446, atol = 0.001)
-        @test isapprox(Z(zafZn...), 0.8973, atol = 0.001)
-        @test isapprox(Z(zafZr...), 0.8442, atol = 0.001)
-        @test isapprox(Z(zafO...), 1.1316, atol = 0.001)
-
-        @test isapprox(A(zafSi..., n"Si K-L3", θ, θ), 0.7652, atol = 0.001)
-        @test isapprox(A(zafMg..., n"Mg K-L3", θ, θ), 0.5996, atol = 0.001)
-        @test isapprox(A(zafBa..., n"Ba L3-M5", θ, θ), 1.0124, atol = 0.001)
-        @test isapprox(A(zafTi..., n"Ti K-L3", θ, θ), 0.9607, atol = 0.001)
-        @test isapprox(A(zafZn..., n"Zn K-L3", θ, θ), 0.9842, atol = 0.001)
-        @test isapprox(A(zafZr..., n"Zr L3-M5", θ, θ), 0.7929, atol = 0.001)
-        @test isapprox(A(zafO..., n"O K-L3", θ, θ), 0.7750, atol = 0.001)
-
-        @test isapprox(F(zafSi..., n"Si K-L3", θ, θ), 1.0030, atol = 0.001)
-        @test isapprox(F(zafMg..., n"Mg K-L3", θ, θ), 1.0041, atol = 0.001)
-        @test_broken isapprox(F(zafBa..., n"Ba L3-M5", θ, θ), 0.9998, atol = 0.001)
-        @test isapprox(F(zafTi..., n"Ti K-L3", θ, θ), 1.0071, atol = 0.002)
-        @test isapprox(F(zafZn..., n"Zn K-L3", θ, θ), 1.000, atol = 0.001)
-        @test isapprox(F(zafZr..., n"Zr L3-M5", θ, θ), 1.0020, atol = 0.001)
-        @test isapprox(F(zafO..., n"O K-L3", θ, θ), 0.9996, atol = 0.001)
-
+        @test isapprox(F(zafSi..., n"Si K-L3", θ, θ), 1.0015, atol = 0.001) # 1.0029
+        @test isapprox(F(zafMg..., n"Mg K-L3", θ, θ), 1.0041, atol = 0.001) # 1.0038
+        @test isapprox(F(zafBa..., n"Ba L3-M5", θ, θ), 0.9998, atol = 0.001) # 0.9997
+        @test isapprox(F(zafTi..., n"Ti K-L3", θ, θ), 1.0042, atol = 0.001) # 1.0007
+        @test isapprox(F(zafZn..., n"Zn K-L3", θ, θ), 1.000, atol = 0.001) # 1.0000
+        @test isapprox(F(zafZr..., n"Zr L3-M5", θ, θ), 1.0020, atol = 0.001) # 1.0106
+        @test isapprox(F(zafO..., n"O K-L3", θ, θ), 0.9996, atol = 0.001) # 0.9997
+        # TryZAF results
+        # K240	C	    Z	    A	    F	    k		        C`	    Z`	    A`	    F`	    k`
+        # O	    0.3400	1.1829	0.3373	1.0003	0.1357	SiO2	0.6348	1.1382	0.8310	0.9997	0.6002
+        # Mg	0.0302	1.0927	0.4579	1.0038	0.0152	MgO	    0.0501	1.1279	0.6021	1.0038	0.0341
+        # Si	0.1870	1.0806	0.6562	1.0029	0.1330	SiO2	0.3984	1.1411	0.7407	1.0029	0.3377
+        # Ti	0.0600	0.9439	0.9567	1.0007	0.0542	Ti					
+        # Zn	0.4020	0.8978	0.9837	1.0000	0.3550	Zn					
+        # Zr	0.0740	0.8443	0.6826	1.0106	0.0431	Zr					
+        # Ba	0.2687	0.7457	1.0361	1.0038	0.2084	BaF2	0.3430	0.8261	1.0128	1.0038	0.2881
+        # SiO2											
+        # Si	0.4694	0.9470	0.8859	1.0000	0.3938						
+        # O	    0.5356	1.0393	0.4059	1.0006	0.2261						
+        # MgO											
+        # Mg	0.6030	0.9688	0.7605	1.0000	0.4443						
+        # O	    0.3970	1.0500	0.5357	1.0018	0.2237						
+        # BaF2											
+        # Ba	0.7833	0.9027	1.0230	1.0000	0.7233						
+        # F	    0.2167	1.3080	0.6009	1.0001	0.1703						
         #    print(asa(DataFrame, Dict( [ zafSi, zafMg, zafBa, zafTi, zafZn, zafZr, zafO ]), θ))
     end
 
@@ -201,10 +218,10 @@ using Test
         @test_broken isapprox(A(zafZr..., θ, θ), 0.7596, atol = 0.001)
         @test isapprox(A(zafO..., θ, θ), 0.7750, atol = 0.001)
 
-        @test isapprox(F(zafSi..., θ, θ), 1.0030, atol = 0.001) # 1.0026
+        @test isapprox(F(zafSi..., θ, θ), 1.0015, atol = 0.001) # 1.0026
         @test isapprox(F(zafMg..., θ, θ), 1.0041, atol = 0.001) # 1.0033
-        @test_broken isapprox(F(zafBa..., θ, θ), 0.9999, atol = 0.001) # 1.0043
-        @test isapprox(F(zafTi..., θ, θ), 1.0072, atol = 0.002) # 1.0009
+        @test isapprox(F(zafBa..., θ, θ), 0.9999, atol = 0.001) # 1.0043
+        @test isapprox(F(zafTi..., θ, θ), 1.0042, atol = 0.002) # 1.0009
         @test isapprox(F(zafZn..., θ, θ), 1.000, atol = 0.001)  # 1.000
         @test isapprox(F(zafZr..., θ, θ), 1.0015, atol = 0.001) # 1.0106
         @test isapprox(F(zafO..., θ, θ), 0.9996, atol = 0.001)  # 1.0006

@@ -102,7 +102,7 @@ function F(reed::ReedFluorescence, secondary::CharXRay, toa::Float64)
         @assert ri.kk >= 0.0 "ri.kk = $(ri.kk) for $(ri) and $(secondary) in $(comp) - $ri"
         u = max(mac(comp, secondary) / (sin(toa) * ri.muB), 1.0e-6)
         # TODO: Evaluate whether weight(ri.primary) is necessary/correct???
-        return normweight(ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
+        return weight(NormalizeByShell, ri.primary) * ri.kk * ((log(1.0 + u) / u) + (log(1.0 + ri.lenard) / ri.lenard))
     end
     return isempty(reed.exciters) ? 1.0 :
            1.0 + sum(ex -> finternal(ex, secondary, toa, reed.comp), reed.exciters)

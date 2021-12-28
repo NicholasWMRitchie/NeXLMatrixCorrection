@@ -123,7 +123,7 @@ The Z (atomic number) correction for `unk` relative to `std`.
 function Z(unk::MultiZAF, std::MultiZAF)
     z, n = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
-        norm = sum(weight.(cxrs2))
+        norm = sum(weight.(NormalizeByShell, cxrs2))
         n += norm
         z += Z(unk.zafs[sh], std.zafs[sh]) * norm
     end
@@ -140,7 +140,7 @@ function A(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFl
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            w = weight(cxr)
+            w = weight(NormalizeByShell, cxr)
             a += w * A(zafU, zafS, cxr, θunk, θstd)
             n += w
         end
@@ -158,7 +158,7 @@ function F(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFl
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            w = weight(cxr)
+            w = weight(NormalizeByShell, cxr)
             f += w * F(zafU, zafS, cxr, θunk, θstd)
             n += w
         end
@@ -179,7 +179,7 @@ function generation(unk::MultiZAF, std::MultiZAF)
         icxU = ionizationcrosssection(sh, beamEnergy(zafU))
         icxS = ionizationcrosssection(sh, beamEnergy(zafS))
         for cxr in cxrs2
-            w = weight(cxr)
+            w = weight(NormalizeToShell, cxr)
             g += w * (icxU / icxS)
             n += w
         end
@@ -197,8 +197,8 @@ function coating(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abst
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
-            c += weight(cxr) * coating(zafU, zafS, cxr, θunk, θstd)
-            n += weight(cxr)
+            c += weight(NormalizeByShell, cxr) * coating(zafU, zafS, cxr, θunk, θstd)
+            n += weight(NormalizeByShell, cxr)
         end
     end
     return c / n
@@ -216,7 +216,7 @@ function gZAFc(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::Abstra
         icxU = ionizationcrosssection(sh, beamEnergy(zafU))
         icxS = ionizationcrosssection(sh, beamEnergy(zafS))
         for cxr in cxrs2
-            w = weight(cxr)
+            w = weight(NormalizeByShell, cxr)
             a +=
                 w *
                 (icxU / icxS) *
@@ -303,7 +303,7 @@ function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::Abstract
             push!(stds, name(material(zafS)))
             push!(stdE0, beamEnergy(zafS))
             push!(xray, cxr)
-            push!(wgt, weight(cxr))
+            push!(wgt, weight(NormalizeByShell, cxr))
             push!(g, generation(zafU, zafS, inner(cxr)))
             push!(z, Z(zafU, zafS))
             push!(a, A(zafU, zafS, cxr, θunk, θstd))
