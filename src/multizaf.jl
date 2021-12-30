@@ -179,7 +179,7 @@ function generation(unk::MultiZAF, std::MultiZAF)
         icxU = ionizationcrosssection(sh, beamEnergy(zafU))
         icxS = ionizationcrosssection(sh, beamEnergy(zafS))
         for cxr in cxrs2
-            w = weight(NormalizeToShell, cxr)
+            w = weight(NormalizeByShell, cxr)
             g += w * (icxU / icxS)
             n += w
         end
