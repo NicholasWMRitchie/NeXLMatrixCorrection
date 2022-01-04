@@ -21,9 +21,9 @@ function zaf(
         std = stdfor(elm)
         for (sh, cxrs) in splitbyshell(cxrs)
             zaf = zafcorrection(mc, fc, Coating, mat, std, sh, e0, unkCoating=coatz(mat), stdCoating=coatz(std))
-            for cxr in filter(cxr->weight(cxr)>=minweight, cxrs)
+            for cxr in filter(cxr->weight(NormalizeToUnity, cxr)>=minweight, cxrs)
                 row = [
-                    mat.name, std.name, cxr, weight(cxr), e0, #
+                    mat.name, std.name, cxr, weight(NormalizeToUnity, cxr), e0, #
                     Z(zaf...),
                     A(zaf..., cxr, toa, toa),
                     F(zaf..., cxr, toa, toa),

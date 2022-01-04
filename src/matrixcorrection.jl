@@ -102,8 +102,8 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 The atomic number (Z) and absorption (A) correction factors.
 """
 function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
-    @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
-    @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
+    @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match"
+    @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match"
     return Fχ(unk, xray, θunk) / Fχ(std, xray, θstd)
 end
 
@@ -126,8 +126,8 @@ end
 The absorption correction factors.
 """
 function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
-    @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match in XPP"
-    @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match in XPP"
+    @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match"
+    @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match"
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
 end
 
