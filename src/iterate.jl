@@ -263,15 +263,15 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         :Xrays => xrays,
         #:Converged => [ir.converged for elm in keys(ir.comp)],
         #:Iterations => [ir.iterations for elm in keys(ir.comp)],
-        Symbol("Mass Frac.") => mfs,
-        Symbol("Δ[Mass Frac.]") => dmfs,
-        Symbol("k[Meas]") => ks,
-        Symbol("Δk[Meas]") => cks,
-        :Generation => g,
+        Symbol("C") => mfs,
+        Symbol("ΔC") => dmfs,
+        Symbol("k") => ks,
+        Symbol("Δk") => cks,
+        :g => g,
         :Z => z,
         :A => a,
         :F => f,
-        :Coating => c,
+        :c => c,
         :gZAFc => gzafc,
     ) :
            DataFrame(
@@ -279,10 +279,10 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
         :Element => elms,
         :Converged => [ir.converged for elm in keys(ir.comp)],
         :Iterations => [ir.iterations for elm in keys(ir.comp)],
-        Symbol("Mass Frac.") => mfs,
-        Symbol("Δ[Mass Frac.]") => dmfs,
-        Symbol("k[Meas]") => ks,
-        Symbol("k[Comp]") => cks,
+        Symbol("C") => mfs,
+        Symbol("ΔC") => dmfs,
+        Symbol("k") => ks,
+        Symbol("Δk") => cks,
     )
     return res
 end
