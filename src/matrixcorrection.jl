@@ -188,6 +188,7 @@ function coatingasfilm(
     toa::Real,
     k::Real,)
     @assert haskey(coating.properties, :Density)
+    @assert element(cxr) in keys(coating) "The element associated with $cxr is not present in $coating."
     return Film(coating, massthickness(ty, substrate, coating, cxr, e0, toa, k) / coating[:Density])
 end
 

@@ -389,12 +389,12 @@ function quantify(
     coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
 )::IterationResult
     # Compute the C = k*C_std estimate
-    firstEstimate(meas::Vector{KRatio})::Dict{Element,Float64} =
-        Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
+    firstEstimate(meas::Vector{KRatio}) =
+        Dict{Element,Float64}(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
     # Compute the estimated k-ratios
-    computeKs(estComp::Material, zafs::Dict{Element,Float64}, stdComps::Dict{Element,Float64})::Dict{Element,Float64} =
-        Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
-    function computefinal(estcomp, meas)
+    computeKs(estComp::Material, zafs::Dict{Element,Float64}, stdComps::Dict{Element,Float64}) =
+        Dict{Element,Float64}(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    function computefinal(estcomp::Material, meas::Vector{KRatio})
         final = Dict{Element,UncertainValue}(elm=>convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
         for kr in meas
             elm = element(kr)
@@ -409,7 +409,7 @@ function quantify(
     end
     @assert isnothing(coating) || (get(last(coating), :Density, -1.0) > 0.0) "You must provide a positive density for the coating material."
     # Is this k-ratio due to the coating?
-    iscoating(k, coatmat) =  (!isnothing(coatmat)) && (element(first(k.xrays)) in keys(last(coatmat)))
+    iscoating(k, coatmat) =  (!isnothing(coatmat)) && (first(coatmat) in k.xrays) && (element(k) in keys(last(coatmat)))
     # k-ratios from measured elements in the unknown - Remove k-ratios for unmeasured and coating elements
     kunk = filter(measured) do kr
         !(isunmeasured(iter.unmeasured, element(kr)) || iscoating(kr, coating))
@@ -420,7 +420,7 @@ function quantify(
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in kunk)
     # Compute the standard matrix correction factors
     stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.xrays) for kr in kunk)
-    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in kunk)
+    stdComps = Dict{Element,Float64}(kr.element => value(kr.standard[kr.element]) for kr in kunk)
     # First estimate c_unk = k*c_std
     estcomp = something(estComp, material(repr(label), compute(iter.unmeasured, firstEstimate(kunk))))
     # Compute the associated matrix corrections
