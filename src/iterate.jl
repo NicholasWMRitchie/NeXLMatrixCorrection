@@ -408,8 +408,8 @@ function quantify(
         return material(name(estcomp), final)
     end
     @assert isnothing(coating) || (get(last(coating), :Density, -1.0) > 0.0) "You must provide a positive density for the coating material."
-    # Is this k-ratio part of the coating?
-    iscoating(k, coatmat) =  (!isnothing(coatmat)) && (first(coatmat) in k.xrays) && (element(k) in keys(last(coatmat)))
+    # Is this k-ratio due to the coating?
+    iscoating(k, coatmat) =  (!isnothing(coatmat)) && (element(first(k.xrays)) in keys(last(coatmat)))
     # k-ratios from measured elements in the unknown - Remove k-ratios for unmeasured and coating elements
     kunk = filter(measured) do kr
         !(isunmeasured(iter.unmeasured, element(kr)) || iscoating(kr, coating))
