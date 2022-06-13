@@ -18,24 +18,24 @@ using Test
 
         cxr = n"O K-L3"
         xpp = NeXLMatrixCorrection.XPP(k240, inner(cxr), 20.0e3)
-        @test isapprox(xpp.A, 393.01, atol = 0.01)
+        @test isapprox(xpp.A, 390.68, atol = 0.01)
         @test isapprox(xpp.a, 6754, atol = 1.0)
-        @test isapprox(xpp.B, -378725, atol = 1.0)
-        @test isapprox(xpp.b, 7786, atol = 1.0)
+        @test isapprox(xpp.B, -377241, atol = 1.0)
+        @test isapprox(xpp.b, 7788, atol = 1.0)
         @test isapprox(xpp.ϕ0, 1.63011, atol = 0.0001)
-        @test isapprox(xpp.F, 0.0016754, atol = 0.000001)
+        @test isapprox(xpp.F, 0.0016734, atol = 0.000001)
 
         xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)), inner(cxr), 20.0e3)
         ZA = Fχ(xpp, cxr, toa) / Fχ(xppO, cxr, toa)
         Z = F(xpp) / F(xppO)
         @test isapprox(Z, 1.1759, atol = 0.0001)
-        @test isapprox(ZA / Z, 0.2951, atol = 0.0001)
+        @test isapprox(ZA / Z, 0.2950, atol = 0.0001)
 
         cxr = n"Zr L3-M5"
         xpp = NeXLMatrixCorrection.XPP(k240, inner(cxr), 20.0e3)
-        @test isapprox(xpp.A, 129.53, atol = 0.01)
+        @test isapprox(xpp.A, 129.23, atol = 0.01)
         @test isapprox(xpp.a, 6668, atol = 1.0)
-        @test isapprox(xpp.B, -177201, atol = 1.0)
+        @test isapprox(xpp.B, -176882, atol = 1.0)
         @test isapprox(xpp.b, 8239, atol = 1.0)
         @test isapprox(xpp.ϕ0, 1.60571, atol = 0.0001)
         @test isapprox(xpp.F, 0.0012887, atol = 0.00001)
@@ -48,9 +48,9 @@ using Test
 
         cxr = n"Mg K-L3"
         xpp = NeXLMatrixCorrection.XPP(k240, inner(cxr), 20.0e3)
-        @test isapprox(xpp.A, 215.96, atol = 0.01)
+        @test isapprox(xpp.A, 215.55, atol = 0.01)
         @test isapprox(xpp.a, 6681, atol = 1.0)
-        @test isapprox(xpp.B, -252614, atol = 1.0)
+        @test isapprox(xpp.B, -252270, atol = 1.0)
         @test isapprox(xpp.b, 7973, atol = 1.0)
         @test isapprox(xpp.ϕ0, 1.620603, atol = 0.0001)
         @test isapprox(xpp.F, 0.001468275, atol = 0.00001)
@@ -59,7 +59,7 @@ using Test
         ZA = Fχ(xpp, cxr, toa) / Fχ(xppO, cxr, toa)
         Z = F(xpp) / F(xppO)
         @test isapprox(Z, 1.0890, atol = 0.0001)
-        @test isapprox(ZA / Z, 0.3889, atol = 0.0001)
+        @test isapprox(ZA / Z, 0.38915, atol = 0.0001)
     end
 
     @testset "K240 ZAF" begin
@@ -116,7 +116,7 @@ using Test
 
         @test isapprox(F(zafSi..., n"Si K-L3", θ, θ), 1.0015, atol = 0.001) # 1.0029
         @test isapprox(F(zafMg..., n"Mg K-L3", θ, θ), 1.0041, atol = 0.001) # 1.0038
-        @test isapprox(F(zafBa..., n"Ba L3-M5", θ, θ), 0.9998, atol = 0.001) # 0.9997
+        @test isapprox(F(zafBa..., n"Ba L3-M5", θ, θ), 0.9987, atol = 0.001) # 0.9997
         @test isapprox(F(zafTi..., n"Ti K-L3", θ, θ), 1.0042, atol = 0.001) # 1.0007
         @test isapprox(F(zafZn..., n"Zn K-L3", θ, θ), 1.000, atol = 0.001) # 1.0000
         @test isapprox(F(zafZr..., n"Zr L3-M5", θ, θ), 1.0020, atol = 0.001) # 1.0106
@@ -157,7 +157,7 @@ using Test
         @test isapprox(Z(zafU_L...), 0.8965, atol = 0.001)
         @test isapprox(Z(zafU_M...), 0.9197, atol = 0.001)
 
-        @test isapprox(A(zafO..., n"O K-L3", toa, toa), 1.5772, atol = 0.001)
+        @test isapprox(A(zafO..., n"O K-L3", toa, toa), 1.5847, atol = 0.001)
         @test isapprox(A(zafU_L..., n"U L3-M5", toa, toa), 1.0089, atol = 0.001)
         @test isapprox(A(zafU_M..., n"U M5-N7", toa, toa), 1.0533, atol = 0.001)
 

@@ -114,17 +114,17 @@ using Test
     #println("MC Result")
     #print(qla_mcres)
 
-    @test isapprox(value(qla_res[NeXLMatrixCorrection.QlaLabel(unknown, inner(cxr))]), 0.548, atol = 0.001)
-    @test isapprox(value(qla_res[NeXLMatrixCorrection.OoSLabel(unknown, inner(cxr))]), 0.00108, atol = 0.00001)
+    @test isapprox(value(qla_res[NeXLMatrixCorrection.QlaLabel(unknown, inner(cxr))]), 0.539, atol = 0.001)
+    @test isapprox(value(qla_res[NeXLMatrixCorrection.OoSLabel(unknown, inner(cxr))]), 0.00106, atol = 0.00001)
     @test isapprox(value(qla_res[NeXLMatrixCorrection.ηLabel(unknown)]), 0.253, atol = 0.001)
-    @test isapprox(value(qla_res[NeXLMatrixCorrection.JU0Label(unknown)]), 99.8, atol = 0.1)
+    @test isapprox(value(qla_res[NeXLMatrixCorrection.JU0Label(unknown)]), 98.23, atol = 0.1)
     @test isapprox(value(qla_res[NeXLMatrixCorrection.WbarLabel(unknown)]), 0.665, atol = 0.001)
     @test isapprox(value(qla_res[NeXLMatrixCorrection.qLabel(unknown)]), 0.987, atol = 0.001)
 
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.QlaLabel(unknown, inner(cxr))]), 0.0173, atol = 0.001)
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.OoSLabel(unknown, inner(cxr))]), 2.85e-5, atol = 0.1e-5)
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.ηLabel(unknown)]), 0.00218, atol = 0.0001)
-    @test isapprox(σ(qla_res[NeXLMatrixCorrection.JU0Label(unknown)]), 0.682, atol = 0.001)
+    @test isapprox(σ(qla_res[NeXLMatrixCorrection.JU0Label(unknown)]), 0.672, atol = 0.001)
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.WbarLabel(unknown)]), 0.000667, atol = 0.00001)
     @test isapprox(σ(qla_res[NeXLMatrixCorrection.qLabel(unknown)]), 0.00595, atol = 0.0001)
 
@@ -225,9 +225,9 @@ using Test
     AB_model = AB ∘ aϵ_model
     AB_mcres = mcpropagate(AB_model, input_uvs, 1000, parallel = false, rng = rgen)
 
-    @test isapprox(value(AB_res[NeXLMatrixCorrection.ALabel(unknown, inner(cxr))]), 393, atol = 1)
-    @test isapprox(value(AB_res[NeXLMatrixCorrection.BLabel(unknown, inner(cxr))]), -3.79e5, atol = 0.01e5)
-    @test isapprox(σ(AB_res[NeXLMatrixCorrection.ALabel(unknown, inner(cxr))]), 8.46, atol = 0.01)
+    @test isapprox(value(AB_res[NeXLMatrixCorrection.ALabel(unknown, inner(cxr))]), 390.68, atol = 1)
+    @test isapprox(value(AB_res[NeXLMatrixCorrection.BLabel(unknown, inner(cxr))]), -3.77e5, atol = 0.01e5)
+    @test isapprox(σ(AB_res[NeXLMatrixCorrection.ALabel(unknown, inner(cxr))]), 8.40, atol = 0.01)
     @test isapprox(σ(AB_res[NeXLMatrixCorrection.BLabel(unknown, inner(cxr))]), 4.0e3, atol = 4.0e3)
 
     @test isapprox(value(AB_res[NeXLMatrixCorrection.ALabel(unknown, inner(cxr))]), zaf[1].za.A, rtol = 1.0e-7)

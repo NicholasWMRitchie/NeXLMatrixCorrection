@@ -9,7 +9,7 @@ using Test
         mat"SiO2",
         uv(0.605, 0.01),
     ))
-    @test isapprox(value(krp), 0.1302, atol=0.0001)
+    @test isapprox(value(krp), 0.13009, atol=0.0001)
 
     krp = aspure(KRatio(
         [n"Si K-L3"],
@@ -38,6 +38,6 @@ using Test
         mat"SiO2",
         [ 0.605 , 0.547978 ],
     ))
-    @test isapprox(value(krps[1]), 0.1302, atol = 0.0001) 
+    @test isapprox(value(krps[1]), 0.13009, atol = 0.0001) 
     @test isapprox(value(krps[2]), 0.1179, atol = 0.0001) 
 end
