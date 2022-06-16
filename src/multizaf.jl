@@ -236,7 +236,6 @@ function gZAFc(
     fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cc::Type{<:CoatingCorrection} = Coating,
 )
-    elm = kr.element
     xrays = filter(cxr->energy(inner(cxr))<min(kr.unkProps[:BeamEnergy],kr.stdProps[:BeamEnergy]), kr.xrays)
     zu = zafcorrection(mc, fc, cc, unkComp, xrays, kr.unkProps[:BeamEnergy])
     zs = zafcorrection(mc, fc, cc, kr.standard, xrays, kr.stdProps[:BeamEnergy])
