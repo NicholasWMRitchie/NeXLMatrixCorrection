@@ -11,9 +11,9 @@ using Roots
     # Integral of the area under the ϕ(ρz)-curve
     ℱ(mc::MCA)
     # Integral of the transmitted area under the ϕ(ρz)-curve
-    ℱχ(mc::MCA, xray::CharXRay, θtoa::Real)
+    ℱχ(mc::MCA, xray::CharXRay, θtoa::AbstractFloat)
     # Area under 0 to τ under the transmitted ϕ(ρz)-curve
-    ℱχp(mc::MCA, xray::CharXRay, θtoa::Real, τ::Real)
+    ℱχp(mc::MCA, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat)
     # The ϕ(ρz)-curve
     ϕ(mc::MCA, ρz)
     # A factory method from MCA
@@ -34,18 +34,27 @@ Integral of the ϕ(ρz)-curve from ρz = 0 to ∞.
 """
 ℱ(mc::MatrixCorrection) = error("$mc does not implement ℱ(mc::$mc)")
 """
-    ℱχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
+    ℱχ(mc::MatrixCorrection, χ::AbstractFloat)
+    ℱχ(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat)
 
 Integral of the area under the absorption corrected ϕ(ρz)-curve from ρz = 0 to ∞.
 """
-ℱχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)  = error("$mc does not implement ℱχ(mc::$mc, xray::CharXRay, θtoa::Real)")
+ℱχ(mc::MatrixCorrection, ::AbstractFloat)  = error("$mc does not implement ℱχ(mc::$mc, χ::AbstractFloat)")
+ℱχ(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat)  = ℱχ(mc, χ(material(mc), xray, θtoa))
 
 """
-    ℱχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)
+    ℱχp(mc::NeXLMatrixCorrection, χ::AbstractFloat, τ::AbstractFloat)
+    ℱχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat)
+    ℱχp(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat, t0::AbstractFloat, t1::AbstractFloat)
 
-The partial integral of the absorption corrected ϕ(ρz) curve from ρz = 0 to τ #
+The partial integral of the absorption corrected ϕ(ρz) curve from ρz = 0 to τ or from t0 to t1
 """
-ℱχp(mc::MatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)  = error("$mc does not implement ℱχp(mc::$mc, xray::CharXRay, θtoa::Real, τ::Real)")
+ℱχp(mc::MatrixCorrection, ::AbstractFloat, ::AbstractFloat) = #
+    error("$mc does not implement ℱχp(mc::$mc, χ::AbstractFloat, τ::AbstractFloat)")
+ℱχp(mc::MatrixCorrection, cxr::CharXRay, θtoa::AbstractFloat, t::AbstractFloat)  = #
+    ℱχp(mc, χ(material(mc), cxr, θtoa), t)
+ℱχp(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat, t0::AbstractFloat, t1::AbstractFloat) = #
+    ℱχp(mc, xray, θtoa, t1) - ℱχp(mc, xray, θtoa, t0)
 
 """
     ϕ(mc::MatrixCorrection, ρz)
@@ -75,13 +84,16 @@ The beam energy (eV) for which this `MatrixCorrection` has been calculated.
 """
 beamEnergy(mc::MatrixCorrection) = mc.E0
 
+
+NeXLCore.minproperties(::Type{<:MatrixCorrection}) = (:BeamEnergy, :TakeOffAngle)
+
 """
     χ(mat::Material, xray::CharXRay, θtoa)
 
 Angle adjusted mass absorption coefficient.
 """
 χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) = mac(mat, xray) * csc(θtoa)
-χ(mat::Material, ea::Float64, θtoa::AbstractFloat) = mac(mat, ea) * csc(θtoa)
+χ(mat::Material, ea::AbstractFloat, θtoa::AbstractFloat) = mac(mat, ea) * csc(θtoa)
 
 """
     ϕabs(mc::MatrixCorection, ρz, xray::CharXRay, θtoa::AbstractFloat)
@@ -137,10 +149,13 @@ function A(unk::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat)
     return ℱχ(unk, xray, θunk)/ℱ(unk)
 end
 
-correctcontinuum(mc::MatrixCorrection, θtoa::Real) = ℱχ(mc, θtoa) / ℱ(mc)
+function correctcontinuum(mc::MatrixCorrection, θtoa::AbstractFloat)
+    @assert isnothing(atomicsubshell(mc))  "Use only for continuum correction"
+    return ℱχ(mc, χ(material(mc), edgeenergy(mc), θtoa)) / ℱ(mc)
+end
 
 """
-    kcoating(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, τ::Real)
+    kcoating(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::AbstractFloat, toa::AbstractFloat, τ::AbstractFloat)
 
 Estimate the k-ratio for a coating of mass-thickness τ (g/cm²) on the specified substrate. The standard for the coating
 is assumed to be of the same material as the coating.
@@ -150,9 +165,9 @@ function kcoating(
     subtrate::Material,
     coating::Material,
     cxr::CharXRay,
-    e0::Real,
-    toa::Real,
-    τ::Real,
+    e0::AbstractFloat,
+    toa::AbstractFloat,
+    τ::AbstractFloat,
 )
     @assert element(cxr) in keys(coating) "$cxr must be produced by one of the elements in $(name(coating))"
     @assert e0 > energy(inner(cxr)) "The beam energy must exceed the edge energy for $cxr."
@@ -161,7 +176,7 @@ function kcoating(
 end
 
 """"
-    massthickness(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, k::Real)
+    massthickness(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::AbstractFloat, toa::AbstractFloat, k::AbstractFloat)
 
 Estimate the mass-thickness of a ultra-thin layer of a `coating` material on a `substrate` from a measured k-ratio `k`
 of a characteristic X-ray `cxr`.  Works for k-ratios of the order of 1 %.  The standard for the coating is assumed
@@ -172,9 +187,9 @@ function NeXLCore.massthickness(
     substrate::Material,
     coating::Material,
     cxr::CharXRay,
-    e0::Real,
-    toa::Real,
-    k::Real,
+    e0::AbstractFloat,
+    toa::AbstractFloat,
+    k::AbstractFloat,
 )
     submc, coatingmc = matrixcorrection(ty, substrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
     f(τ) = k - ℱχp(submc, cxr, toa, τ) / ℱχ(coatingmc, cxr, toa)
@@ -186,9 +201,9 @@ function coatingasfilm(
     substrate::Material,
     coating::Material,
     cxr::CharXRay,
-    e0::Real,
-    toa::Real,
-    k::Real,)
+    e0::AbstractFloat,
+    toa::AbstractFloat,
+    k::AbstractFloat,)
     @assert haskey(coating.properties, :Density)
     @assert element(cxr) in keys(coating) "The element associated with $cxr is not present in $coating."
     return Film(coating, massthickness(ty, substrate, coating, cxr, e0, toa, k) / coating[:Density])
@@ -196,13 +211,13 @@ end
 
 
 """
-    correctkratios(krs::AbstractVector{KRatio}, coating::Material, θtoa::Real, ρz::Real)::Vector{KRatio}
+    correctkratios(krs::AbstractVector{KRatio}, coating::Material, θtoa::AbstractFloat, ρz::AbstractFloat)::Vector{KRatio}
 
 This function is mainly for pedagogical purposes.  It takes a `KRatio[]`, a coating `Material` on the unknown,
 and a mass-thickness (g/cm²) and creates a new `KRatio[]` that accounts for the intensity missing due to absorption
 by the coating.  Favor the coating correction built into `ZAFCorrection` or `MultiZAF`.
 """
-function correctkratios(krs::AbstractVector{KRatio}, coating::Material, ρz::Real)::Vector{KRatio}
+function correctkratios(krs::AbstractVector{KRatio}, coating::Material, ρz::AbstractFloat)::Vector{KRatio}
     res = KRatio[]
     for kr in krs
         if !(kr.element in keys(coating))

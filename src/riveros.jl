@@ -25,7 +25,7 @@ struct Riveros1993 <: MatrixCorrection
     α::Float64
     β::Float64
 
-    function Riveros1993(mat::Material, ashell::Union{AtomicSubShell,Nothing}, ea::Float64, e0::Float64)
+    function Riveros1993(mat::Material, ashell::Union{AtomicSubShell,Nothing}, ea::AbstractFloat, e0::AbstractFloat)
         e0k, eck, u0 = 0.001 * e0, 0.001 * ea, e0 / ea
         @assert u0 >= 1.0
         αz(elm) = (2.14e5*z(elm)^1.16/(a(elm)*e0k^1.25))*sqrt(log(1.166*e0/J(Berger1982,elm))/(e0k-eck))
@@ -49,26 +49,14 @@ function ℱ(rv::Riveros1993)
     return gg < 22.3 ? (sqrt(π)*(rv.γ - exp(gg^2)*(rv.γ - rv.ϕ0)*erfc(gg)))/(2.0*rv.α) : 1.0
 end
 
-function ℱχ(rv::Riveros1993, θtoa::Float64)
-    @assert isnothing(rv.subshell)  "Use only for continuum correction"
-    χm = χ(material(rv), rv.Ea, θtoa)
-    ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
-    return gg < 22.3 ? (sqrt(π)*(exp(ff^2)*rv.γ*rv.α*(1.0 - erf(ff)) -
-            exp(gg^2)*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf(gg))))/(2.0*rv.α^2) :
-            0.0
-end
-
-function ℱχ(rv::Riveros1993, xray::CharXRay, θtoa::Float64)
-    @assert !isnothing(rv.subshell) "Use only for characteristic correction"
-    @assert inner(xray) == rv.subshell
-    χm = χ(material(rv), xray, θtoa)
+function ℱχ(rv::Riveros1993, χm::AbstractFloat)
     ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
     return gg < 22.3 ? (sqrt(π)*(exp(ff^2)*rv.γ*rv.α*(1.0 - erf(ff)) -
            exp(gg^2)*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf(gg))))/(2.0*rv.α^2) :
            0.0
 end
 
-function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::Float64, τ::Float64)
+function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat)
     @assert isnothing(rv.subshell) || (inner(xray) == rv.subshell)
     χm = χ(material(rv), xray, θtoa)
     @assert rv.α > 0.0 && χm > 0.0
@@ -82,10 +70,12 @@ function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::Float64, τ::Float64)
                abs(rv.β + 2.0*rv.α^2*τ + χm))))/(2.0*rv.α^2) : 0.0
 end
 
-matrixcorrection(::Type{Riveros1993}, mat::Material, ashell::AtomicSubShell, e0::Float64) = Riveros1993(mat, ashell, energy(ashell), e0)
+edgeenergy(rv::Riveros1993) = rv.Ea
 
-continuumcorrection(::Type{Riveros1993}, mat::Material, ea::Float64, e0::Float64) = Riveros1993(mat, nothing, ea, e0)
+matrixcorrection(::Type{Riveros1993}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = Riveros1993(mat, ashell, energy(ashell), e0)
 
-Base.range(::Type{Riveros1993}, mat::Material, e0::Float64, inclDensity=true) = range(XPP, mat, e0, inclDensity)
+continuumcorrection(::Type{Riveros1993}, mat::Material, ea::AbstractFloat, e0::AbstractFloat) = Riveros1993(mat, nothing, ea, e0)
+
+Base.range(::Type{Riveros1993}, mat::Material, e0::AbstractFloat, inclDensity=true) = range(XPP, mat, e0, inclDensity)
 
 NeXLCore.minproperties(::Type{Riveros1993}) = (:BeamEnergy, :TakeOffAngle)

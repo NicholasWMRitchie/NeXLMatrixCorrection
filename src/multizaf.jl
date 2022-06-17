@@ -288,10 +288,10 @@ end
 Tabulate each term in the MultiZAF matrix correction in a DataFrame.
 """
 function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
-    stds, stdE0, unks = Vector{String}(), Vector{Float64}(), Vector{String}()
-    unkE0, xray, g = Vector{Float64}(), Vector{CharXRay}(), Vector{Float64}()
-    z, a, f = Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
-    c, wgt, zaf, k = Vector{Float64}(), Vector{Float64}(), Vector{Float64}(), Vector{Float64}()
+    stds, stdE0, unks = String[], Float64[], String[]
+    unkE0, xray, g = Float64[], CharXRay[], Float64[]
+    z, a, f = Float64[], Float64[], Float64[]
+    c, wgt, zaf, k = Float64[], Float64[], Float64[], Float64[]
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         matU, matS = material(zafU), material(zafS)

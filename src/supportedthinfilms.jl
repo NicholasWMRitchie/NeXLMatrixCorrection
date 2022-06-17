@@ -53,27 +53,27 @@ The Material from which the i-th layer (or substrate) is constructed.
 NeXLCore.material(stf::SupportedThinFilms, i::Int) = i <= length(stf.layer) ? material(stf.layer[i]) : stf.substrate
 
 """
-    χs(stf::SupportedThinFilms, cxr::CharXRay, toa::Float64)::Vector{Float64}
+    χs(stf::SupportedThinFilms, cxr::CharXRay, toa::AbstractFloat)
 
 Compute the reduced mass-absorption coefficient for each layer in the SupportedThinFilm.
 """
-χs(stf::SupportedThinFilms, cxr::CharXRay, toa::Float64)::Vector{Float64} = #
+χs(stf::SupportedThinFilms, cxr::CharXRay, toa::AbstractFloat) = #
     [ χ(material(stf,i), cxr, toa) for i in eachindex(stf) ]
 
 """
-    Base.indexin(stf::SupportedThinFilms, ρz::Float64)
+    Base.indexin(stf::SupportedThinFilms, ρz::AbstractFloat)
 
 Returns the index of the layer in which the depth ρz is located.
 """
-Base.indexin(stf::SupportedThinFilms, ρz::Float64) = findfirst(i->ρz < inner(stf,i), eachindex(stf))
+Base.indexin(stf::SupportedThinFilms, ρz::AbstractFloat) = findfirst(i->ρz < inner(stf,i), eachindex(stf))
 
 """
-    transmission(stf::SupportedThinFilms, χs::Vector{Float64}, ρz::Float64)
+    transmission(stf::SupportedThinFilms, χs::Vector{<:AbstractFloat}, ρz::AbstractFloat)
 
 The fraction of the intensity generated at ρz that will be emitted. `χs` are the reduced mass-absorption coefficients
 which define the angle of exit and the mass-absorption coefficients.
 """
-function NeXLCore.transmission(stf::SupportedThinFilms, χs::Vector{Float64}, ρz::Float64)
+function NeXLCore.transmission(stf::SupportedThinFilms, χs::Vector{<:AbstractFloat}, ρz::AbstractFloat)
     @assert ρz >= 0.0
     k = indexin(stf, ρz)
     return (k <= 1 ? 1.0 : exp(-sum(χs[i]*massthickness(stf,i) for i in 1:k-1)))*exp(-(ρz-outer(stf, k))*χs[k])

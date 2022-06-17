@@ -1,6 +1,6 @@
 """
-    emitted_intensities(comp::Material, elm::Element, dose::Float64, e0::Float64, θtoa::Float64, Ω::Float64; mc=XPP, fc=ReedFluorescence)
-    emitted_intensities(comp::Material, dose::Float64, e0::Float64, θtoa::Float64, Ω::Float64; mc=XPP, fc=ReedFluorescence)
+    emitted_intensities(comp::Material, elm::Element, dose::AbstractFloat, e0::AbstractFloat, θtoa::AbstractFloat, Ω::AbstractFloat; mc=XPP, fc=ReedFluorescence)
+    emitted_intensities(comp::Material, dose::AbstractFloat, e0::AbstractFloat, θtoa::AbstractFloat, Ω::AbstractFloat; mc=XPP, fc=ReedFluorescence)
 
   * comp: The composition of the Material
   * elm: The ionized element
@@ -9,13 +9,13 @@
   * θtoa: Take off angle in radians
   * Ω: Solid angle steradians
   
-  * returns Dict{CharXRay, Float64} containing characteristic X-rays and the emitted intensities.
+  * returns Dict{CharXRay, <:AbstractFloat} containing characteristic X-rays and the emitted intensities.
 
 Computes the intensity emitted from the sample at the take-off angle into the specified solid angle.
 The XPP and Reed fluorescence algorithms are used by default but any ϕ(ρz)-model in which the
 integral Fχ is normalized to the emission from a single shell may be used.
 """
-function emitted_intensities(comp::Material, elm::Element, dose::Float64, e0::Float64, θtoa::Float64, Ω::Float64; mc=XPP, fc=ReedFluorescence, minweight=0.001)
+function emitted_intensities(comp::Material, elm::Element, dose::AbstractFloat, e0::AbstractFloat, θtoa::AbstractFloat, Ω::AbstractFloat; mc=XPP, fc=ReedFluorescence, minweight=0.001)
     cxrs = characteristic(elm, alltransitions, minweight, e0)
     kk = atoms_per_g(comp, elm) *     # Number of atoms of elm in 1 g of comp
         6.241509074460764e9 * dose *  # ustrip(NoUnits, (dose*u"nA*s")/ElementaryCharge) * # Number of electrons per nA⋅s
@@ -35,7 +35,7 @@ function emitted_intensities(comp::Material, elm::Element, dose::Float64, e0::Fl
     end
     return si
 end
-function emitted_intensities(comp::Material, dose::Float64, e0::Float64, θtoa::Float64, Ω::Float64; kwargs...)
+function emitted_intensities(comp::Material, dose::AbstractFloat, e0::AbstractFloat, θtoa::AbstractFloat, Ω::AbstractFloat; kwargs...)
     mapreduce(merge, elms(comp)) do elm
         emitted_intensities(comp, elm, dose, e0, θtoa, Ω; kwargs...)
     end

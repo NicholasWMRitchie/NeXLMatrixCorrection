@@ -4,7 +4,7 @@ the fitting process.  Examples include element-by-stoichiometry or element-by-di
 
 `UnmeasuredElementRule` implementations must include methods for:
 
-    NeXLUncertainties.compute(uer::<:UnmeasuredElementRule, inp::Dict{Element,Float64})::Dict{Element,Float64}
+    NeXLUncertainties.compute(uer::<:UnmeasuredElementRule, inp::Dict{Element,<:AbstractFloat})::Dict{Element,AbstractFloat}
     isunmeasured(uer::<:UnmeasuredElementRule, elm::Element)::Bool
 """
 abstract type UnmeasuredElementRule end
@@ -15,11 +15,11 @@ The NullUnmeasuredRule adds no additional elements in the iteration process.
 struct NullUnmeasuredRule <: UnmeasuredElementRule end
 
 """
-    NeXLUncertainties.compute(::NullUnmeasuredRule, inp::Dict{Element,Float64})::Dict{Element,Float64}
+    NeXLUncertainties.compute(::NullUnmeasuredRule, inp::Dict{Element,<:AbstractFloat})::Dict{Element,AbstractFloat}
 
 A null UnmeasuredElementRule.  Just returns the inputs.
 """
-NeXLUncertainties.compute(::NullUnmeasuredRule, inp::Dict{Element,<:AbstractFloat})::Dict{Element,Float64} = inp
+NeXLUncertainties.compute(::NullUnmeasuredRule, inp::Dict{Element,<:AbstractFloat}) = inp
 
 isunmeasured(::NullUnmeasuredRule, elm::Element) = false
 
@@ -40,11 +40,11 @@ Returns an ElementByStoichiometry for computing O using the valences provided as
 OByStoichiometry(valences = NeXLCore.defaultValences) = ElementByStoichiometry(n"O", valences)
 
 """
-    NeXLUncertainties.compute(stoic::ElementByStoichiometry, inp::Dict{Element,<:AbstractFloat})::Dict{Element,Float64}
+    NeXLUncertainties.compute(stoic::ElementByStoichiometry, inp::Dict{Element,<:AbstractFloat})
 
 Computes an element using stoichiometric rules.
 """
-function NeXLUncertainties.compute(stoic::ElementByStoichiometry, inp::Dict{Element,<:AbstractFloat})::Dict{Element,Float64} 
+function NeXLUncertainties.compute(stoic::ElementByStoichiometry, inp::Dict{Element,<:AbstractFloat})
     inp[stoic.element] = obystoichiometry(inp, valences = stoic.valences)
     inp
 end
@@ -63,11 +63,11 @@ struct ElementByFiat <: UnmeasuredElementRule
 end
 
 """
-    NeXLUncertainties.compute(stoic::ElementByFiat, inp::Dict{Element,<:AbstractFloat})::Dict{Element,Float64}
+    NeXLUncertainties.compute(stoic::ElementByFiat, inp::Dict{Element,<:AbstractFloat})
 
 Simply assigns a quantity for an element.
 """
-function NeXLUncertainties.compute(fiat::ElementByFiat, inp::Dict{Element,<:AbstractFloat})::Dict{Element,Float64} 
+function NeXLUncertainties.compute(fiat::ElementByFiat, inp::Dict{Element,<:AbstractFloat})
     inp[fiat.element] = fiat.massfraction
     inp
 end
@@ -88,7 +88,7 @@ struct MultiUnmeasuredElementRule <: UnmeasuredElementRule
     rules::Vector{<:UnmeasuredElementRule}
 end
 
-function NeXLUncertainties.compute(muer::MultiUnmeasuredElementRule, inp::Dict{Element,<:AbstractFloat})::Dict{Element,Float64}
+function NeXLUncertainties.compute(muer::MultiUnmeasuredElementRule, inp::Dict{Element,<:AbstractFloat})
     res = inp
     for rule in muer.rules
         res = compute(rule, res)

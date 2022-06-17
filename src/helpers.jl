@@ -2,8 +2,8 @@ using DataFrames
 
 function zaf(
         mat::Material,
-        e0::Float64,
-        toa::Float64=deg2rad(40.0);
+        e0::AbstractFloat,
+        toa::AbstractFloat=deg2rad(40.0);
         mc::Type{<:MatrixCorrection} = XPP,
         fc::Type{<:FluorescenceCorrection}=ReedFluorescence,
         coatings::Dict{String,Film}=Dict{String,Film}(),
@@ -52,7 +52,7 @@ function NeXLUncertainties.asa(
     mc::Type{<:MatrixCorrection} = XPP,
     fc::Type{<:FluorescenceCorrection}=ReedFluorescence
 )
-    fm, sm, cm = Union{Float64,Missing}, Union{String,Missing}, Union{Material,Missing}
+    fm, cm = Union{Float64,Missing}, Union{Material,Missing}
     xrays, mease0, meastoa, meascomp = String[], fm[], fm[], cm[]
     refe0, reftoa, refcomp, krv, dkrv, cks, ratio = fm[], fm[], cm[], Float64[], Float64[], fm[], fm[]
     for kr in krs

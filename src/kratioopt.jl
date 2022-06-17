@@ -17,14 +17,14 @@ are not considered as available.
 """
 struct SimpleKRatioOptimizer <: KRatioOptimizer
     overvoltage::Float64
-    scores::Dict{Vector{CharXRay},AbstractFloat}
+    scores::Dict{Vector{CharXRay},Float64}
     favor::Vector{CharXRay}
     minOver::Float64
 
     function SimpleKRatioOptimizer(overvoltage, favor::Vector{CharXRay} = CharXRay[], minOvervoltage=1.2) 
         elms = map(element, favor)
         @assert length(unique(elms)) == length(elms) "SimpleKRatioOptimizer: Please specify only one characteristic X-ray per element to favor."
-        new(overvoltage, Dict{Vector{CharXRay}, AbstractFloat}(), favor, minOvervoltage)
+        new(overvoltage, Dict{Vector{CharXRay}, Float64}(), favor, minOvervoltage)
     end
 end
 

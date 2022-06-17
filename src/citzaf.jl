@@ -10,7 +10,7 @@ struct CitZAF <: MatrixCorrection
     α::Float64
     β::Float64
 
-    function CitZAF(mat::Material, ashell::Union{AtomicSubShell,Nothing}, ea::Float64, e0::Float64)
+    function CitZAF(mat::Material, ashell::Union{AtomicSubShell,Nothing}, ea::AbstractFloat, e0::AbstractFloat)
         function ϕ0L(u0, ηbar)
             a = 3.43378 + (-10.7872 + (10.97628 - 3.62286 / u0) / u0) / u0
             b = -0.59299 + (21.55329 + (-30.55248 + 9.59218 / u0) / u0) / u0
@@ -41,30 +41,18 @@ end
 
 ℱ(cz::CitZAF) = ((cz.α - cz.q * cz.α + cz.β) * cz.γ0) / (cz.α * (cz.α + cz.β))
 
-function ℱχ(cz::CitZAF, θtoa::Float64)
-    @assert isnothing(cz.subshell)  "Use only for continuum correction"
-    χm = χ(material(cz), cz.Ea, θtoa)
-    return cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
-end
+ℱχ(cz::CitZAF, χm::AbstractFloat) = cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
+ℱχp(cz::CitZAF, χm::AbstractFloat, τ::AbstractFloat) = #
+    ((1.0 - exp(-τ * (cz.α + χm))) * cz.γ0) / (cz.α + χm) +
+    ((-1.0 + exp(-τ * (cz.α + cz.β + χm))) * cz.q * cz.γ0) / (cz.α + cz.β + χm)
 
-function ℱχ(cz::CitZAF, xray::CharXRay, θtoa::Float64)
-    @assert !isnothing(cz.subshell) "Use only for characteristic correction"
-    @assert inner(xray) == cz.subshell
-    χm = χ(material(cz), xray, θtoa)
-    return cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
-end
+edgeenergy(cz::CitZAF) = cz.Ea
 
-function ℱχp(cz::CitZAF, xray::CharXRay, θtoa::Float64, τ::Float64)
-    @assert isnothing(cz.subshell) || (inner(xray) == cz.subshell)
-    χm = χ(material(cz), xray, θtoa)
-    return ((1.0 - exp(-τ * (cz.α + χm))) * cz.γ0) / (cz.α + χm) +
-           ((-1.0 + exp(-τ * (cz.α + cz.β + χm))) * cz.q * cz.γ0) / (cz.α + cz.β + χm)
-end
 
-matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::Float64) = CitZAF(mat, ashell, energy(ashell), e0)
+matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = CitZAF(mat, ashell, energy(ashell), e0)
 
-continuumcorrection(::Type{CitZAF}, mat::Material, ea::Float64, e0::Float64) = CitZAF(mat, nothing, ea, e0)
+continuumcorrection(::Type{CitZAF}, mat::Material, ea::AbstractFloat, e0::AbstractFloat) = CitZAF(mat, nothing, ea, e0)
 
-Base.range(::Type{CitZAF}, mat::Material, e0::Float64, inclDensity=true) = range(XPP, mat, e0, inclDensity)
+Base.range(::Type{CitZAF}, mat::Material, e0::AbstractFloat, inclDensity=true) = range(XPP, mat, e0, inclDensity)
 
 NeXLCore.minproperties(::Type{CitZAF}) = (:BeamEnergy, :TakeOffAngle)

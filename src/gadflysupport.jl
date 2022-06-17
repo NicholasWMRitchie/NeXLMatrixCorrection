@@ -63,7 +63,7 @@ function Gadfly.plot(
     tmc::Type{<:MatrixCorrection},
     mat::Material,
     cxrs::Vector{CharXRay},
-    beamEnergy::Float64,
+    beamEnergy::AbstractFloat,
     takeOffAngle,
 )
     zz, sh, prz, lsty = Float64[], String[], Float64[], Int[]
@@ -102,8 +102,8 @@ function Gadfly.plot(
     tmcs::AbstractVector{DataType},
     mat::Material,
     cxr::CharXRay,
-    beamEnergy::Float64,
-    takeOffAngle::Float64=deg2rad(40.0),
+    beamEnergy::AbstractFloat,
+    takeOffAngle::AbstractFloat=deg2rad(40.0),
 )
     zz, sh, prz, lsty = Float64[], String[], Float64[], Int[]
     r = 1.2*(range(Kanaya1972, mat, beamEnergy, false) - range(Kanaya1972, mat, energy(inner(cxr)), false))

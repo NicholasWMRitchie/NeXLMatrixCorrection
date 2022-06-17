@@ -17,22 +17,22 @@ struct XPhi <: MatrixCorrection
     function XPhi(
         subshell::AtomicSubShell,
         material::Material,
-        E0::Float64, # Beam energy (eV)
-        Φm::Float64,  # Max amplitude
-        ρzm::Float64, # ρz at max amplitude
-        α::Float64, # Interior side shape parameter
-        β::Float64 # Surface side shape parameter
+        E0::AbstractFloat, # Beam energy (eV)
+        Φm::AbstractFloat,  # Max amplitude
+        ρzm::AbstractFloat, # ρz at max amplitude
+        α::AbstractFloat, # Interior side shape parameter
+        β::AbstractFloat # Surface side shape parameter
     )
         new(subshell, material, E0, Φm, ρzm, α, β)
     end
 
     """
-        XPhi(mat::Material, sh::AtomicSubShell, e0::Float64)
+        XPhi(mat::Material, sh::AtomicSubShell, e0::AbstractFloat)
 
     Construct an object representing the XPhi molde for the specified material and atomic shell at the
     beam energy `e0` in eV.
     """
-    function XPhi(mat::Material, sh::AtomicSubShell, e0::Float64)
+    function XPhi(mat::Material, sh::AtomicSubShell, e0::AbstractFloat)
         E0, Ec = 0.001 * e0, 0.001 * energy(sh)
         # This implements the multi-element weighting on page 367 of 1994
         Φ0_v = Φ0(XPhi, mat, E0, Ec)
@@ -55,12 +55,12 @@ struct XPhi <: MatrixCorrection
 end
 
 """
-    ρzx(::Type{XPhi}, E0::Float64, Ec::Float64, elm::Element)
+    ρzx(::Type{XPhi}, E0::AbstractFloat, Ec::AbstractFloat, elm::Element)
 
 X-ray range in g/cm² from Eqn 6 Merlet 1994 or Eqn 7 in Merlet 1995
 E0, Ec in keV, Z is the atomic number
 """
-function ρzx(::Type{XPhi}, E0::Float64, Ec::Float64, elm::Element)::Float64
+function ρzx(::Type{XPhi}, E0::AbstractFloat, Ec::AbstractFloat, elm::Element)
     @assert E0 > Ec "The beam energy must be larger than the edge energy!"
     @assert E0 > Ec && E0 <= 100.0
     a = 1.845e-6 * evalpoly(E0, (2.6, -0.216, 0.015, -0.000387, 0.00000501)) # Ok
@@ -70,12 +70,12 @@ function ρzx(::Type{XPhi}, E0::Float64, Ec::Float64, elm::Element)::Float64
 end
 
 """
-    ρzm(::Type{XPhi}, ρzx::Float64, E0::Float64, Ec::Float64, em::Union{Element,Material})
+    ρzm(::Type{XPhi}, ρzx::AbstractFloat, E0::AbstractFloat, Ec::AbstractFloat, em::Union{Element,Material})
 
 Depth of the peak of the ϕ(ρz) curve in g/cm² (Merlet 1994 eqn 5 or Merlet 1995 eqn 7).
 E0, Ec in keV, Z is the atomic number
 """
-function ρzm(::Type{XPhi}, ρzx::Float64, E0::Float64, Ec::Float64, em::Union{Element,Material})::Float64
+function ρzm(::Type{XPhi}, ρzx::AbstractFloat, E0::AbstractFloat, Ec::AbstractFloat, em::Union{Element,Material})
     @assert E0 < 100.0
     @assert Ec <= E0
     U0, Z = E0 / Ec, z(em)
@@ -85,11 +85,11 @@ end
 
 
 """
-    τ(::Type{XPhi}, elm::Element, t::Float64)
+    τ(::Type{XPhi}, elm::Element, t::AbstractFloat)
 
 Transmission coefficient of Zeller and Ruste 1976 (from Merlet 1994 & 1995)
 """
-function τ(::Type{XPhi}, elm::Element, ρzm::Float64, ρzx::Float64)::Float64
+function τ(::Type{XPhi}, elm::Element, ρzm::AbstractFloat, ρzx::AbstractFloat)
     Z, t = z(elm), ρzm / ρzx
     τ1, τ2 = (1.0 - t)^(4.65 + 0.0356 * Z), (1.0 - t)^(1.112 + 0.00414 * Z^2)
     return τ1 + 4.65 * (τ2 - τ1) / evalpoly(Z, (3.54, 0.0356, -0.00414)) # Ok
@@ -98,7 +98,7 @@ end
 mexp(::Type{XPhi}, sh::AtomicSubShell) = n(sh) == 1 ? 0.95 : 0.8
 
 """
-    Φm(::Type{XPhi}, ::Type{XPhi}, ::Type{XPhi}, elm::Element, J::Float64, A::Float64, sh::AtomicSubShell, E0::Float64, ρzm::Float64, ρzx::Float64)
+    Φm(::Type{XPhi}, ::Type{XPhi}, ::Type{XPhi}, elm::Element, J::AbstractFloat, A::AbstractFloat, sh::AtomicSubShell, E0::AbstractFloat, ρzm::AbstractFloat, ρzx::AbstractFloat)
 
 The maximum amplitude of the ϕ(ρz) curve (Located at ρzm).
 Z, J, A are the atomic number, ionization potential and atomic weight (mass-fraction averaged except J which is log-averaged)
@@ -106,13 +106,13 @@ Z, J, A are the atomic number, ionization potential and atomic weight (mass-frac
 function Φm(
     ::Type{XPhi}, 
     elm::Element,
-    J::Float64, # Mean ionization potential (keV)
-    A::Float64, # Atomic weight
+    J::AbstractFloat, # Mean ionization potential (keV)
+    A::AbstractFloat, # Atomic weight
     sh::AtomicSubShell,
-    E0::Float64, # in keV
-    ρzm::Float64,
-    ρzx::Float64,
-)::Float64
+    E0::AbstractFloat, # in keV
+    ρzm::AbstractFloat,
+    ρzx::AbstractFloat,
+)
     @assert E0 < 100.0
     @assert J < 10.0
     Z, m, U0 = z(elm), mexp(XPhi, sh), E0 / (0.001 * energy(sh)) # Ok
@@ -138,11 +138,11 @@ function Φm(
 end
 
 """
-    Φ0(::Type{XPhi}, mat::Material, E0::Float64, Ec::Float64)
+    Φ0(::Type{XPhi}, mat::Material, E0::AbstractFloat, Ec::AbstractFloat)
 
 The value of the ϕ(ρz) curve at ρz=0.
 """
-function Φ0(::Type{XPhi}, mat::Material, E0::Float64, Ec::Float64)::Float64
+function Φ0(::Type{XPhi}, mat::Material, E0::AbstractFloat, Ec::AbstractFloat)
     @assert E0 < 100.0
     @assert Ec < 100.0
     Z, U0 = z(mat), E0 / Ec
@@ -163,12 +163,12 @@ Base.max(xp::XPhi) = xp.Φm
 ϕ0(xp::XPhi) = xp.Φm * exp(-(xp.ρzm / xp.β)^2)
 
 """
-    Φ(xphi::XPhi, ρz::Float64) # W/o absorption
-    Φ(xphi::XPhi, ρz::Float64, χ::Float64) # With absorption
+    Φ(xphi::XPhi, ρz::AbstractFloat) # W/o absorption
+    Φ(xphi::XPhi, ρz::AbstractFloat, χ::AbstractFloat) # With absorption
 
 The antsatz for ϕ(ρz) curve in the XPhi matrix correction algorithm.
 """
-function Φ(xphi::XPhi, ρz::Float64)::Float64
+function Φ(xphi::XPhi, ρz::AbstractFloat)
     ρz >= 0.0 ? #
     (
         ρz < xphi.ρzm ? #
@@ -177,39 +177,21 @@ function Φ(xphi::XPhi, ρz::Float64)::Float64
     ) : #
     0.0
 end
-Φ(xphi::XPhi, χ::Float64, ρz::Float64)::Float64 = Φ(xphi, ρz) * exp(-ρz * χ)
+Φ(xphi::XPhi, χ::AbstractFloat, ρz::AbstractFloat) = Φ(xphi, ρz) * exp(-ρz * χ)
 
 """
-    ℱ(xphi::XPhi, 𝒜::Float64, ci::Float64, χ::Float64)
+    ℱ(xphi::XPhi, 𝒜::AbstractFloat, ci::AbstractFloat, χ::AbstractFloat)
 
 𝒜 - Instrumental, physical and other poorly known parameters
 ci - Mass fraction of the i-th element
 
 The generated intensity in the XPhi model.
 """
-ℱ(xphi::XPhi, 𝒜::Float64, ci::Float64)::Float64 = #
+ℱ(xphi::XPhi, 𝒜::AbstractFloat, ci::AbstractFloat) = #
     0.5 * sqrt(π) * 𝒜 * ci * xphi.Φm * (xphi.α + xphi.β * erf(xphi.ρzm / xphi.β))
 
 """
-    ℱχ(xphi::XPhi, χ::Float64)
-
-𝒜 - Instrumental, physical and other poorly known parameters
-χ - reduced mass absorption coefficient
-
-The emitted intensity in the XPhi model.
-"""
-function ℱχ(xphi::XPhi, χ::Float64)::Float64
-    return (0.5 * sqrt(π) * xphi.Φm) * (
-        exp(χ * (0.25 * xphi.β^2 * χ - xphi.ρzm)) *
-        xphi.β *
-        (erf(0.5 * xphi.β * χ) + erf(xphi.ρzm / xphi.β - 0.5 * xphi.β * χ)) +
-        exp(χ * (0.25 * xphi.α^2 * χ - xphi.ρzm)) * xphi.α * erfc(0.5 * xphi.α * χ)
-    )
-end
-
-
-"""
-    ℱχp(xphi::XPhi, 𝒜::Float64, ci::Float64, χ::Float64, ρz0::Float64, ρz1::Float64)
+    ℱχp(xphi::XPhi, 𝒜::AbstractFloat, ci::AbstractFloat, χ::AbstractFloat, ρz0::AbstractFloat, ρz1::AbstractFloat)
 
 𝒜 - Instrumental, physical and other poorly known parameters
 ci - Mass fraction of the i-th element
@@ -220,12 +202,12 @@ The emitted intensity in the XPhi model for the depth between ρz0 and ρz1
 """
 function ℱχp(
     xphi::XPhi,
-    𝒜::Float64,
-    ci::Float64,
-    χ::Float64,
-    ρz0::Float64,
-    ρz1::Float64,
-)::Float64
+    𝒜::AbstractFloat,
+    ci::AbstractFloat,
+    χ::AbstractFloat,
+    ρz0::AbstractFloat,
+    ρz1::AbstractFloat,
+)
     @assert ρz0 >= 0.0
     @assert ρz0 < ρz1
     if ρz0 < xphi.ρzm && ρz1 > xphi.ρzm
@@ -245,16 +227,26 @@ end
 # The remainder of the code is to allow XPhi to fit within the framework with other
 # matrix correction algorithms.
 
-matrixcorrection(::Type{XPhi}, mat::Material, ashell::AtomicSubShell, e0::Float64) =
+matrixcorrection(::Type{XPhi}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) =
     XPhi(mat, ashell, e0)
 
 Base.range(::Type{XPhi}, mat::Material, e0::AbstractFloat, inclDensity=false) = # 
     range(Kanaya1972, mat, e0, inclDensity)
 
-ℱχ(xphi::XPhi, xray::CharXRay, θtoa::Float64)::Float64 = ℱχ(xphi, χ(material(xphi), xray, θtoa))
-
 ℱ(xphi::XPhi) = ℱ(xphi, 1.0, 1.0)
 
-ℱχp(xphi::XPhi, xray::CharXRay, θtoa::Real, t::Real) =
-    ℱχp(xphi, 1.0, 1.0, χ(material(xphi), xray, θtoa), 0.0, t)
+function ℱχ(xphi::XPhi, χ::AbstractFloat)
+    return (0.5 * sqrt(π) * xphi.Φm) * (
+        exp(χ * (0.25 * xphi.β^2 * χ - xphi.ρzm)) *
+        xphi.β *
+        (erf(0.5 * xphi.β * χ) + erf(xphi.ρzm / xphi.β - 0.5 * xphi.β * χ)) +
+        exp(χ * (0.25 * xphi.α^2 * χ - xphi.ρzm)) * xphi.α * erfc(0.5 * xphi.α * χ)
+    )
+end
+
+ℱχp(xphi::XPhi, χ::AbstractFloat, t::AbstractFloat) =
+    ℱχp(xphi, 1.0, 1.0, χ, 0.0, t)
+ℱχp(xphi::XPhi, χ::AbstractFloat, t0::AbstractFloat, t1::AbstractFloat) =
+    ℱχp(xphi, 1.0, 1.0, χ(material(xphi), xray, θtoa), t0, t1)
+
 ϕ(xphi::XPhi, ρz) = Φ(xphi, ρz)

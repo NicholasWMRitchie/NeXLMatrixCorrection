@@ -7,14 +7,14 @@ struct XPP <: MatrixCorrection
     # Configuration data
     subshell::AtomicSubShell
     material::Material
-    E0 # Beam energy (eV)
+    E0::Float64 # Beam energy (eV)
     # Computed items
-    ϕ0 # ϕ(ρz) at the surface
-    A # Amplitude  factor
-    a # Width factor
-    B # Amplitude  factor
-    b # Width factor
-    F # Integral under the ϕ(ρz) curve
+    ϕ0::Float64 # ϕ(ρz) at the surface
+    A::Float64 # Amplitude  factor
+    a::Float64 # Width factor
+    B::Float64 # Amplitude  factor
+    b::Float64 # Width factor
+    F::Float64 # Integral under the ϕ(ρz) curve
 
     """
         XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
@@ -70,7 +70,7 @@ P(::Type{XPP}, J) = (0.78, 0.1, -0.5 + 0.25 * J) #C1
 T(::Type{XPP}, P, m) = (1.0 + Pk - m for Pk in P) #C1
 
 """
-    dEdρs(args::Dict{Label,AbstractFloat}, mat::MaterialLabel, Ekev::AbstractFloat, elms)
+    dEdρs(::Type{XPP}, mat::MaterialLabel, Ekev::AbstractFloat, elms)
 
 The function P&P uses to describe the deceleration of an electron in a material.
 Output units are (keV/cm)/(g/cm^3) = keV cm^2/g. (PAP eqn 5)
@@ -306,11 +306,9 @@ end
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
-ℱχ(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) = ℱχ(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
-
-
-ℱχp(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat) =
-    ℱχp(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
+ℱχ(xpp::XPP, χ::AbstractFloat) = ℱχ(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ℱχp(xpp::XPP, χ::AbstractFloat, τ::AbstractFloat) =
+    ℱχp(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
 
 ℱ(xpp::XPP) = xpp.F
 
