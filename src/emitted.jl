@@ -24,18 +24,13 @@ function emitted_intensities(comp::Material, elm::Element, dose::Float64, e0::Fl
     for ash in unique(inner.(cxrs))
         zaf = zafcorrection(mc, fc, NullCoating, comp, ash, e0, missing)
         icx = ionizationcrosssection(ash, e0) * occupancy(ash) # Cross section for ionization of ash per atom 
-        for cxr in cxrs
-            ashi, inn, out = NeXLCore.subshellindex(ash), NeXLCore.innerindex(cxr), NeXLCore.outerindex(cxr)
-            if ashi <= inn
-                fy = NeXLCore.xrayweight(NormalizeRaw, cxr.z, ashi, inn, out)
-                if fy > 0.0
-                    si[cxr] = get(si, cxr, 0.0) +
-                        kk * icx *              # constants 
-                        fy *                    # Fraction of ionizations that eventually relax via cxr
-                        Fχ(zaf.za, cxr, θtoa) * # Absorption corrected integral of ϕ(ρz) 
-                        F(zaf.f, cxr, θtoa)     # Fluorescence correction factor (~1.)
-                end
-            end
+        for cxr in filter(cxr->inner(cxr)==ash, cxrs)
+            inn, out = NeXLCore.innerindex(cxr), NeXLCore.outerindex(cxr)
+            si[cxr] = get(si, cxr, 0.0) +
+                kk * icx *              # constants 
+                NeXLCore.xrayweight(NormalizeRaw, cxr.z, inn, inn, out) *  # Fraction of ionizations that eventually relax via cxr
+                ℱχ(zaf.za, cxr, θtoa) * # Absorption corrected integral of ϕ(ρz) 
+                F(zaf.f, cxr, θtoa)     # Fluorescence correction factor (~1.)
         end
     end
     return si
