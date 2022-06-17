@@ -70,7 +70,7 @@ function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::AbstractFloat, τ::Abstr
                abs(rv.β + 2.0*rv.α^2*τ + χm))))/(2.0*rv.α^2) : 0.0
 end
 
-edgeenergy(rv::Riveros1993) = rv.Ea
+NeXLCore.edgeenergy(rv::Riveros1993) = rv.Ea
 
 matrixcorrection(::Type{Riveros1993}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = Riveros1993(mat, ashell, energy(ashell), e0)
 

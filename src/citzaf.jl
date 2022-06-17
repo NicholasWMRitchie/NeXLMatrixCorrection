@@ -46,8 +46,7 @@ end
     ((1.0 - exp(-τ * (cz.α + χm))) * cz.γ0) / (cz.α + χm) +
     ((-1.0 + exp(-τ * (cz.α + cz.β + χm))) * cz.q * cz.γ0) / (cz.α + cz.β + χm)
 
-edgeenergy(cz::CitZAF) = cz.Ea
-
+NeXLCore.edgeenergy(cz::CitZAF) = cz.Ea
 
 matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = CitZAF(mat, ashell, energy(ashell), e0)
 

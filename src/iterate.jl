@@ -170,8 +170,8 @@ struct IsApproximate <: ConvergenceTest
 end
 
 converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,<:AbstractFloat}) = all(
-    (abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < rtol) ||
-    (abs(value(nonnegk(kr)) - computed[kr.element]) < atol) for kr in meas
+    (abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < ia.rtol) ||
+    (abs(value(nonnegk(kr)) - computed[kr.element]) < ia.atol) for kr in meas
 )
 """
 Collects the information necessary to define the iteration process including the `MatrixCorrection` and
@@ -218,11 +218,11 @@ The source of the k-ratio data as a Label (often a CharXRayLabel).
 source(ir::IterationResult)::Label = ir.label
 
 function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::Bool = true)
-    elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], Label[]
+    elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], String[]
     g, z, a, f = Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[]
     c, gzafc, stds, dmfs, xrays = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[], String[]
     for elm in keys(ir.comp)
-        push!(labels, ir.label)
+        push!(labels, repr(ir.label))
         push!(elms, elm.symbol)
         rc = round(ir.comp[elm])
         push!(mfs, value(rc))
@@ -309,6 +309,8 @@ NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(i
 
 NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
     mapreduce(itres -> compare(itres, known), append!, itress)
+
+NeXLCore.compare(iter1::IterationResult, iter2::IterationResult) = compare(iter1.comp, iter2.comp)
 """
     NeXLCore.material(itres::IterationResult)::Material
 """
