@@ -180,26 +180,25 @@ end
 Φ(xphi::XPhi, χ::Float64, ρz::Float64)::Float64 = Φ(xphi, ρz) * exp(-ρz * χ)
 
 """
-    F(xphi::XPhi, 𝒜::Float64, ci::Float64, χ::Float64)
+    ℱ(xphi::XPhi, 𝒜::Float64, ci::Float64, χ::Float64)
 
 𝒜 - Instrumental, physical and other poorly known parameters
 ci - Mass fraction of the i-th element
 
 The generated intensity in the XPhi model.
 """
-F(xphi::XPhi, 𝒜::Float64, ci::Float64)::Float64 = #
+ℱ(xphi::XPhi, 𝒜::Float64, ci::Float64)::Float64 = #
     0.5 * sqrt(π) * 𝒜 * ci * xphi.Φm * (xphi.α + xphi.β * erf(xphi.ρzm / xphi.β))
 
 """
-    Fχ(xphi::XPhi, χ::Float64)
+    ℱχ(xphi::XPhi, χ::Float64)
 
 𝒜 - Instrumental, physical and other poorly known parameters
-ci - Mass fraction of the i-th element
 χ - reduced mass absorption coefficient
 
 The emitted intensity in the XPhi model.
 """
-function Fχ(xphi::XPhi, χ::Float64)::Float64
+function ℱχ(xphi::XPhi, χ::Float64)::Float64
     return (0.5 * sqrt(π) * xphi.Φm) * (
         exp(χ * (0.25 * xphi.β^2 * χ - xphi.ρzm)) *
         xphi.β *
@@ -210,7 +209,7 @@ end
 
 
 """
-    Fχ(xphi::XPhi, 𝒜::Float64, ci::Float64, χ::Float64, ρz0::Float64, ρz1::Float64)
+    ℱχp(xphi::XPhi, 𝒜::Float64, ci::Float64, χ::Float64, ρz0::Float64, ρz1::Float64)
 
 𝒜 - Instrumental, physical and other poorly known parameters
 ci - Mass fraction of the i-th element
@@ -219,7 +218,7 @@ ci - Mass fraction of the i-th element
 
 The emitted intensity in the XPhi model for the depth between ρz0 and ρz1
 """
-function Fχp(
+function ℱχp(
     xphi::XPhi,
     𝒜::Float64,
     ci::Float64,
@@ -230,7 +229,7 @@ function Fχp(
     @assert ρz0 >= 0.0
     @assert ρz0 < ρz1
     if ρz0 < xphi.ρzm && ρz1 > xphi.ρzm
-        return Fχp(xphi, 𝒜, ci, χ, ρz0, xphi.ρzm) + Fχp(xphi, 𝒜, ci, χ, xphi.ρzm, ρz1)
+        return ℱχp(xphi, 𝒜, ci, χ, ρz0, xphi.ρzm) + ℱχp(xphi, 𝒜, ci, χ, xphi.ρzm, ρz1)
     else
         ξ = (ρz0 < xphi.ρzm ? xphi.β : xphi.α)
         return (0.5 * sqrt(π) * xphi.Φm * ξ) *
@@ -252,11 +251,10 @@ matrixcorrection(::Type{XPhi}, mat::Material, ashell::AtomicSubShell, e0::Float6
 Base.range(::Type{XPhi}, mat::Material, e0::AbstractFloat, inclDensity=false) = # 
     range(Kanaya1972, mat, e0, inclDensity)
 
-function Fχ(xphi::XPhi, xray::CharXRay, θtoa::Float64)::Float64
-    @assert inner(xray) == xphi.subshell
-    return Fχ(xphi, 1.0, 1.0, χ(material(xphi), xray, θtoa))
-end
-F(xphi::XPhi) = F(xphi, 1.0, 1.0)
-Fχp(xphi::XPhi, xray::CharXRay, θtoa::Real, t::Real) =
-    Fχp(xphi, 1.0, 1.0, χ(material(xphi), xray, θtoa), 0.0, t)
+ℱχ(xphi::XPhi, xray::CharXRay, θtoa::Float64)::Float64 = ℱχ(xphi, χ(material(xphi), xray, θtoa))
+
+ℱ(xphi::XPhi) = ℱ(xphi, 1.0, 1.0)
+
+ℱχp(xphi::XPhi, xray::CharXRay, θtoa::Real, t::Real) =
+    ℱχp(xphi, 1.0, 1.0, χ(material(xphi), xray, θtoa), 0.0, t)
 ϕ(xphi::XPhi, ρz) = Φ(xphi, ρz)

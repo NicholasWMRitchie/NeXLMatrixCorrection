@@ -1,7 +1,7 @@
 """
 An abstract type for implementing secondary-fluorescence corrections.
 
-    F(unk::FluorescenceCorrection, xray::CharXRay, θtoa::AbstractFloat)
+    F((unk::FluorescenceCorrection, xray::CharXRay, θtoa::AbstractFloat)
 """
 abstract type FluorescenceCorrection end
 
@@ -12,10 +12,10 @@ Implements Castaing's First Approximation (i.e. No correction F=1)
 """
 struct NullFluorescence <: FluorescenceCorrection
 
-    NullFluorescence(mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = new()
+    NullFluorescence(_::Material, _::AtomicSubShell, _::AbstractFloat) = new()
 end
 
-Base.show(io::IO, nc::NullFluorescence) = print(io, "Null[Fluor]")
+Base.show(io::IO, _::NullFluorescence) = print(io, "NullFluorescence[]")
 
 F(nc::NullFluorescence, cxr::CharXRay, θtoa::AbstractFloat) = 1.0
 
@@ -41,12 +41,11 @@ function fluorescencecorrection(
 end
 
 fluorescencecorrection(
-    fltype::Type{NullFluorescence},
+    ::Type{NullFluorescence},
     comp::Material,
     secondary::AtomicSubShell,
     e0::Float64;
-    eThresh = 2.5e3,
-    wThresh = 0.01, 
+    vargs...
 ) = NullFluorescence(comp, secondary, e0)
 
 

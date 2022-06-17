@@ -26,8 +26,8 @@ using Test
         @test isapprox(xpp.F, 0.0016734, atol = 0.000001)
 
         xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)), inner(cxr), 20.0e3)
-        ZA = Fχ(xpp, cxr, toa) / Fχ(xppO, cxr, toa)
-        Z = F(xpp) / F(xppO)
+        ZA = ℱχ(xpp, cxr, toa) / ℱχ(xppO, cxr, toa)
+        Z = ℱ(xpp) / ℱ(xppO)
         @test isapprox(Z, 1.1759, atol = 0.0001)
         @test isapprox(ZA / Z, 0.2950, atol = 0.0001)
 
@@ -41,8 +41,8 @@ using Test
         @test isapprox(xpp.F, 0.0012887, atol = 0.00001)
 
         xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)), inner(cxr), 20.0e3)
-        ZA = Fχ(xpp, cxr, toa) / Fχ(xppO, cxr, toa)
-        Z = F(xpp) / F(xppO)
+        ZA = ℱχ(xpp, cxr, toa) / ℱχ(xppO, cxr, toa)
+        Z = ℱ(xpp) / ℱ(xppO)
         @test isapprox(Z, 0.8502, atol = 0.0001)
         @test isapprox(ZA / Z, 0.7463, atol = 0.0001)
 
@@ -56,8 +56,8 @@ using Test
         @test isapprox(xpp.F, 0.001468275, atol = 0.00001)
 
         xppO = NeXLMatrixCorrection.XPP(pure(element(cxr)), inner(cxr), 20.0e3)
-        ZA = Fχ(xpp, cxr, toa) / Fχ(xppO, cxr, toa)
-        Z = F(xpp) / F(xppO)
+        ZA = ℱχ(xpp, cxr, toa) / ℱχ(xppO, cxr, toa)
+        Z = ℱ(xpp) / ℱ(xppO)
         @test isapprox(Z, 1.0890, atol = 0.0001)
         @test isapprox(ZA / Z, 0.38915, atol = 0.0001)
     end

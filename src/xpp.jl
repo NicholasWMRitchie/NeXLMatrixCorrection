@@ -32,7 +32,7 @@ struct XPP <: MatrixCorrection
         Dv, Pjv, mv, Wbarv = D(XPP, Jv), P(XPP, Jv), m(XPP, ashell), Wbar(XPP, ηbarv)
         invSv = invS(XPP, U0v, V0v, Mv, Dv, Pjv, T(XPP, Pjv, mv))
         Rv, ϕ0v, QlAv = R(XPP, ηbarv, Wbarv, U0v), ϕ0(XPP, U0v, ηbarv), QlA(XPP, U0v, eLv, mv)
-        Fv, FoverRbarv = F(XPP, Rv, invSv, QlAv), FoverRbar(XPP, X(XPP, Zbarbv), Y(XPP, Zbarbv), U0v)
+        Fv, FoverRbarv = ℱ(XPP, Rv, invSv, QlAv), FoverRbar(XPP, X(XPP, Zbarbv), Y(XPP, Zbarbv), U0v)
         Rbarv = Rbar(XPP, Fv, FoverRbarv, ϕ0v)
         bv = b(XPP, Rbarv, ϕ0v, Fv)
         Pv = P(XPP, Zbarbv, U0v, Fv, Rbarv, ϕ0v, bv)
@@ -99,11 +99,11 @@ R0(::Type{XPP}, J, D, P, M, Ekev) = #C1
     end / M
 
 """
-    ϕxpp(ρz, A, a, B, b, ϕ0)
+    ϕ(::Type{XPP}, ρz, A, a, B, b, ϕ0)
 
 Compute the shape of the ϕ(ρz) curve in the XPP model.
 """
-ϕxpp(::Type{XPP}, ρz, A, a, B, b, ϕ0) = #C1
+ϕ(::Type{XPP}, ρz, A, a, B, b, ϕ0) = #C1
     A * exp(-a * ρz) + (B * ρz + ϕ0 - A) * exp(-b * ρz)
 
 """
@@ -208,7 +208,7 @@ FoverRbar(::Type{XPP}, X, Y, U0) = #C3
     1.0 + X * log(1.0 + Y * (1.0 - 1.0 / (U0^0.42))) / log(1.0 + Y)
 
 # PAP eqn 13
-F(::Type{XPP}, R, invS, QlA) = #C1
+ℱ(::Type{XPP}, R, invS, QlA) = #C1
     R * invS / QlA
 
 # PAP eqn 28
@@ -269,18 +269,18 @@ XPP ϕ(ρz) model parameter A
 A(::Type{XPP}, B, b, ϕ0, F, ϵ) = #C1
     (B / b + ϕ0 - b * F) * (1 + ϵ) / ϵ
 
-function Fχ(::Type{XPP}, χ, A, a, B, b, ϕ0)
+function ℱχ(::Type{XPP}, χ, A, a, B, b, ϕ0)
     ϵ = (a - b) / b
     return (ϕ0 + B / (b + χ) - A * b * ϵ / (b * (1.0 + ϵ) + χ)) / (b + χ)
 end
 
 
 """
-    Fχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ)
+    ℱχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ)
 
 The integral of the ϕ(ρz) exp(-χ ρz) from 0 to τ.
 """
-Fχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ) =
+ℱχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ) =
     (A * (1.0 - exp(-(τ * (a + χ))))) / (a + χ) +
     (A * (-1.0 + exp(-(τ * (b + χ))))) / (b + χ) +
     ((1 - exp(-(τ * (b + χ)))) * ϕ0) / (b + χ) +
@@ -306,13 +306,13 @@ end
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
-Fχ(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) = Fχ(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ℱχ(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat) = ℱχ(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 
-Fχp(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat) =
-    Fχp(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
+ℱχp(xpp::XPP, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat) =
+    ℱχp(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
 
-F(xpp::XPP) = xpp.F
+ℱ(xpp::XPP) = xpp.F
 
 NeXLCore.minproperties(::Type{XPP}) = (:BeamEnergy, :TakeOffAngle)
 
@@ -321,7 +321,7 @@ NeXLCore.minproperties(::Type{XPP}) = (:BeamEnergy, :TakeOffAngle)
 
 Computes the ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕ(xpp::XPP, ρz) = ϕxpp(XPP, ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ϕ(xpp::XPP, ρz) = ϕ(XPP, ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 
 """

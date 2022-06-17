@@ -9,11 +9,11 @@ using Roots
 `MCA <: MatrixCorrection` should implement
 
     # Integral of the area under the ϕ(ρz)-curve
-    F(mc::MCA)
+    ℱ(mc::MCA)
     # Integral of the transmitted area under the ϕ(ρz)-curve
-    Fχ(mc::MCA, xray::CharXRay, θtoa::Real)
+    ℱχ(mc::MCA, xray::CharXRay, θtoa::Real)
     # Area under 0 to τ under the transmitted ϕ(ρz)-curve
-    Fχp(mc::MCA, xray::CharXRay, θtoa::Real, τ::Real)
+    ℱχp(mc::MCA, xray::CharXRay, θtoa::Real, τ::Real)
     # The ϕ(ρz)-curve
     ϕ(mc::MCA, ρz)
     # A factory method from MCA
@@ -28,24 +28,24 @@ From these methods, other methods like `Z(...)`, `A(...)` are implemented.
 abstract type MatrixCorrection end
 
 """
-    F(mc::MatrixCorrection)
+    ℱ(mc::MatrixCorrection)
 
 Integral of the ϕ(ρz)-curve from ρz = 0 to ∞.
 """
-F(mc::MatrixCorrection) = error("$mc does not implement F(mc::$mc)")
+ℱ(mc::MatrixCorrection) = error("$mc does not implement ℱ(mc::$mc)")
 """
-    Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
+    ℱχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)
 
 Integral of the area under the absorption corrected ϕ(ρz)-curve from ρz = 0 to ∞.
 """
-Fχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)  = error("$mc does not implement Fχ(mc::$mc, xray::CharXRay, θtoa::Real)")
+ℱχ(mc::MatrixCorrection, xray::CharXRay, θtoa::Real)  = error("$mc does not implement ℱχ(mc::$mc, xray::CharXRay, θtoa::Real)")
 
 """
-    Fχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)
+    ℱχp(mc::NeXLMatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)
 
 The partial integral of the absorption corrected ϕ(ρz) curve from ρz = 0 to τ #
 """
-Fχp(mc::MatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)  = error("$mc does not implement Fχp(mc::$mc, xray::CharXRay, θtoa::Real, τ::Real)")
+ℱχp(mc::MatrixCorrection, xray::CharXRay, θtoa::Real, τ::Real)  = error("$mc does not implement ℱχp(mc::$mc, xray::CharXRay, θtoa::Real, τ::Real)")
 
 """
     ϕ(mc::MatrixCorrection, ρz)
@@ -85,10 +85,12 @@ Angle adjusted mass absorption coefficient.
 
 """
     ϕabs(mc::MatrixCorection, ρz, xray::CharXRay, θtoa::AbstractFloat)
+    ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, χ::AbstractFloat)
 
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(mc::MatrixCorrection, ρz, xray::CharXRay, θtoa::AbstractFloat) = ϕ(mc, ρz) * exp(-χ(material(mc), xray, θtoa) * ρz)
+ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, xray::CharXRay, θtoa::AbstractFloat) = ϕabs(mc, χ(material(mc), xray, θtoa), ρz)
+ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, χ::AbstractFloat) = ϕ(mc, ρz) * exp(-χ * ρz)
 
 """
     ZA(
@@ -104,7 +106,7 @@ The atomic number (Z) and absorption (A) correction factors.
 function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match"
     @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match"
-    return Fχ(unk, xray, θunk) / Fχ(std, xray, θstd)
+    return ℱχ(unk, xray, θunk) / ℱχ(std, xray, θstd)
 end
 
 """
@@ -115,7 +117,7 @@ The atomic number correction factor.
 function Z(unk::MatrixCorrection, std::MatrixCorrection)
     @assert isequal(unk.subshell, std.subshell)
     "Unknown and standard matrix corrections don't apply to the same sub-shell."
-    return F(unk) / F(std)
+    return ℱ(unk) / ℱ(std)
 end
 
 
@@ -132,10 +134,10 @@ function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::
 end
 
 function A(unk::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat)
-    return Fχ(unk, xray, θunk)/F(unk)
+    return ℱχ(unk, xray, θunk)/ℱ(unk)
 end
 
-correctcontinuum(mc::MatrixCorrection, θtoa::Real) = Fχ(mc, θtoa) / F(mc)
+correctcontinuum(mc::MatrixCorrection, θtoa::Real) = ℱχ(mc, θtoa) / ℱ(mc)
 
 """
     kcoating(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::Real, toa::Real, τ::Real)
@@ -155,7 +157,7 @@ function kcoating(
     @assert element(cxr) in keys(coating) "$cxr must be produced by one of the elements in $(name(coating))"
     @assert e0 > energy(inner(cxr)) "The beam energy must exceed the edge energy for $cxr."
     submc, coatmc = matrixcorrection(ty, subtrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
-    return Fχp(submc, cxr, toa, τ) / Fχ(coatmc, cxr, toa)
+    return ℱχp(submc, cxr, toa, τ) / ℱχ(coatmc, cxr, toa)
 end
 
 """"
@@ -175,7 +177,7 @@ function NeXLCore.massthickness(
     k::Real,
 )
     submc, coatingmc = matrixcorrection(ty, substrate, inner(cxr), e0), matrixcorrection(ty, coating, inner(cxr), e0)
-    f(τ) = k - Fχp(submc, cxr, toa, τ) / Fχ(coatingmc, cxr, toa)
+    f(τ) = k - ℱχp(submc, cxr, toa, τ) / ℱχ(coatingmc, cxr, toa)
     return find_zero(f, 0.01 * range(ty, substrate, e0, false), Roots.Order1())
 end
 

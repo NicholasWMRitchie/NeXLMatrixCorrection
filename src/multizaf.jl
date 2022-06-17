@@ -154,7 +154,7 @@ end
 The F (fluoresence) correction for `unk` relative to `std`.
 """
 function F(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
-    f, n = 0.0, 0.0
+    n, f  = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
