@@ -5,7 +5,7 @@ Implements Castaing's First Approximation (i.e. No correction Z⋅A = 1)
 struct NullCorrection <: MatrixCorrection
     material::Material
     subshell::AtomicSubShell
-    E0::AbstractFloat
+    E0::Float64
 
     NullCorrection(mat::Material, ashell::AtomicSubShell, e0) = new(mat, ashell, e0)
 end
