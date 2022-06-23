@@ -145,7 +145,7 @@ The value of the ϕ(ρz) curve at ρz=0.
 function Φ0(::Type{XPhi}, mat::Material, E0::AbstractFloat, Ec::AbstractFloat)
     @assert E0 < 100.0
     @assert Ec < 100.0
-    Z, U0 = z(mat), E0 / Ec
+    Z, U0 = z(NaiveZ, mat), E0 / Ec # Merlet calls for the mass fraction averaged Z (Merlet1994, pg 367)
     @assert U0 > 1.0
     b = map( (0.02 * Z, 0.1 * Z, 0.4 * Z) ) do di
         (1.0 / di) * (1.0 - (1.0 - 1.0 / U0^di) / (di * log(U0)))
