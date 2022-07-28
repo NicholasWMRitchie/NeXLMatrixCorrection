@@ -21,8 +21,8 @@ struct NaiveUpdateRule <: UpdateRule end
         ::NaiveUpdateRule,
         prevcomp::Material,
         measured::Vector{KRatio},
-        zafs::Dict{Element, Float64}
-    )::Dict{Element,Float64}
+        zafs::Dict{Element, AbstractFloat}
+    )
 
 Determine the next estimate of the composition that brings the estimate k-ratios closer to measured.
 """
@@ -30,8 +30,8 @@ update(
     ::NaiveUpdateRule, #
     prevcomp::Material, #
     measured::Vector{KRatio}, #
-    zafs::Dict{Element,Float64}, #
-)::Dict{Element,Float64} =
+    zafs::Dict{Element,<:AbstractFloat}, #
+) = #
     Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
 
 function reset(::NaiveUpdateRule) end
@@ -52,8 +52,8 @@ function update( #
     weg::WegsteinUpdateRule,
     prevcomp::Material,
     measured::Vector{KRatio},
-    zafs::Dict{Element,Float64},
-)::Dict{Element,Float64}
+    zafs::Dict{Element,<:AbstractFloat},
+)
     # Default to naive
     cnp1 = update(weg.fallback, prevcomp, measured, zafs)
     fn = Dict(kr.element => value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
@@ -115,8 +115,8 @@ function NeXLMatrixCorrection.update( #
     rur::RecordingUpdateRule,
     prevcomp::Material,
     measured::Vector{KRatio},
-    zafs::Dict{Element,Float64},
-)::Dict{Element,Float64}
+    zafs::Dict{Element,<:AbstractFloat},
+)
     if length(rur.comps)==0
         push!(rur.comps, Dict(elm=>prevcomp[elm] for elm in keys(prevcomp)))
     end
@@ -133,7 +133,7 @@ end
 """
 The `ConvergenceTest` abstract type represents mechanisms to decide when the iteration has converged.
 
-    converged(ct::ConvergenceTest, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool
+    converged(ct::ConvergenceTest, meas::Vector{KRatio}, computed::Dict{Element,<:AbstractFloat})::Bool
 """
 abstract type ConvergenceTest end
 
@@ -145,7 +145,7 @@ struct RMSBelowTolerance <: ConvergenceTest
     tolerance::Float64
 end
 
-converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool =
+converged(rbt::RMSBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,<:AbstractFloat})::Bool =
     sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in meas) < rbt.tolerance^2
 
 """
@@ -156,7 +156,7 @@ struct AllBelowTolerance <: ConvergenceTest
     tolerance::Float64
 end
 
-converged(abt::AllBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,Float64})::Bool =
+converged(abt::AllBelowTolerance, meas::Vector{KRatio}, computed::Dict{Element,<:AbstractFloat})::Bool =
     all(abs(value(nonnegk(kr)) - computed[kr.element]) < abt.tolerance for kr in meas)
 
 
@@ -169,9 +169,9 @@ struct IsApproximate <: ConvergenceTest
     rtol::Float64
 end
 
-converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,Float64}) = all(
-    (abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < rtol) ||
-    (abs(value(nonnegk(kr)) - computed[kr.element]) < atol) for kr in meas
+converged(ia::IsApproximate, meas::Vector{KRatio}, computed::Dict{Element,<:AbstractFloat}) = all(
+    (abs(1.0 - value(nonnegk(kr)) / computed[kr.element]) < ia.rtol) ||
+    (abs(value(nonnegk(kr)) - computed[kr.element]) < ia.atol) for kr in meas
 )
 """
 Collects the information necessary to define the iteration process including the `MatrixCorrection` and
@@ -218,11 +218,11 @@ The source of the k-ratio data as a Label (often a CharXRayLabel).
 source(ir::IterationResult)::Label = ir.label
 
 function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::Bool = true)
-    elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], Label[]
+    elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], String[]
     g, z, a, f = Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[]
     c, gzafc, stds, dmfs, xrays = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[], String[]
     for elm in keys(ir.comp)
-        push!(labels, ir.label)
+        push!(labels, repr(ir.label))
         push!(elms, elm.symbol)
         rc = round(ir.comp[elm])
         push!(mfs, value(rc))
@@ -309,6 +309,8 @@ NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(i
 
 NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
     mapreduce(itres -> compare(itres, known), append!, itress)
+
+NeXLCore.compare(iter1::IterationResult, iter2::IterationResult) = compare(iter1.comp, iter2.comp)
 """
     NeXLCore.material(itres::IterationResult)::Material
 """
@@ -323,11 +325,11 @@ _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, xrays::Vector{Char
         iter::Iteration,
         est::Material,
         stdZafs::Dict{KRatio,MultiZAF}
-    )::Dict{Element, Float64}
+    )
 
 Given an estimate of the composition compute the corresponding k-ratios.
 """
-function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZAF})::Dict{Element,Float64}
+function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZAF})
     zaf(kr, zafs) =
         gZAFc(_ZAF(iter, est, kr.unkProps, kr.xrays), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
@@ -390,10 +392,10 @@ function quantify(
 )::IterationResult
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio}) =
-        Dict{Element,Float64}(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
+        Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
     # Compute the estimated k-ratios
-    computeKs(estComp::Material, zafs::Dict{Element,Float64}, stdComps::Dict{Element,Float64}) =
-        Dict{Element,Float64}(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    computeKs(estComp::Material, zafs, stdComps) =
+        Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
     function computefinal(estcomp::Material, meas::Vector{KRatio})
         final = Dict{Element,UncertainValue}(elm=>convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
         for kr in meas
@@ -420,7 +422,7 @@ function quantify(
     eval(computed) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in kunk)
     # Compute the standard matrix correction factors
     stdZafs = Dict(kr => _ZAF(iter, kr.standard, kr.stdProps, kr.xrays) for kr in kunk)
-    stdComps = Dict{Element,Float64}(kr.element => value(kr.standard[kr.element]) for kr in kunk)
+    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in kunk)
     # First estimate c_unk = k*c_std
     estcomp = something(estComp, material(repr(label), compute(iter.unmeasured, firstEstimate(kunk))))
     # Compute the associated matrix corrections

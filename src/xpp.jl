@@ -7,14 +7,14 @@ struct XPP <: MatrixCorrection
     # Configuration data
     subshell::AtomicSubShell
     material::Material
-    E0 # Beam energy (eV)
+    E0::Float64 # Beam energy (eV)
     # Computed items
-    ϕ0 # ϕ(ρz) at the surface
-    A # Amplitude  factor
-    a # Width factor
-    B # Amplitude  factor
-    b # Width factor
-    F # Integral under the ϕ(ρz) curve
+    ϕ0::Float64 # ϕ(ρz) at the surface
+    A::Float64 # Amplitude  factor
+    a::Float64 # Width factor
+    B::Float64 # Amplitude  factor
+    b::Float64 # Width factor
+    F::Float64 # Integral under the ϕ(ρz) curve
 
     """
         XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
@@ -31,8 +31,8 @@ struct XPP <: MatrixCorrection
         @assert V0v > 1.0 "The beam energy must be larger than the mean energy loss. ($(mat), $(ashell), $(E0))"
         Dv, Pjv, mv, Wbarv = D(XPP, Jv), P(XPP, Jv), m(XPP, ashell), Wbar(XPP, ηbarv)
         invSv = invS(XPP, U0v, V0v, Mv, Dv, Pjv, T(XPP, Pjv, mv))
-        qv, Rv, ϕ0v, QlAv = q(XPP, Wbarv), R(XPP, ηbarv, Wbarv, U0v), ϕ0(XPP, U0v, ηbarv), QlA(XPP, U0v, eLv, mv)
-        Fv, FoverRbarv = F(XPP, Rv, invSv, QlAv), FoverRbar(XPP, X(XPP, Zbarbv), Y(XPP, Zbarbv), U0v)
+        Rv, ϕ0v, QlAv = R(XPP, ηbarv, Wbarv, U0v), ϕ0(XPP, U0v, ηbarv), QlA(XPP, U0v, eLv, mv)
+        Fv, FoverRbarv = ℱ(XPP, Rv, invSv, QlAv), FoverRbar(XPP, X(XPP, Zbarbv), Y(XPP, Zbarbv), U0v)
         Rbarv = Rbar(XPP, Fv, FoverRbarv, ϕ0v)
         bv = b(XPP, Rbarv, ϕ0v, Fv)
         Pv = P(XPP, Zbarbv, U0v, Fv, Rbarv, ϕ0v, bv)
@@ -67,10 +67,10 @@ D(::Type{XPP}, J) = (6.6e-6, 1.12e-5 * (1.35 - 0.45 * J^2), 2.2e-6 / J) #C1
 P(::Type{XPP}, J) = (0.78, 0.1, -0.5 + 0.25 * J) #C1
 
 # From PAP near Eqn 11
-T(::Type{XPP}, P, m) = collect(1.0 + P[k] - m for k = 1:3) #C1
+T(::Type{XPP}, P, m) = (1.0 + Pk - m for Pk in P) #C1
 
 """
-    dEdρs(args::Dict{Label,AbstractFloat}, mat::MaterialLabel, Ekev::AbstractFloat, elms)
+    dEdρs(::Type{XPP}, mat::MaterialLabel, Ekev::AbstractFloat, elms)
 
 The function P&P uses to describe the deceleration of an electron in a material.
 Output units are (keV/cm)/(g/cm^3) = keV cm^2/g. (PAP eqn 5)
@@ -79,11 +79,13 @@ function dEdρs(::Type{XPP}, mat::Material, Ekev::AbstractFloat) #C1
     @assert Ekev < 50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
     Jkev = 0.001 * J(XPP, mat) # XPP expects in keV
     # PAP Eqn 8
-    function f(mat, Ekev, Jkev)
-        d, p, v = D(XPP, j), P(XPP, j), Ekev / Jkev
-        return sum(i -> d[i] * v^p[i], 1:3)
+    function fV(Ekev, Jkev)
+        d, p, v = D(XPP, Jkev), P(XPP, Jkev), Ekev / Jkev
+        return sum(zip(d,p)) do ( di, pi )
+            di * v^pi
+        end
     end
-    return -(M(XPP, mat) / Jkev) / f(mat, Ekev, Jkev)
+    return -(M(XPP, mat) / Jkev) / fV(Ekev, Jkev)
 end
 
 """
@@ -92,14 +94,16 @@ end
 Total trajectory (range) of an electron with initial energy Ekev. (in cm/(g/cm^3))
 """
 R0(::Type{XPP}, J, D, P, M, Ekev) = #C1
-    sum(J^(1.0 - P[k]) * D[k] * Ekev^(1.0 + P[k]) / (1.0 + P[k]) for k = 1:3) / M
+    sum(zip(D,P)) do (Di, Pi) 
+        J^(1.0 - Pi) * Di * Ekev^(1.0 + Pi) / (1.0 + Pi) 
+    end / M
 
 """
-    ϕxpp(ρz, A, a, B, b, ϕ0)
+    ϕ(::Type{XPP}, ρz, A, a, B, b, ϕ0)
 
 Compute the shape of the ϕ(ρz) curve in the XPP model.
 """
-ϕxpp(::Type{XPP}, ρz, A, a, B, b, ϕ0) = #C1
+ϕ(::Type{XPP}, ρz, A, a, B, b, ϕ0) = #C1
     A * exp(-a * ρz) + (B * ρz + ϕ0 - A) * exp(-b * ρz)
 
 """
@@ -108,7 +112,9 @@ Compute the shape of the ϕ(ρz) curve in the XPP model.
 Computes 1/S where S is the stopping power.
 """
 invS(::Type{XPP}, U0, V0, M, D, P, T) = #C1
-    U0 / (V0 * M) * sum(D[k] * ((V0 / U0)^P[k]) * (T[k] * U0^T[k] * log(U0) - U0^T[k] + 1.0) / (T[k]^2) for k = 1:3)
+    U0 / (V0 * M) * sum(zip(D, P, T)) do (Dk, Pk, Tk)
+        Dk * ((V0 / U0)^Pk) * (Tk * U0^Tk * log(U0) - U0^Tk + 1.0) / (Tk^2)
+    end
 
 """
     S(mat, ashell, E)
@@ -118,7 +124,8 @@ Computes S, the stopping power at the specified energy (in keV)
 function S(::Type{XPP}, mat::Material, ashell::AtomicSubShell, Ekev)
     @assert Ekev < 50.0 "It appears that the beam energy is in keV not eV. ($Ekev)"
     jkev = 0.001 * J(XPP, mat) # XPP expects in keV
-    return 1.0 / invS(XPP, Ekev / (0.001 * energy(ashell)), Ekev / jkev, M(XPP, mat), D(XPP, jkev), P(XPP, jkev), T(XPP, P(XPP, jkev), m(XPP, ashell)))
+    p = P(XPP, jkev)
+    return 1.0 / invS(XPP, Ekev / (0.001 * energy(ashell)), Ekev / jkev, M(XPP, mat), D(XPP, jkev), p, T(XPP, p, m(XPP, ashell)))
 end
 
 """
@@ -135,10 +142,13 @@ QlA(::Type{XPP}, U, El, m) = log(U) / ((U^m) * (El^2)) #C1
 Returns the ionization cross-section exponent for QlA(U,El,m(ashell))
 """
 function m(::Type{XPP}, ashell::AtomicSubShell) #C1
-    if isequal(n(ashell), 1)
+    nn = n(ashell)
+    if nn==1
         return 0.86 + 0.12 * exp(-(ashell.z / 5.0)^2)
+    elseif nn==2
+        return 0.82
     else
-        return n(ashell) == 2 ? 0.82 : 0.78
+        return 0.78
     end
 end
 
@@ -176,10 +186,8 @@ Backscatter factor as a function of material and overvoltage.
 Compares well to PAP Figure 23.
 """
 function R(::Type{XPP}, mat::Material, u0)
-    zbarbv = Zbarb(XPP, mat)
-    ηbarv = ηbar(XPP, zbarbv)
-    wbar = Wbar(XPP, ηbarv)
-    return R(XPP, ηbarv, wbar, u0)
+    ηbarv = ηbar(XPP, Zbarb(XPP, mat))
+    return R(XPP, ηbarv, Wbar(XPP, ηbarv), u0)
 end
 
 """
@@ -200,7 +208,7 @@ FoverRbar(::Type{XPP}, X, Y, U0) = #C3
     1.0 + X * log(1.0 + Y * (1.0 - 1.0 / (U0^0.42))) / log(1.0 + Y)
 
 # PAP eqn 13
-F(::Type{XPP}, R, invS, QlA) = #C1
+ℱ(::Type{XPP}, R, invS, QlA) = #C1
     R * invS / QlA
 
 # PAP eqn 28
@@ -225,7 +233,10 @@ b(::Type{XPP}, Rbar, ϕ0, F) = #C1
 
 # PAP eqn 29
 P(::Type{XPP}, Zbarb, U0, F, Rbar, ϕ0, b) = #C1
-    min(g(XPP, Zbarb, U0) * h(XPP, Zbarb, U0)^4, 0.9 * b * Rbar^2 * (b - 2.0 * ϕ0 / F)) * F / (Rbar^2)
+    min(#
+        g(XPP, Zbarb, U0) * h(XPP, Zbarb, U0)^4, #
+        0.9 * b * Rbar^2 * (b - 2.0 * ϕ0 / F)
+    ) * F / (Rbar^2)
 
 function ϵ(::Type{XPP}, P, b, ϕ0, F, Rbar) #C1
     a = (P + b * (2.0 * ϕ0 - b * F)) / (b * F * (2.0 - b * Rbar) - ϕ0)
@@ -258,18 +269,18 @@ XPP ϕ(ρz) model parameter A
 A(::Type{XPP}, B, b, ϕ0, F, ϵ) = #C1
     (B / b + ϕ0 - b * F) * (1 + ϵ) / ϵ
 
-function Fχ(::Type{XPP}, χ, A, a, B, b, ϕ0)
+function ℱχ(::Type{XPP}, χ, A, a, B, b, ϕ0)
     ϵ = (a - b) / b
     return (ϕ0 + B / (b + χ) - A * b * ϵ / (b * (1.0 + ϵ) + χ)) / (b + χ)
 end
 
 
 """
-    Fχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ)
+    ℱχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ)
 
 The integral of the ϕ(ρz) exp(-χ ρz) from 0 to τ.
 """
-Fχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ) =
+ℱχp(::Type{XPP}, χ, A, a, B, b, ϕ0, τ) =
     (A * (1.0 - exp(-(τ * (a + χ))))) / (a + χ) +
     (A * (-1.0 + exp(-(τ * (b + χ))))) / (b + χ) +
     ((1 - exp(-(τ * (b + χ)))) * ϕ0) / (b + χ) +
@@ -295,13 +306,11 @@ end
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
-Fχ(xpp::XPP, xray::CharXRay, θtoa::Real) = Fχ(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ℱχ(xpp::XPP, χ::AbstractFloat) = ℱχ(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ℱχp(xpp::XPP, χ::AbstractFloat, τ::AbstractFloat) =
+    ℱχp(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
 
-
-Fχp(xpp::XPP, xray::CharXRay, θtoa::Real, τ::Real) =
-    Fχp(XPP, χ(material(xpp), xray, θtoa), xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
-
-F(xpp::XPP) = xpp.F
+ℱ(xpp::XPP) = xpp.F
 
 NeXLCore.minproperties(::Type{XPP}) = (:BeamEnergy, :TakeOffAngle)
 
@@ -310,19 +319,22 @@ NeXLCore.minproperties(::Type{XPP}) = (:BeamEnergy, :TakeOffAngle)
 
 Computes the ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕ(xpp::XPP, ρz) = ϕxpp(XPP, ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ϕ(xpp::XPP, ρz) = ϕ(XPP, ρz, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 
 
 """
-    range(::Type{XPP}, mat::MaterialLabel, e0, inclDensity=true)
+    range(::Type{XPP}, e0, inclDensity=true)
     range(ty::Type{<:BetheEnergyLoss}, mat::Material, e0::Float64, inclDensity=true; emin=50.0, mip::Type{<:NeXLMeanIonizationPotential}=Berger1982)
 
 Total trajectory (range) of an electron with initial energy e0 (eV). (Units: inclDensity ? cm : cm/(g/cm³))
 """
-function Base.range(::Type{XPP}, mat::Material, e0::Real, inclDensity=true)
+function Base.range(::Type{XPP}, mat::Material, e0::AbstractFloat, inclDensity=true)
     j = 0.001 * J(XPP, mat) # XPP expects in keV
     return R0(XPP, j, D(XPP, j), P(XPP, j), M(XPP, mat), 0.001 * e0) / (inclDensity ? density(mat) : 1.0)
 end
+
+Base.range(xpp::XPP, inclDensity=true) = Base.range(XPP, material(xpp), beamEnergy(xpp), inclDensity)
+
 
 """
     matrixcorrection(::Type{XPP}, mat::Material, ashell::AtomicSubShell,e0)

@@ -12,15 +12,15 @@ Implements Castaing's First Approximation (i.e. No correction F=1)
 """
 struct NullFluorescence <: FluorescenceCorrection
 
-    NullFluorescence(mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = new()
+    NullFluorescence(_::Material, _::AtomicSubShell, _::AbstractFloat) = new()
 end
 
-Base.show(io::IO, nc::NullFluorescence) = print(io, "Null[Fluor]")
+Base.show(io::IO, _::NullFluorescence) = print(io, "NullFluorescence[]")
 
 F(nc::NullFluorescence, cxr::CharXRay, θtoa::AbstractFloat) = 1.0
 
 """
-    fluorescence(fltype::Type{<:FluorescenceCorrection}, comp::Material, secondary::AtomicSubShell, e0::Float64)
+    fluorescence(fltype::Type{<:FluorescenceCorrection}, comp::Material, secondary::AtomicSubShell, e0::AbstractFloat)
 
 Construct an instance of a fltype correction structure to compute the
 secondary fluorescence in the specified material and beam energy.
@@ -29,7 +29,7 @@ function fluorescencecorrection(
     fltype::Type{<:FluorescenceCorrection},
     comp::Material,
     secondary::AtomicSubShell,
-    e0::Float64;
+    e0::AbstractFloat;
     eThresh = 2.5e3,
     wThresh = 0.01,
 )
@@ -41,12 +41,11 @@ function fluorescencecorrection(
 end
 
 fluorescencecorrection(
-    fltype::Type{NullFluorescence},
+    ::Type{NullFluorescence},
     comp::Material,
     secondary::AtomicSubShell,
-    e0::Float64;
-    eThresh = 2.5e3,
-    wThresh = 0.01, 
+    e0::AbstractFloat;
+    vargs...
 ) = NullFluorescence(comp, secondary, e0)
 
 
@@ -55,6 +54,6 @@ fluorescencecorrection(
     comp::Material,
     primarys::Vector{CharXRay},
     secondary::AtomicSubShell,
-    e0::Float64,
+    e0::AbstractFloat,
 ) = NullFluorescence(comp, secondary, e0)
 

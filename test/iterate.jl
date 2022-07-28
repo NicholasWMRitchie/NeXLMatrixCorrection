@@ -279,11 +279,11 @@ Base.isapprox(v1::Real, uv2::UncertainValue; atol::Real=0.0) =
         res = quantify(nl"K309", [al,ba,ca,fe,o,si])
         @test isapprox(res.comp[n"Fe"],0.1038,atol=0.0001) # 0.1036 in DTSA-II
         @test isapprox(res.comp[n"Al"],0.0756,atol=0.0001) # 0.0756
-        @test isapprox(res.comp[n"Si"],0.1829,atol=0.0001) # 0.1823
+        @test isapprox(res.comp[n"Si"],0.1828,atol=0.0001) # 0.1823
         @test isapprox(res.comp[n"Ba"],0.1404,atol=0.0001) # 0.1402
         @test isapprox(res.comp[n"O"],0.3899,atol=0.0001)  # 0.3899
         @test isapprox(res.comp[n"Ca"],0.1074,atol=0.0001) # 0.1036
-        @test isapprox(analyticaltotal(res.comp), 1.0, atol=0.00002) # 0.9986
+        @test isapprox(analyticaltotal(res.comp), 1.0, atol=0.0002) # 0.9986
     end
     @testset "20 nm C on SiO2 at 5 keV" begin
         props = Dict(:BeamEnergy=>5.0e3, :TakeOffAngle=>deg2rad(40.0))

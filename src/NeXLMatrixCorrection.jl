@@ -13,8 +13,9 @@ export A # Absorption correction
 export ZA # Combined ZA (ϕ(ρz)) correction (more efficient than Z(...)*A(...))
 export ϕ # ϕ(ρz) function
 export ϕabs # ϕ(ρz) function (absorbed)
-export F  # Generated intensity function
-export Fχ # Absorbed intensity function
+export ℱ  # \scrF Generated intensity function (not the flourescence correction!!!!!) ℱ = ∫ ϕ(ρz) dρz
+export ℱχ # \scrF\chi Absorbed intensity function ℱχ = ∫ ϕ(ρz) exp(-χ ρz) dρz
+export ℱχp # \scrF\chi p Partial integral of the absorbed intensity function
 export matrixcorrection # Factory method for MatrixCorrection algorithms (XPP and NullCorrection)
 export continuumcorrection # Factory method for creating matrix correction algorithms for continuum correction
 export correctcontinuum # The method to calculate the continuum correction
@@ -24,8 +25,8 @@ export χ # Calculates reduced mass-absorption coefficient
 include("fluorescencecorrection.jl")
 export FluorescenceCorrection # Abstract class for the algorithm implementing the F-term
 export NullFluorescence
-# export F # Compute the flurorescence correction
 export fluorescencecorrection # Factory method for FluorescenceCorrection algorithms (Reed and NullFluorescence)
+export F # The fluorescence correction (F term in ZAF)
 
 # Abstract class for a base coating correction algorithm
 include("coating.jl")
@@ -58,7 +59,6 @@ export aspure # The k-ratio for this X-ray relative to a pure element
 # Implements Pouchou & Pichoir's XPP  ϕ(ρz) model
 include("xpp.jl")
 export XPP # <: MatrixCorrection
-export xpp # Build an XPP correction
 
 include("citzaf.jl")
 export CitZAF # <: MatrixCorrection
@@ -74,15 +74,15 @@ export StepMJZbarb, StepDPT, StepQlaOoS
 
 # Implements Merlet's XPhi algorithm
 include("xphi.jl")
-export XPhi
+export XPhi # <: MatrixCorrection
 
 # Implements the null matrix correction
 include("nullmatrixcorrection.jl")
-export NullCorrection
+export NullCorrection # <: MatrixCorrection
 
 # Implements Reed's 1991 fluorescence correction
 include("reed.jl")
-export ReedFluorescence
+export ReedFluorescence # <: FluorescenceCorrection
 export reedFluorescence # Construct a structure encapsulating the Reed fluorescence correction model
 
 # For picking which characteristic lines to use to perform the matrix correction
@@ -135,6 +135,9 @@ export zaf # Generates a table of ZAF correction factors
 
 include("defaultstandards.jl")
 export getstandards # Get a list of suggested standards for an element.
+
+include("emitted.jl")
+export emitted_intensities # Compute the X-ray intensity emitted from a sample
 
 function __init__()
     @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")
