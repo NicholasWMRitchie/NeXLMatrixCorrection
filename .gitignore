@@ -11,3 +11,7 @@ Manifest.toml
 /docs/src/testingagainstpap.md
 /docs/src/testagainstheinrich.md
 /docs/src/testagainstpap.md
+
+docs/src/emitted.md
+
+docs/src/roundtrip.md

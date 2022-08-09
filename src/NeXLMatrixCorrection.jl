@@ -10,6 +10,8 @@ include("matrixcorrection.jl")
 export MatrixCorrection # Abstract class for the algorithm implementing the Z- & A-terms
 export Z # Atomic number correction
 export A # Absorption correction
+export generation # Differential generation correction
+export coating # Sample / standard coating correction
 export ZA # Combined ZA (ϕ(ρz)) correction (more efficient than Z(...)*A(...))
 export ϕ # ϕ(ρz) function
 export ϕabs # ϕ(ρz) function (absorbed)

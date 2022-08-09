@@ -1,0 +1,163 @@
+# Computing a Round-Trip Matrix Correction
+
+This notebook demonstrates a round-trip matrix correction calculation.  First, we will compute 
+the k-ratios associated with a material relative to a set of standards under specified measurement
+conditions.  Then we will reverse the process.  Given the k-ratios we just calculated and the 
+assumed conditions, we will invert the calculation to return the original material (or a good estimate
+of it.)  
+
+First, we will do it using the simplest code path.  This code trades efficiency for simplicity.  This 
+is fine, if we just want to compute the k-ratio but is less desirable if you want to reuse the matrix 
+correction procedure to compute different perspectives on the matrix correction process like computing
+the Z, A and F correction terms.
+
+Then we will demonstrate how to use the underlying API to compute other perspectives.
+
+#### Load the necessary libraries
+```julia; term=true
+using NeXLMatrixCorrection # Also automatically loads NeXLCore
+using DataFrames # For tabulation
+```
+
+#### Define the problem
+Let's make this a little easier by defining some conditions and our standards.
+I'm going to do an EDSy kind-of-thing.  I'll assume multiple transitions per measurement.
+In WDS-land, these could be replaced with a vector containing a single transition like n"Si K-L3", n"O K-K3" etc.
+```julia; term=true
+unk_mat = mat"NaAlSi3O8"  # The "unknown" material
+# The conditions under which the "unknown" and standards are measured (They can be different...)
+unk_cond = Dict(:BeamEnergy=>19.5e3, :TakeOffAngle=>deg2rad(41.0), :Coating=>Film(pure(n"C"), 15.0e-7))
+std_cond = Dict(:BeamEnergy=>20.0e3, :TakeOffAngle=>deg2rad(40.0), :Coating=>Film(pure(n"C"), 10.0e-7))
+stds = [
+    characteristic(n"Si", ktransitions) => mat"SiO2",
+    characteristic(n"O", ktransitions) => mat"SiO2",
+    characteristic(n"Na", ktransitions) => mat"NaF",
+    characteristic(n"Al", ktransitions) => mat"Al"
+]
+```
+
+Now use a specialized version of the `KRatio(...)` constructor to compute a vector of `KRatio` data items.
+```julia; term=true
+krs = map(std->KRatio(std.first, unk_mat, unk_cond, std.second, std_cond), stds)
+```
+`KRatio` objects represent the input to the matrix correction iteration algorithm.  The `KRatio` data items 
+can represent ratios of intensities measured by WDS or they can represent fitted k-ratios extracted from 
+pairs of EDS spectra.  (Or, as in this example, they can represent the computed k-ratios.)  
+
+Ultimately, matrix correction is the process of finding the computed k-ratios that most closely match the 
+measured k-ratios.  We use the `quantify(...)` function to perform this optimization.
+```julia; term=true
+res=quantify(label("Unknown"), krs)
+```
+
+Now, let's compare the estimated composition with the initial, input composition.
+```julia; term=true
+compare(res, unk_mat)
+```
+They are not identical but they are close.  You will note that the output from the `quantify(...)` reports
+the number of iteration steps that it took to converge to this result.  We could specify a tighter tolerance
+and the algorithm would iterate additional steps to produce a better estimate.  However, it is rarely worth
+the extra effort given the uncertainties present in the measurement. 
+
+## In More Detail...
+#### `K-ratio` Data Items
+Since k-ratios are relevant to not only bulk quantification using classical bulk matrix correction, they are 
+defined in `NeXLCore` where they can be shared with other libraries that might implement alternative algorithms
+like thin-film or particle quantification algorithms.
+
+`KRatio` data items can be created explicitly.  The arguments consist of a vector of `CharXRay` data items
+which must all be from the same element, measurement parameters for the "unknown" and standard, the material
+from which the standard was collected and the k-ratio value. 
+```julia; term=true
+kr1 = KRatio( 
+    [ n"Fe K-L3" ], 
+    Dict(:BeamEnergy => 20.0e3, :TakeOffAngle => deg2rad(40.0), :ProbeCurrent => 0.9, :LiveTime => 60.0),
+    Dict(:BeamEnergy => 20.0e3, :TakeOffAngle => deg2rad(40.0), :ProbeCurrent => 1.1, :LiveTime => 30.0),
+    mat"FeS2",
+    0.3  # the k-ratio value (without an associated uncertainty)
+)
+kr2 = KRatio( 
+    [ n"Fe K-L3" ], 
+    Dict(:BeamEnergy => 20.0e3, :TakeOffAngle => deg2rad(40.0), :ProbeCurrent => 0.9, :LiveTime => 60.0),
+    Dict(:BeamEnergy => 20.0e3, :TakeOffAngle => deg2rad(40.0), :ProbeCurrent => 1.1, :LiveTime => 30.0),
+    mat"FeS2",
+    uv(0.30,0.01)  # the k-ratio value (with an associated uncertainty)
+)
+```
+
+#### `MultiZAF` Data Items
+The `MultiZAF` data item represents a cached, pre-computed representation of the matrix correction
+process for a single material under specified conditions and for one or more characteristic X-rays.
+`MultiZAF` items can be computed using the `zafcorrection(...)` function.  This function takes
+arguments which define which algorithms to use.
+
+Two `MultiZAF` data items (one for the unknown and one for the standard) can be used to compute the 
+Z, A and F (classic atomic number, absorption and secondary fluorescence) corrections.  They also 
+compute a g-term which represents the a generation correction (due to differences in beam energy) 
+and a c-term due to difference in sample coating.
+
+
+```julia; term=true
+unk = zafcorrection(
+    XPP,                    # ϕ(ρz) model
+    ReedFluorescence,       # F - model
+    Coating,                # Coating model
+    unk_mat,                # sample material
+    [ n"Si K-L3" ],         # measured x-rays
+    20.0e3,                 # beam energy in eV
+    Film(pure(n"C"), 10.0e-7) # 10 nm C coating
+)
+# Compute the matrix correction for the standard
+std = zafcorrection(XPP, ReedFluorescence, Coating, mat"SiO2", [ n"Si K-L3" ], 19.0e3, Film(pure(n"C"), 15.0e-7))
+# Examine these
+ENV["columns"]=300
+asa(DataFrame, unk, std, unk_cond[:TakeOffAngle], std_cond[:TakeOffAngle])
+```
+
+Now, let's use these two `MultiZAF` items to compute the individual terms in the matrix correction process. 
+Each individual calculation is optimized to compute the output value in an efficient manner.  This means 
+that computing `k(...)` while numerically equivalent to computing 
+`generation(...)*Z(...)*A(...)*F(...)*coating(...)*C[unk]/C[std]` is actually much more efficient.
+```julia; term=true
+# Compute the atomic number correction
+Z(unk, std)
+# Compute the absorption correction
+A(unk, std, unk_cond[:TakeOffAngle], std_cond[:TakeOffAngle])
+# Compute the secondary fluorescence correction
+F(unk, std, unk_cond[:TakeOffAngle], std_cond[:TakeOffAngle])
+# Compute the generation correction 
+generation(unk, std)
+# Compute the secondary fluorescence correction
+coating(unk, std, unk_cond[:TakeOffAngle], std_cond[:TakeOffAngle])
+# Compute the full set of generation, atomic number, absorption, fluorescence and coating corrections.
+gZAFc(unk, std, unk_cond[:TakeOffAngle], std_cond[:TakeOffAngle])
+# Compute the k-ratio (gZAF*unk_mat[elm]/std_mat[elm])
+k(unk, std, unk_cond[:TakeOffAngle], std_cond[:TakeOffAngle])
+```
+
+#### Tabulating Matrix corrections
+
+There are various ways to tabulate matrix corrections depending upon how much the measurement and the standard
+differ in mode.  For complete generality, it is possible to compute two `zafcorrection(...)`s for each 
+element pair.  This is tedious but can handle almost any situation.
+
+This looks something like this.
+```julia; term=true
+zafs = map(stds) do (cxrs, std_mat)
+    ( 
+        zafcorrection(XPP, ReedFluorescence, Coating, unk_mat, cxrs, unk_cond[:BeamEnergy], unk_cond[:Coating]),    
+        zafcorrection(XPP, ReedFluorescence, Coating, std_mat, cxrs, std_cond[:BeamEnergy], std_cond[:Coating])
+    )
+end
+vcat( ( asa(DataFrame, zaf..., deg2rad(40.0), deg2rad(40.0)) for zaf in zafs )...) 
+```
+
+Alternatively, when the measurement and standard are more similar, there is a method for Base.creating
+a table like this:
+```julia; term=true
+asa(DataFrame, mat"NaAlSi3O8", mat"SiO2", characteristic(n"O", ktransitions), 15.0e3, deg2rad(40.0))
+```
+This could be applied to our earlier `stds` like this:
+```julia; term=true
+vcat( ( asa(DataFrame, mat"NaAlSi3O8", std, cxrs, 15.0e3, deg2rad(40.0)) for (cxrs, std) in stds)...)
+``` 

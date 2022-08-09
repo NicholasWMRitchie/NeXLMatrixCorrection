@@ -13,6 +13,8 @@ let start_dir = pwd()
     weave("coatingthickness.jmd", out_path=joinpath(outpath,"coatingthickness.md"), doctype="github")
     weave("testagainstpap.jmd", out_path=joinpath(outpath,"testagainstpap.md"), doctype="github")
     weave("testagainstheinrich.jmd", out_path=joinpath(outpath,"testagainstheinrich.md"), doctype="github")
+    weave("roundtrip.jmd", out_path=joinpath(outpath,"roundtrip.md"), doctype="github")
+    weave("emitted.jmd", out_path=joinpath(outpath,"emitted.md"), doctype="github")
 
     cd(start_dir)
 end

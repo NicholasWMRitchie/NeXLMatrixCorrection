@@ -2,14 +2,17 @@ using Documenter
 using Weave
 using NeXLMatrixCorrection
 
-include("../weave/buildweave.jl")
+# include("../weave/buildweave.jl")
 
 
 pages = [
             "Example" => "example.md",
+            "k-ratio Round Trip" => "roundtrip.md",
+            "Advanced Iteration" => "advanced.md",
             "Coating Thickness" => "coatingthickness.md",
             "Compare To PAP" => "testagainstpap.md",
-            "Compare to Heinrich" => "testagainstheinrich.md"
+            "Compare to Heinrich" => "testagainstheinrich.md",
+            "Emitted Intensities" => "emitted.md"
         ]
 
 makedocs(modules = [NeXLMatrixCorrection], sitename = "NeXLMatrixCorrection.jl", pages = pages)

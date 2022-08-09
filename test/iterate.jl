@@ -14,8 +14,7 @@ function testIterate(unk, stds, e0, θ)
         push!(krs, KRatio(xrays, props, props, std, k))
     end
     up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
-    iter = Iteration(XPP, ReedFluorescence, Coating, updater = up)
-    return quantify(iter, "Result", krs)
+    return quantify("Result", krs, Iteration(updater = up))
 end
 
 randomize(mat::Material, qty::Float64)::Material =

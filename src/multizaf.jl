@@ -245,7 +245,7 @@ end
 """
     k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
 
-The computed k-ratio for the unknown relative to standard.
+Compute the k-ratio for the unknown relative to standard.
 """
 function k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
     elm = element(unk)
@@ -370,4 +370,44 @@ end
 function aspure(unk::Material, cxr::CharXRay, e0::Float64, toa::Float64)
     zs = zafcorrection(XPP, ReedFluorescence, NullCoating, unk, pure(element(cxr)), [cxr], e0)
     return k(zs..., toa, toa)
+end
+
+
+"""
+    NeXLCore.KRatio(
+        cxrs::Vector{CharXRay}, 
+        unk_mat::Material, 
+        unk_props::Dict{Symbol,Any}, 
+        std_mat::Material, 
+        std_props::Dict{Symbol,Any};
+        mc = XPP,
+        fc = ReedFluorescence,
+        cc = Coating
+    )
+
+Construct a KRatio object for the specified measurement.
+The :BeamEnergy, :ProbeCurrent, :LiveTime (or :Dose) properties are required.
+The :Coating property is optional.
+"""
+function NeXLCore.KRatio(
+    cxrs::Vector{CharXRay}, 
+    unk_mat::Material, 
+    unk_props::Dict{Symbol,Any}, 
+    std_mat::Material, 
+    std_props::Dict{Symbol,Any};
+    mc = XPP,
+    fc = ReedFluorescence,
+    cc = Coating
+)
+    KRatio(
+        cxrs,
+        unk_props,
+        std_props,
+        std_mat,
+        k(
+            zafcorrection(mc, fc, cc, unk_mat, cxrs, unk_props[:BeamEnergy], get(unk_props, :Coating, missing)),    
+            zafcorrection(mc, fc, cc, std_mat, cxrs, std_props[:BeamEnergy], get(std_props, :Coating, missing)),
+            unk_props[:TakeOffAngle], std_props[:TakeOffAngle]
+        )
+    )
 end

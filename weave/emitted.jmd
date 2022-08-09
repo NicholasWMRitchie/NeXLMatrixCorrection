@@ -1,0 +1,24 @@
+## Computing Emitted intensities
+
+Matrix correction algorithms like XPP which constrain the integral of the
+ϕ(ρz)-curve can be used to model generated and emitted intensities.  The
+method `emitted_intensities(...)` can be used to compute the total 
+emitted intensity into a specified solid angle for all characteristic 
+X-rays less than the incident beam energy on a per-element basis.
+
+The result is a `Dict{CharXRay,Int}`.  
+
+```julia; term=true
+using NeXLMatrixCorrection
+
+emitted_intensities(mat"NaAlSi3O8", n"Na", 60.0, 15.0e3, deg2rad(40.0), 10.0/(43.0^2))
+```
+
+Alternatively, the element can be omitted in which case all elements present in the 
+material are computed.
+```julia; term=true
+emitted_intensities(mat"NaAlSi3O8", 60.0, 15.0e3, deg2rad(40.0), 10.0/(43.0^2))
+```
+
+This information can be used to inform a wavelength dispersive measurement or to model 
+an EDS measurement when connvolved with the detector response function. (See `NeXLSpectrum`)
