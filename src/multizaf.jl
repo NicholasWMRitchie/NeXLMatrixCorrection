@@ -386,18 +386,18 @@ end
     )
 
 Construct a KRatio object for the specified measurement.
-The :BeamEnergy, :ProbeCurrent, :LiveTime (or :Dose) properties are required.
+The :BeamEnergy and :TakeOffAngle properties are required.
 The :Coating property is optional.
 """
 function NeXLCore.KRatio(
-    cxrs::Vector{CharXRay}, 
-    unk_mat::Material, 
-    unk_props::Dict{Symbol,Any}, 
-    std_mat::Material, 
+    cxrs::Vector{CharXRay},
+    unk_mat::Material,
+    unk_props::Dict{Symbol,Any},
+    std_mat::Material,
     std_props::Dict{Symbol,Any};
-    mc = XPP,
-    fc = ReedFluorescence,
-    cc = Coating
+    mc::Type{<:MatrixCorrection} = XPP,
+    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
+    cc::Type{<:CoatingCorrection} = Coating
 )
     KRatio(
         cxrs,

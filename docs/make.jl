@@ -2,8 +2,7 @@ using Documenter
 using Weave
 using NeXLMatrixCorrection
 
-# include("../weave/buildweave.jl")
-
+include("../weave/buildweave.jl")
 
 pages = [
             "Example" => "example.md",
@@ -24,13 +23,14 @@ function addNISTHeaders(htmlfile::String)
     i = findfirst(r"</[Hh][Ee][Aa][Dd]>", html)
     # Already added???
     j = findfirst("nist-header-footer", html)
+
     if isnothing(j) && (!isnothing(i))
+        # Load header text
+        header = open(joinpath(@__DIR__, "src", "assets", "nist_header.txt")) do io
+            join(readlines(io),"\n")
+        end
         # Insert nist-pages links right before </head>
-        res = html[1:i.start-1]*
-            "<link rel=\"stylesheet\" href=\"https://pages.nist.gov/nist-header-footer/css/nist-combined.css\">\n"*
-            "<script src=\"https://pages.nist.gov/nist-header-footer/js/jquery-1.9.0.min.js\" type=\"text/javascript\" defer=\"defer\"></script>\n"*
-            "<script src=\"https://pages.nist.gov/nist-header-footer/js/nist-header-footer.js\" type=\"text/javascript\" defer=\"defer\"></script>\n"*
-            html[i.start:end]
+        res = html[1:i.start-1]*"\n"*header*"\n"*html[i.start:end]
         write(htmlfile, res)
         println("Inserting NIST header/footer into $htmlfile")
     end

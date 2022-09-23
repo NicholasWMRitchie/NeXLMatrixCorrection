@@ -22,6 +22,7 @@ export matrixcorrection # Factory method for MatrixCorrection algorithms (XPP an
 export continuumcorrection # Factory method for creating matrix correction algorithms for continuum correction
 export correctcontinuum # The method to calculate the continuum correction
 export χ # Calculates reduced mass-absorption coefficient
+# export KRatio (exported from NeXLCore)
 
 # Abstract class for a base fluorescence correction
 include("fluorescencecorrection.jl")
