@@ -471,7 +471,7 @@ function quantify(
 end
 
 function quantify(
-    measured::AbstractVector{KRatios{T}},
+    measured::Vector{KRatios},
     iteration::Iteration = Iteration(fc=NullFluorescence, cc=NoCoating);
     kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
     maxIter::Int = 100, 
