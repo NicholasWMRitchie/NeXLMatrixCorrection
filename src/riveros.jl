@@ -30,7 +30,7 @@ struct Riveros1993 <: MatrixCorrection
         @assert u0 >= 1.0
         αz(elm) = (2.14e5*z(elm)^1.16/(a(elm)*e0k^1.25))*sqrt(log(1.166*e0/J(Berger1982,elm))/(e0k-eck))
         βz(elm) = (1.1e5*z(elm)^1.5)/((e0k-eck)*a(elm))
-        weightavg(f, mat) = sum(f(elm)*mat[elm] for elm in keys(mat))
+        weightavg(f, mat) = sum(elm->f(elm)*mat[elm], keys(mat))
         ηm = η(mat, e0) # Use Donovan's averaging (not weight averaging...)
         ϕ0 = 1.0 + (ηm*u0*log(u0))/(u0-1.0)
         γ = (1.0 + ηm)*(u0*log(u0))/(u0-1.0)
