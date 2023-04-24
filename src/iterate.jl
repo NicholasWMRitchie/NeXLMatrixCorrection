@@ -470,25 +470,31 @@ function quantify(
     return IterationResult(lbl, bestComp, measured, bestKrs, false, bestIter, iteration)
 end
 
-function quantify(
+function NeXLMatrixCorrection.quantify(
     measured::Vector{KRatios},
     iteration::Iteration = Iteration(fc=NullFluorescence, cc=NullCoating);
     kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
     maxIter::Int = 100, 
     estComp::Union{Nothing,Material}=nothing, 
-    coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
-) where { T <: AbstractFloat }
+    coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing,
+    name::AbstractString = "Map",
+    ty::Union{Type{UncertainValue}, Type{Float64}, Type{Float32}}=Float32
+)
     @assert all(size(measured[1])==size(krsi) for krsi in measured[2:end]) "All the KRatios need to be the same dimensions."
     # Pick the best sub-selection of `measured` to quantify
     optmeasured = brightest.(optimizeks(kro, measured))
-	lbl = label("Bogus")
-    ThreadsX.map(CartesianIndices(optmeasured[1].kratios)) do ci
+    mats = Materials(name, [ element(kr) for kr in optmeasured ], ty, size(measured[1]))
+    # Threading gives this fits... Why???
+    for ci in CartesianIndices(mats)
+        q = NeXLCore.NULL_MATERIAL
         try
             krs = KRatio[ kr[ci] for kr in optmeasured]
-            quantify(lbl, krs, iteration, coating=coating, maxIter=maxIter, estComp=estComp).comp
-         catch ex
-             @error ex
-             NeXLCore.NULL_MATERIAL
-         end
+            q = quantify(label("Bogus$ci"), krs, iteration, coating=coating, maxIter=maxIter, estComp=estComp).comp
+            @assert !(ismissing(q) || isnothing(q)) "Returned composition is $q."
+        catch ex
+            @error ex
+        end
+        mats[ci] = q
     end
+    return mats
 end

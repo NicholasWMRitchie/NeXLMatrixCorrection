@@ -55,3 +55,30 @@ function optimizeks(skro::SimpleKRatioOptimizer, krs::AbstractVector{T})::Vector
         elmkrs[maxi[2]]
     end
 end
+
+"""
+    NullKRatioOptimizer
+
+Does nothing.  Returns the input k-ratios.  For when, the k-ratios are already optimal.
+"""
+struct NullKRatioOptimizer <: KRatioOptimizer end
+
+function optimizeks(::NullKRatioOptimizer, krs::AbstractVector{T})::Vector{T} where  T <: Union{KRatio, KRatios}
+    return krs
+end
+
+struct ElementalMap end
+
+"""
+    asa(ElementalMap, krs::AbstractVector{KRatios}, scale=Log3Band)
+
+Converts `Vector{KRatios}` into a Dict that maps each Element present to an image.
+
+    scale = [ Log3Band , Log3BancColorblind, Log3BandBright, LogScale, Gray ]
+
+"""
+function NeXLUncertainties.asa(::Type{ElementalMap}, krs::AbstractVector{KRatios}, scale=Log3Band, kro=SimpleKRatioOptimizer(2.0))
+    opt=optimizeks(kro, krs)
+    nks=normalizek(opt)
+    Dict(map(nk-> nk.element => scale.(nk.kratios), nks))
+end
