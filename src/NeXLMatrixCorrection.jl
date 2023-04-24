@@ -92,6 +92,7 @@ include("kratioopt.jl")
 export KRatioOptimizer # Abstract class
 export SimpleKRatioOptimizer # A very simple implmentation of KRatioOptimizer
 export optimizeks # The method required of KRatioOptimizer
+export ElementalMap # For visualizing maps
 
 include("unmeasuredelement.jl")
 # Abstract class for calculating elements by difference or stoichiometry or ???
