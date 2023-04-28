@@ -33,10 +33,13 @@ function fluorescencecorrection(
     eThresh = 2.5e3,
     wThresh = 0.01,
 )
-    test(cxr, ee, wt) =
-        (energy(cxr) > ee) && (energy(cxr) < ee + eThresh) && (NeXLCore.edgeenergy(cxr) < e0) && (weight(NormalizeToUnity, cxr) > wt)
-    char4elm(elm, wt) = characteristic(elm, alltransitions, cxr -> test(cxr, energy(secondary), wt / comp[elm]))
-    primaries = mapreduce(elm -> char4elm(elm, wThresh), append!, keys(comp))
+    es = energy(secondary)
+    primaries = mapreduce(append!, keys(comp)) do elm 
+        characteristic(elm, alltransitions) do cxr
+            (energy(cxr) > es) && (energy(cxr) < es + eThresh) && #
+            (NeXLCore.edgeenergy(cxr) < 0.8*e0) && (weight(NormalizeToUnity, cxr) * comp[elm] > wThresh)
+        end
+    end
     return fluorescencecorrection(fltype, comp, primaries, secondary, e0)
 end
 
