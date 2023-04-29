@@ -21,44 +21,42 @@ struct NaiveUpdateRule <: UpdateRule end
         ::NaiveUpdateRule,
         prevcomp::Material,
         measured::Vector{KRatio},
-        zafs::Dict{Element, AbstractFloat}
+        zafs::Dict{Element, Float64}
     )::Dict{Element, Float64}
 
 Determine the next estimate of the composition that brings the estimate k-ratios closer to measured.
 """
-update(
+function update(
     ::NaiveUpdateRule, #
     prevcomp::Material, #
     measured::Vector{KRatio}, #
-    zafs::Dict{Element,<:AbstractFloat}, #
-) = #
-    Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
+    zafs::Dict{Element,Float64},
+    state::Union{Nothing, Tuple} #
+)::Tuple
+    cnp1 = Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
+    return ( cnp1, nothing )
 
-function reset(::NaiveUpdateRule) end
+end
 
 """
 The `WegsteinUpdateRule` implements the very effective method of Reed and Mason (S.J.B. Reed and P.K. Mason,
 Transactions ofthe Second National Conference on Electron Microprobe Analysis, Boston, 1967.) for updating
 the composition estimate between iteration steps.
 """
-mutable struct WegsteinUpdateRule <: UpdateRule
-    fallback::UpdateRule
-    prevc::Union{Material,Missing}
-    prevfn::Union{Dict{Element,Float64},Missing}
-    WegsteinUpdateRule() = new(NaiveUpdateRule(), missing, missing)
-end
+struct WegsteinUpdateRule <: UpdateRule end
 
 function update( #
-    weg::WegsteinUpdateRule,
+    ::WegsteinUpdateRule,
     prevcomp::Material,
     measured::Vector{KRatio},
-    zafs::Dict{Element,<:AbstractFloat},
-)
-    # Default to naive
-    cnp1 = update(weg.fallback, prevcomp, measured, zafs)
+    zafs::Dict{Element,Float64},
+    state::Union{Nothing, Tuple}
+)::Tuple
+    cnp1 = Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
     fn = Dict(kr.element => value(kr.standard[kr.element]) / zafs[kr.element] for kr in measured)
-    if !ismissing(weg.prevc)
-        cn, cnm1, fnm1 = prevcomp, weg.prevc, weg.prevfn
+    if !isnothing(state)
+        cn = prevcomp
+        cnm1, fnm1 = state
         for mkr in measured
             elm, km = mkr.element, value(nonnegk(mkr))
             if km > 0
@@ -71,64 +69,7 @@ function update( #
             end
         end
     end
-    weg.prevc, weg.prevfn = prevcomp, fn
-    return cnp1
-end
-
-"""
-    reset(weg::WegsteinUpdateRule)
-
-Restart the WegsteinUpdateRule accumulators.
-"""
-function reset(weg::WegsteinUpdateRule)
-    weg.prevc = missing
-    weg.prevfn = missing
-end
-
-"""
-The `RecordingUpdateRule` wraps other `UpdateRule` instances to provide diagnostics which may be tabulated
-using asa(DataFrame, rur::RecordingUpdateRule) or plotted using Gadfly's plot(rur::RecordingUpdateRule).
-"""
-struct RecordingUpdateRule <: UpdateRule
-    base::UpdateRule
-    comps::Vector{Dict{Element,Float64}}
-    """
-        RecordingUpdateRule(ur::UpdateRule)
-
-    Wrap an UpdateRule instance with diagnostic recorders.
-    """
-    RecordingUpdateRule(ur::UpdateRule) = new( ur, Vector{Dict{Element,Float64}}())
-end
-"""
-    NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)::DataFrame
-
-Tabulate the iteration steps in a DataFrame.
-"""
-function NeXLUncertainties.asa(::Type{DataFrame}, rur::RecordingUpdateRule)
-    df = DataFrame(Iter = eachindex(rur.comps))
-    for elm in keys(rur.comps[1])
-        df[!, Symbol("Cest[$(elm.symbol)]")] = [ get(rur.comps[i], elm, 0.0) for i in eachindex(rur.comps) ]
-    end
-    return df
-end
-
-function NeXLMatrixCorrection.update( #
-    rur::RecordingUpdateRule,
-    prevcomp::Material,
-    measured::Vector{KRatio},
-    zafs::Dict{Element,<:AbstractFloat},
-)
-    if length(rur.comps)==0
-        push!(rur.comps, Dict(elm=>prevcomp[elm] for elm in keys(prevcomp)))
-    end
-    res = NeXLMatrixCorrection.update(rur.base, prevcomp, measured, zafs)
-    push!(rur.comps, res)
-    return res
-end
-
-function NeXLMatrixCorrection.reset(rur::RecordingUpdateRule)
-    resize!(rur.comps, 0)
-    NeXLMatrixCorrection.reset(rur.base)
+    return ( cnp1, ( prevcomp, fn ) )
 end
 
 """
@@ -339,7 +280,7 @@ _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, xrays::Vector{Char
 
 Given an estimate of the composition compute the corresponding k-ratios.
 """
-function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{KRatio,MultiZAF})
+function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{<:NeXLCore.KRatioBase,MultiZAF})
     zaf(kr, zafs) =
         gZAFc(_ZAF(iter, est, kr.unkProps, kr.xrays), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
     return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
@@ -357,7 +298,7 @@ Assumptions:
   * The coating is the same for all measurements of the unknown
   * The coating element k-ratio is assumed to be assigned to the brightest line
 """
-function estimatecoating(substrate::Material, coating::Material, kcoating::KRatio, mc::Type{<:MatrixCorrection}=XPP)::Film
+function estimatecoating(substrate::Material, coating::Material, kcoating::Union{KRatio,KRatios}, mc::Type{<:MatrixCorrection}=XPP)::Film
     coatingasfilm(mc, substrate, coating, #
             brightest(kcoating.xrays), kcoating.unkProps[:BeamEnergy], # 
             kcoating.unkProps[:TakeOffAngle], value(kcoating.kratio))
@@ -440,8 +381,7 @@ function quantify(
     # Compute the associated matrix corrections
     zafs = computeZAFs(iteration, estcomp, stdZafs)
     bestComp, bestKrs = estcomp, computeKs(estcomp, zafs, stdComps)
-    bestEval, bestIter = 1.0e300, 0
-    reset(iteration.updater)
+    bestEval, bestIter, iter_state = 1.0e300, 0, nothing
     for iters in Base.OneTo(maxIter)
         if length(kcoat) >= 1
             coatings = estimatecoating(estcomp, last(coating), first(kcoat), iteration.mctype)
@@ -459,7 +399,7 @@ function quantify(
             end
         end
         # Compute the next estimated mass fractions
-        upd = update(iteration.updater, estcomp, kunk, zafs)
+        upd, iter_state = update(iteration.updater, estcomp, kunk, zafs, iter_state)
         # Apply unmeasured element rules
         estcomp = material(repr(lbl), compute(iteration.unmeasured, upd))
         # calculated matrix correction for estcomp
@@ -475,26 +415,95 @@ function NeXLMatrixCorrection.quantify(
     iteration::Iteration = Iteration(fc=NullFluorescence, cc=NullCoating);
     kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
     maxIter::Int = 100, 
-    estComp::Union{Nothing,Material}=nothing, 
     coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing,
     name::AbstractString = "Map",
-    ty::Union{Type{UncertainValue}, Type{Float64}, Type{Float32}}=Float32
+    ty::Union{Type{UncertainValue}, Type{Float64}, Type{Float32}}=Float32,
+    maxErrors::Int = 5
+) = quantify(measured, iteration, kro, maxIter, coating, name, ty, maxErrors)
+
+function NeXLMatrixCorrection.quantify(
+    measured::Vector{KRatios},
+    iteration::Iteration,
+    kro::KRatioOptimizer,
+    maxIter::Int, 
+    coating::Union{Nothing, Pair{CharXRay, <:Material}},
+    name::AbstractString,
+    ty::Union{Type{UncertainValue}, Type{Float64}, Type{Float32}},
+    maxErrors::Int
 )
     @assert all(size(measured[1])==size(krsi) for krsi in measured[2:end]) "All the KRatios need to be the same dimensions."
+    # Compute the C = k*C_std estimate
+    firstEstimate(meas::Vector{KRatio}) =
+        Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
+    # Compute the estimated k-ratios
+    computeKs(estComp::Material, zafs, stdComps) =
+        Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    @assert isnothing(coating) || (get(last(coating), :Density, -1.0) > 0.0) "You must provide a positive density for the coating material."
+    # Is this k-ratio due to the coating?
+    iscoating(k, coatmat) =  (!isnothing(coatmat)) && (first(coatmat) in k.xrays) && (element(k) in keys(last(coatmat)))
+    # Compute the k-ratio difference metric
+    eval(computed, kunk) = sum((value(nonnegk(kr)) - computed[kr.element])^2 for kr in kunk)
     # Pick the best sub-selection of `measured` to quantify
     optmeasured = brightest.(optimizeks(kro, measured))
+    # Compute the standard matrix correction factors
+    stdZafs = Dict(kr => _ZAF(iteration, kr.standard, kr.stdProps, kr.xrays) for kr in optmeasured)
+    stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in optmeasured)
     mats = Materials(name, [ element(kr) for kr in optmeasured ], ty, size(measured[1]))
-    # Threading gives this fits... Why???
-    for ci in CartesianIndices(mats)
-        q = NeXLCore.NULL_MATERIAL
+    nerrors=0
+    ThreadsX.foreach(CartesianIndices(mats)) do ci
+        if nerrors > maxErrors
+            mats[ci] = NeXLCore.NULL_MATERIAL
+            return
+        end
         try
-            krs = KRatio[ kr[ci] for kr in optmeasured]
-            q = quantify(label("Bogus$ci"), krs, iteration, coating=coating, maxIter=maxIter, estComp=estComp).comp
-            @assert !(ismissing(q) || isnothing(q)) "Returned composition is $q."
+            measured = KRatio[ kr[ci] for kr in optmeasured ]
+            # k-ratios from measured elements in the unknown - Remove k-ratios for unmeasured and coating elements
+            kunk = filter(measured) do kr
+                !(isunmeasured(iteration.unmeasured, element(kr)) || iscoating(kr, coating))
+            end
+            # k-ratios associated with the coating
+            kcoat = filter(kr->iscoating(kr, coating), measured)
+            # First estimate c_unk = k*c_std
+            estComp = material("first", compute(iteration.unmeasured, firstEstimate(kunk)))
+            # Compute the associated matrix corrections
+            zafs = computeZAFs(iteration, estComp, stdZafs)
+            bestComp, bestKrs = estComp, computeKs(estComp, zafs, stdComps)
+            bestEval, bestIter, iter_state = 1.0e300, 0, nothing
+            for iters in Base.OneTo(maxIter)
+                if length(kcoat) >= 1
+                    coatings = estimatecoating(estComp, last(coating), first(kcoat), iteration.mctype)
+                    # Previous coatings are replaced on all the unknown's k-ratios
+                    foreach(k->k.unkProps[:Coating] = coatings, kunk)
+                end
+                # How close are the calculated k-ratios to the measured version of the k-ratios?
+                estKrs = computeKs(estComp, zafs, stdComps)
+                if (ev = eval(estKrs, kunk)) < bestEval
+                    # If no convergence report it but return closest result...
+                    bestComp, bestKrs, bestEval, bestIter = estComp, estKrs, ev, iters
+                    if converged(iteration.converged, kunk, bestKrs)
+                        mats[ci] = bestComp
+                        return
+                    end
+                end
+                # Compute the next estimated mass fractions
+                upd, iter_state = update(iteration.updater, estComp, kunk, zafs, iter_state)
+                # Apply unmeasured element rules
+                estComp = material("bogus", compute(iteration.unmeasured, upd))
+                # calculated matrix correction for estComp
+                zafs = computeZAFs(iteration, estComp, stdZafs)
+            end
+            mats[ci] = bestComp
+            @warn "$ci did not converge in $(maxIter)."
+            @warn "   Using best non-converged result from step $(bestIter)."
+            # mats[ci] = quantify(label("Bogus$ci"), measured, iteration, coating=coating, maxIter=maxIter, estComp=nothing).comp
         catch ex
+            nerrors+=1
+            mats[ci] = NeXLCore.NULL_MATERIAL
             @error ex
         end
-        mats[ci] = q
+    end
+    if nerrors>=maxErrors
+        @error "Exceeded $maxErrors errors - terminating early."
     end
     return mats
 end
