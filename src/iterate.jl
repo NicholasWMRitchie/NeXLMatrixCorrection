@@ -410,7 +410,7 @@ function quantify(
     return IterationResult(lbl, bestComp, measured, bestKrs, false, bestIter, iteration)
 end
 
-function NeXLMatrixCorrection.quantify(
+NeXLMatrixCorrection.quantify(
     measured::Vector{KRatios},
     iteration::Iteration = Iteration(fc=NullFluorescence, cc=NullCoating);
     kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
