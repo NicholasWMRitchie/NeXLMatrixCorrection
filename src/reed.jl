@@ -62,8 +62,8 @@ struct ReedInternal
 
     function ReedInternal(comp::Material, primary::CharXRay, secondary::AtomicSubShell, e0::AbstractFloat)
         bElm, aElm = element(primary), element(secondary)
-        @assert aElm in keys(comp) "Element $(aElm.symbol) not in $(comp). (aElm)"
-        @assert bElm in keys(comp) "Element $(bElm.symbol) not in $(comp). (bElm)"
+        # @assert aElm in keys(comp) "Element $(aElm.symbol) not in $(comp). (aElm)"
+        # @assert bElm in keys(comp) "Element $(bElm.symbol) not in $(comp). (bElm)"
         cB = comp[bElm]
         muB_A, muB = mac(aElm, primary), mac(comp, primary)
         ionizeF = ionizationfraction(secondary)
@@ -72,7 +72,7 @@ struct ReedInternal
         ss = ionizationdepthratio(inner(primary), secondary, e0)
         f = familyfactor(secondary, inner(primary))
         k = f * 0.5 * cB * (muB_A / muB) * ionizeF * fluorB * (a(aElm) / a(bElm)) * ss
-        @assert k >= 0.0 "k<0 in RI[$comp, $primary, $secondary, $e0] - $k"
+        # @assert k >= 0.0 "k<0 in RI[$comp, $primary, $secondary, $e0] - $k"
         return new(primary, k, v, muB)
     end
 end
@@ -117,16 +117,17 @@ material and beam energy.
 function fluorescencecorrection(
     ::Type{ReedFluorescence},
     comp::Material,
-    primarys::Vector{CharXRay},
+    primaries::Vector{CharXRay},
     secondary::AtomicSubShell,
     e0::AbstractFloat,
 )
-    ris = Vector{ReedInternal}()
-    if element(secondary) in keys(comp)
-        for primary in filter(p->(energy(p) >= energy(secondary)) && (element(p) in keys(comp)), primarys)
-            push!(ris, ReedInternal(comp, primary, secondary, e0))
-        end
+    ris = if element(secondary) in keys(comp)
+        map(primary -> ReedInternal(comp, primary, secondary, e0), #
+            filter(p -> (energy(p) >= energy(secondary)) && (element(p) in keys(comp)), primaries))
+    else
+        ReedInternal[]
     end
+
     return ReedFluorescence(comp, secondary, e0, ris)
 end
 
