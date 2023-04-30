@@ -13,7 +13,7 @@ function testIterate(unk, stds, e0, θ)
         k = gZAFc(zu, zs, toa, toa) * unk[elm] / std[elm]
         push!(krs, KRatio(xrays, props, props, std, k))
     end
-    up = RecordingUpdateRule(NeXLMatrixCorrection.WegsteinUpdateRule())
+    up = NeXLMatrixCorrection.WegsteinUpdateRule()
     return quantify("Result", krs, Iteration(updater = up))
 end
 
