@@ -192,11 +192,12 @@ function zafcorrection(
     e0::Real,
     coating::Union{Film,AbstractVector{Film},Missing},
 )
+    nn = analyticaltotal(mat) > 0
     norm = asnormalized(mat)  # Ensures convergence of the interation algorithms...
     return ZAFCorrection(
-        matrixcorrection(mctype, norm, ashell, e0),
-        fluorescencecorrection(fctype, norm, ashell, e0),
-        coatingcorrection(cctype, coating),
+        matrixcorrection(nn ? mctype : NullCorrection, norm, ashell, e0),
+        fluorescencecorrection(nn ? fctype : NullFluorescence, norm, ashell, e0),
+        coatingcorrection(nn ? cctype : NullCoating, coating),
     )
 end
 
