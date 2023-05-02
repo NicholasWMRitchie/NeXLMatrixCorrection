@@ -1,11 +1,20 @@
 """
-The `MultiZAF` structure holds the information necessary to perform matrix correction on a collection of
-characteristic X-rays that were measured simultaneously from the same element.
-Use `zafcorrection(...)` to construct these rather than the internal constructor.
+The `MultiZAF` structure optimizes the calculation of the matrix correction 
+for mutliple lines measured simultaneously from a single contiguous peak as
+represented by a single k-ratio (as is often the case with energy dispersive
+measurements.)  For example, when the potassium K line is measured by EDS, 
+one k-ratio is measured that corresponds to the K K-L2, K K-L3, K K-M2 & 
+K K-M3 transitions.  Most of the matrix correction calculation depends upon
+the shell the "K K" shell and only a small part depends on the exact 
+characteristic X-ray.  To optimize the calculation, the `ZAFCorrection` 
+object is calculated once for each `AtomicSubShell` and reused to calculated
+all the `CharXRay`s.
+
+DOn't construct MultiZAF objects directly; instead use `zafcorrection(...)`.
 """
 struct MultiZAF
     xrays::Vector{CharXRay}
-    zafs::Dict{AtomicSubShell,ZAFCorrection}
+    zafs::Dict{AtomicSubShell, ZAFCorrection}
     function MultiZAF(xrays, zafs)
         elm = element(xrays[1])
         mat = material(first(values(zafs)))
@@ -44,10 +53,10 @@ function zafcorrection(
     mat::Material,
     cxrs,
     e0::Real,
-    coating::Union{Film,AbstractVector{Film},Missing} = missing,
+    coating::Union{Film,AbstractVector{Film},Missing}=missing,
 )
     mat = asnormalized(mat)
-    shells = union(filter(sh->energy(sh)<e0, inner.(cxrs)))
+    shells = union(filter(sh -> energy(sh) < e0, inner.(cxrs)))
     zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in shells)
     return MultiZAF(cxrs, zafs)
 end
@@ -76,10 +85,10 @@ function zafcorrection(
     std::Material,
     cxrs,
     e0::Real;
-    unkCoating::Union{Film,AbstractVector{Film},Missing} = missing,
-    stdCoating::Union{Film,AbstractVector{Film},Missing} = missing,
+    unkCoating::Union{Film,AbstractVector{Film},Missing}=missing,
+    stdCoating::Union{Film,AbstractVector{Film},Missing}=missing
 )
-    xrays = filter(cxr->energy(inner(cxr))<e0, cxrs)
+    xrays = filter(cxr -> energy(inner(cxr)) < e0, cxrs)
     return (
         zafcorrection(mctype, fctype, cctype, unk, xrays, e0, unkCoating),
         zafcorrection(mctype, fctype, cctype, std, xrays, e0, stdCoating),
@@ -113,8 +122,11 @@ beamEnergy(mz::MultiZAF) = beamEnergy(first(values(mz.zafs)))
 
 NeXLCore.name(mz::MultiZAF) = repr(brightest(mz.xrays)) * "+" * string(length(mz.xrays) - 1) * " others"
 
-commonXrays(unk::MultiZAF, std::MultiZAF) = union(characteristic(unk), characteristic(std))
-
+function commonXrays(unk::MultiZAF, std::MultiZAF)
+    cunk = characteristic(unk)
+    filter(cxr->cxr in cunk, characteristic(std))
+    # union(characteristic(unk), characteristic(std)) 
+end
 """
     Z(unk::MultiZAF, std::MultiZAF)
 
@@ -232,11 +244,11 @@ end
 function gZAFc(
     kr::KRatio,
     unkComp::Material;
-    mc::Type{<:MatrixCorrection} = XPP,
-    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
-    cc::Type{<:CoatingCorrection} = Coating,
+    mc::Type{<:MatrixCorrection}=XPP,
+    fc::Type{<:FluorescenceCorrection}=ReedFluorescence,
+    cc::Type{<:CoatingCorrection}=Coating
 )
-    xrays = filter(cxr->energy(inner(cxr))<min(kr.unkProps[:BeamEnergy],kr.stdProps[:BeamEnergy]), kr.xrays)
+    xrays = filter(cxr -> energy(inner(cxr)) < min(kr.unkProps[:BeamEnergy], kr.stdProps[:BeamEnergy]), kr.xrays)
     zu = zafcorrection(mc, fc, cc, unkComp, xrays, kr.unkProps[:BeamEnergy])
     zs = zafcorrection(mc, fc, cc, kr.standard, xrays, kr.stdProps[:BeamEnergy])
     return gZAFc(zu, zs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
@@ -267,18 +279,18 @@ function NeXLUncertainties.asa(
     tot = gZAFc(unk, std, θunk, θstd)
     @assert isequal(element(unk), element(std)) "The unknown and standard's elements must match."
     return DataFrame(
-        Unknown = [name(material(unk))],
-        E₀ᵤ = [beamEnergy(unk)],
-        Standard = [name(material(std))],
-        E₀ₛ = [beamEnergy(std)],
-        Xrays = [name(union(characteristic(unk), characteristic(std)))],
-        Generation = [generation(unk, std)],
-        Z = [Z(unk, std)],
-        A = [A(unk, std, θunk, θstd)],
-        F = [F(unk, std, θunk, θstd)],
-        coating = [coating(unk, std, θunk, θstd)],
-        gZAFc = [tot],
-        k = [tot * material(unk)[element(unk)] / material(std)[element(unk)]],
+        Unknown=[name(material(unk))],
+        E₀ᵤ=[beamEnergy(unk)],
+        Standard=[name(material(std))],
+        E₀ₛ=[beamEnergy(std)],
+        Xrays=[name(union(characteristic(unk), characteristic(std)))],
+        Generation=[generation(unk, std)],
+        Z=[Z(unk, std)],
+        A=[A(unk, std, θunk, θstd)],
+        F=[F(unk, std, θunk, θstd)],
+        coating=[coating(unk, std, θunk, θstd)],
+        gZAFc=[tot],
+        k=[tot * material(unk)[element(unk)] / material(std)[element(unk)]],
     )
 end
 
@@ -314,19 +326,19 @@ function detail(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::Abstract
         end
     end
     return DataFrame(
-        Unknown = unks,
-        E0unk = 0.001 * unkE0,
-        Standard = stds,
-        E0std = 0.001 * stdE0,
-        Xray = xray,
-        Weight = wgt,
-        Generation = g,
-        Z = z,
-        A = a,
-        F = f,
-        c = c,
-        ZAF = zaf,
-        k = k,
+        Unknown=unks,
+        E0unk=0.001 * unkE0,
+        Standard=stds,
+        E0std=0.001 * stdE0,
+        Xray=xray,
+        Weight=wgt,
+        Generation=g,
+        Z=z,
+        A=a,
+        F=f,
+        c=c,
+        ZAF=zaf,
+        k=k,
     )
 end
 
@@ -358,9 +370,9 @@ function NeXLUncertainties.asa(
     xrays::Vector{CharXRay},
     e0::Float64,
     toa::Float64;
-    mc::Type{<:MatrixCorrection} = XPP,
-    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
-    coating::Type{<:CoatingCorrection} = Coating,
+    mc::Type{<:MatrixCorrection}=XPP,
+    fc::Type{<:FluorescenceCorrection}=ReedFluorescence,
+    coating::Type{<:CoatingCorrection}=Coating
 )
     flines = filter(cxr->energy(inner(cxr)) < e0, xrays)
     zafs = zafcorrection(mc, fc, coating, unk, std, flines, e0)
@@ -395,9 +407,9 @@ function NeXLCore.KRatio(
     unk_props::Dict{Symbol,Any},
     std_mat::Material,
     std_props::Dict{Symbol,Any};
-    mc::Type{<:MatrixCorrection} = XPP,
-    fc::Type{<:FluorescenceCorrection} = ReedFluorescence,
-    cc::Type{<:CoatingCorrection} = Coating
+    mc::Type{<:MatrixCorrection}=XPP,
+    fc::Type{<:FluorescenceCorrection}=ReedFluorescence,
+    cc::Type{<:CoatingCorrection}=Coating
 )
     KRatio(
         cxrs,

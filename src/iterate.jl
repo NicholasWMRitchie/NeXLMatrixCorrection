@@ -276,14 +276,14 @@ _ZAF(iter::Iteration, mat::Material, props::Dict{Symbol,Any}, xrays::Vector{Char
         iter::Iteration,
         est::Material,
         stdZafs::Dict{KRatio,MultiZAF}
-    )
+    )::Dict{Element, Float64}
 
-Given an estimate of the composition compute the corresponding k-ratios.
+Given an estimate of the composition compute the corresponding gZAFc matrix correction.
 """
-function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{<:NeXLCore.KRatioBase,MultiZAF})
-    zaf(kr, zafs) =
+function computeZAFs(iter::Iteration, est::Material, stdZafs::Dict{<:NeXLCore.KRatioBase, MultiZAF})
+    gzafc(kr, zafs)::MultiZAF =
         gZAFc(_ZAF(iter, est, kr.unkProps, kr.xrays), zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle])
-    return Dict(kr.element => zaf(kr, zafs) for (kr, zafs) in stdZafs)
+    return Dict(kr.element => gzafc(kr, zafs) for (kr, zafs) in stdZafs)
 end
 
 
@@ -412,7 +412,7 @@ end
 
 NeXLMatrixCorrection.quantify(
     measured::Vector{KRatios},
-    iteration::Iteration = Iteration(fc=NullFluorescence, cc=NullCoating);
+    iteration::Iteration = Iteration(mx=XPP, fc=NullFluorescence, cc=NullCoating);
     kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
     maxIter::Int = 100, 
     coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing,

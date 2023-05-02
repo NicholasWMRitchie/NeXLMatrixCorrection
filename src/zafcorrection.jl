@@ -3,14 +3,14 @@
 
 Pulls together the ZA, F and coating corrections into a single structure.
 """
-struct ZAFCorrection
-    za::MatrixCorrection
-    f::FluorescenceCorrection
-    coating::CoatingCorrection
+struct ZAFCorrection{M <: MatrixCorrection, F <: FluorescenceCorrection, C <: CoatingCorrection}
+    za::M
+    f::F
+    coating::C
     """
         ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection)
     """
-    ZAFCorrection(za::MatrixCorrection, f::FluorescenceCorrection, coating::CoatingCorrection) = new(za, f, coating)
+    ZAFCorrection(za::M, f::F, coating::C) where {M <: MatrixCorrection, F <: FluorescenceCorrection, C <: CoatingCorrection} = new{M,F,C}(za, f, coating)
 end
 
 NeXLCore.material(zaf::ZAFCorrection) = material(zaf.za)
