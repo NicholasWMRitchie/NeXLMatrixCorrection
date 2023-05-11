@@ -92,8 +92,8 @@ NeXLCore.minproperties(::Type{<:MatrixCorrection}) = (:BeamEnergy, :TakeOffAngle
 
 Angle adjusted mass absorption coefficient.
 """
-χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat) = mac(mat, xray) * csc(θtoa)
-χ(mat::Material, ea::AbstractFloat, θtoa::AbstractFloat) = mac(mat, ea) * csc(θtoa)
+χ(mat::Material, xray::CharXRay, θtoa::AbstractFloat)::Float64 = mac(mat, xray) * csc(θtoa)
+χ(mat::Material, ea::AbstractFloat, θtoa::AbstractFloat)::Float64 = mac(mat, ea) * csc(θtoa)
 
 """
     ϕabs(mc::MatrixCorection, ρz, xray::CharXRay, θtoa::AbstractFloat)
@@ -101,8 +101,8 @@ Angle adjusted mass absorption coefficient.
 
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, xray::CharXRay, θtoa::AbstractFloat) = ϕabs(mc, χ(material(mc), xray, θtoa), ρz)
-ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, χ::AbstractFloat) = ϕ(mc, ρz) * exp(-χ * ρz)
+ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, xray::CharXRay, θtoa::AbstractFloat)::Float64 = ϕabs(mc, χ(material(mc), xray, θtoa), ρz)
+ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, χ::AbstractFloat)::Float64 = ϕ(mc, ρz) * exp(-χ * ρz)
 
 """
     ZA(
@@ -115,7 +115,7 @@ Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 
 The atomic number (Z) and absorption (A) correction factors.
 """
-function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+function ZA(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)::Float64
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match"
     @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match"
     return ℱχ(unk, xray, θunk) / ℱχ(std, xray, θstd)
@@ -126,7 +126,7 @@ end
 
 The atomic number correction factor.
 """
-function Z(unk::MatrixCorrection, std::MatrixCorrection)
+function Z(unk::MatrixCorrection, std::MatrixCorrection)::Float64
     @assert isequal(unk.subshell, std.subshell)
     "Unknown and standard matrix corrections don't apply to the same sub-shell."
     return ℱ(unk) / ℱ(std)
@@ -139,13 +139,13 @@ end
 
 The absorption correction factors.
 """
-function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+function A(unk::MatrixCorrection, std::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)::Float64
     @assert isequal(unk.subshell, inner(xray)) "Unknown and X-ray don't match"
     @assert isequal(std.subshell, inner(xray)) "Standard and X-ray don't match"
     return ZA(unk, std, xray, θunk, θstd) / Z(unk, std)
 end
 
-function A(unk::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat)
+function A(unk::MatrixCorrection, xray::CharXRay, θunk::AbstractFloat)::Float64
     return ℱχ(unk, xray, θunk)/ℱ(unk)
 end
 

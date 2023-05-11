@@ -5,7 +5,7 @@ An implementation of Merlet's XPhi matrix correction algorithm as described in L
 """
 struct XPhi <: MatrixCorrection
     subshell::AtomicSubShell
-    material::Material
+    material::Material{Float64,Float64}
     E0::Float64 # Beam energy (eV)
     Φm::Float64  # Max amplitude
     ρzm::Float64 # ρz at max amplitude
@@ -27,12 +27,13 @@ struct XPhi <: MatrixCorrection
     end
 
     """
-        XPhi(mat::Material, sh::AtomicSubShell, e0::AbstractFloat)
+        XPhi(mat::Material{Float64,Float64}, sh::AtomicSubShell, e0::AbstractFloat)
 
     Construct an object representing the XPhi molde for the specified material and atomic shell at the
     beam energy `e0` in eV.
     """
-    function XPhi(mat::Material, sh::AtomicSubShell, e0::AbstractFloat)
+    function XPhi(matp::Material, sh::AtomicSubShell, e0::AbstractFloat)
+        mat = convert(Material{Float64,Float64}, matp)
         E0, Ec = 0.001 * e0, 0.001 * energy(sh)
         # This implements the multi-element weighting on page 367 of 1994
         Φ0_v = Φ0(XPhi, mat, E0, Ec)
@@ -60,7 +61,7 @@ end
 X-ray range in g/cm² from Eqn 6 Merlet 1994 or Eqn 7 in Merlet 1995
 E0, Ec in keV, Z is the atomic number
 """
-function ρzx(::Type{XPhi}, E0::AbstractFloat, Ec::AbstractFloat, elm::Element)
+function ρzx(::Type{XPhi}, E0::AbstractFloat, Ec::AbstractFloat, elm::Element)::Float64
     @assert E0 > Ec "The beam energy must be larger than the edge energy!"
     @assert E0 > Ec && E0 <= 100.0
     a = 1.845e-6 * evalpoly(E0, (2.6, -0.216, 0.015, -0.000387, 0.00000501)) # Ok
@@ -75,7 +76,7 @@ end
 Depth of the peak of the ϕ(ρz) curve in g/cm² (Merlet 1994 eqn 5 or Merlet 1995 eqn 7).
 E0, Ec in keV, Z is the atomic number
 """
-function ρzm(::Type{XPhi}, ρzx::AbstractFloat, E0::AbstractFloat, Ec::AbstractFloat, em::Union{Element,Material})
+function ρzm(::Type{XPhi}, ρzx::AbstractFloat, E0::AbstractFloat, Ec::AbstractFloat, em::Union{Element,Material})::Float64
     @assert E0 < 100.0
     @assert Ec <= E0
     U0, Z = E0 / Ec, z(em)
@@ -89,7 +90,7 @@ end
 
 Transmission coefficient of Zeller and Ruste 1976 (from Merlet 1994 & 1995)
 """
-function τ(::Type{XPhi}, elm::Element, ρzm::AbstractFloat, ρzx::AbstractFloat)
+function τ(::Type{XPhi}, elm::Element, ρzm::AbstractFloat, ρzx::AbstractFloat)::Float64
     Z, t = z(elm), ρzm / ρzx
     τ1, τ2 = (1.0 - t)^(4.65 + 0.0356 * Z), (1.0 - t)^(1.112 + 0.00414 * Z^2)
     return τ1 + 4.65 * (τ2 - τ1) / evalpoly(Z, (3.54, 0.0356, -0.00414)) # Ok
@@ -112,7 +113,7 @@ function Φm(
     E0::AbstractFloat, # in keV
     ρzm::AbstractFloat,
     ρzx::AbstractFloat,
-)
+)::Float64
     @assert E0 < 100.0
     @assert J < 10.0
     Z, m, U0 = z(elm), mexp(XPhi, sh), E0 / (0.001 * energy(sh)) # Ok
@@ -142,7 +143,7 @@ end
 
 The value of the ϕ(ρz) curve at ρz=0.
 """
-function Φ0(::Type{XPhi}, mat::Material, E0::AbstractFloat, Ec::AbstractFloat)
+function Φ0(::Type{XPhi}, mat::Material, E0::AbstractFloat, Ec::AbstractFloat)::Float64
     @assert E0 < 100.0
     @assert Ec < 100.0
     Z, U0 = z(NaiveZ, mat), E0 / Ec # Merlet calls for the mass fraction averaged Z (Merlet1994, pg 367)
@@ -168,7 +169,7 @@ Base.max(xp::XPhi) = xp.Φm
 
 The antsatz for ϕ(ρz) curve in the XPhi matrix correction algorithm.
 """
-function Φ(xphi::XPhi, ρz::AbstractFloat)
+function Φ(xphi::XPhi, ρz::AbstractFloat)::Float64
     ρz >= 0.0 ? #
     (
         ρz < xphi.ρzm ? #
@@ -177,7 +178,7 @@ function Φ(xphi::XPhi, ρz::AbstractFloat)
     ) : #
     0.0
 end
-Φ(xphi::XPhi, χ::AbstractFloat, ρz::AbstractFloat) = Φ(xphi, ρz) * exp(-ρz * χ)
+Φ(xphi::XPhi, χ::AbstractFloat, ρz::AbstractFloat)::Float64 = Φ(xphi, ρz) * exp(-ρz * χ)
 
 """
     ℱ(xphi::XPhi, 𝒜::AbstractFloat, ci::AbstractFloat, χ::AbstractFloat)
@@ -187,7 +188,7 @@ ci - Mass fraction of the i-th element
 
 The generated intensity in the XPhi model.
 """
-ℱ(xphi::XPhi, 𝒜::AbstractFloat, ci::AbstractFloat) = #
+ℱ(xphi::XPhi, 𝒜::AbstractFloat, ci::AbstractFloat)::Float64 = #
     0.5 * sqrt(π) * 𝒜 * ci * xphi.Φm * (xphi.α + xphi.β * erf(xphi.ρzm / xphi.β))
 
 """
@@ -207,7 +208,7 @@ function ℱχp(
     χ::AbstractFloat,
     ρz0::AbstractFloat,
     ρz1::AbstractFloat,
-)
+)::Float64
     @assert ρz0 >= 0.0
     @assert ρz0 < ρz1
     if ρz0 < xphi.ρzm && ρz1 > xphi.ρzm
@@ -235,7 +236,7 @@ Base.range(::Type{XPhi}, mat::Material, e0::AbstractFloat, inclDensity=false) = 
 
 ℱ(xphi::XPhi) = ℱ(xphi, 1.0, 1.0)
 
-function ℱχ(xphi::XPhi, χ::AbstractFloat)
+function ℱχ(xphi::XPhi, χ::AbstractFloat)::Float64
     return (0.5 * sqrt(π) * xphi.Φm) * (
         exp(χ * (0.25 * xphi.β^2 * χ - xphi.ρzm)) *
         xphi.β *
@@ -244,9 +245,9 @@ function ℱχ(xphi::XPhi, χ::AbstractFloat)
     )
 end
 
-ℱχp(xphi::XPhi, χ::AbstractFloat, t::AbstractFloat) =
+ℱχp(xphi::XPhi, χ::AbstractFloat, t::AbstractFloat)::Float64 =
     ℱχp(xphi, 1.0, 1.0, χ, 0.0, t)
-ℱχp(xphi::XPhi, χ::AbstractFloat, t0::AbstractFloat, t1::AbstractFloat) =
+ℱχp(xphi::XPhi, χ::AbstractFloat, t0::AbstractFloat, t1::AbstractFloat)::Float64 =
     ℱχp(xphi, 1.0, 1.0, χ(material(xphi), xray, θtoa), t0, t1)
 
 ϕ(xphi::XPhi, ρz) = Φ(xphi, ρz)

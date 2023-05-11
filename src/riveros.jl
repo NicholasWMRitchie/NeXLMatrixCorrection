@@ -16,7 +16,7 @@ The instruction in Packwood1991 in Electron Probe Quantitation is:
 \"For compounds weight averaging is used for all appropriate variables: Z, Z/A, η, and (Z/A)log(1.166(E0-Ec)/2J)\"
 """
 struct Riveros1993 <: MatrixCorrection
-    material::Material
+    material::Material{Float64, Float64}
     E0::Float64  # Beam energy
     subshell::Union{Nothing,AtomicSubShell}
     Ea::Float64 # Sub-shell energy
@@ -25,7 +25,8 @@ struct Riveros1993 <: MatrixCorrection
     α::Float64
     β::Float64
 
-    function Riveros1993(mat::Material, ashell::Union{AtomicSubShell,Nothing}, ea::AbstractFloat, e0::AbstractFloat)
+    function Riveros1993(matp::Material, ashell::Union{AtomicSubShell,Nothing}, ea::AbstractFloat, e0::AbstractFloat)
+        mat = convert(Material{Float64,Float64}, matp)
         e0k, eck, u0 = 0.001 * e0, 0.001 * ea, e0 / ea
         @assert u0 >= 1.0
         αz(elm) = (2.14e5*z(elm)^1.16/(a(elm)*e0k^1.25))*sqrt(log(1.166*e0/J(Berger1982,elm))/(e0k-eck))
@@ -44,19 +45,19 @@ end
 
 ϕ(rv::Riveros1993, ρz) = exp(-(rv.α*ρz)^2)*(rv.γ - (rv.γ-rv.ϕ0)*exp(-rv.β*ρz))
 
-function ℱ(rv::Riveros1993)
+function ℱ(rv::Riveros1993)::Float64
     gg = rv.β/(2.0*rv.α)
     return gg < 22.3 ? (sqrt(π)*(rv.γ - exp(gg^2)*(rv.γ - rv.ϕ0)*erfc(gg)))/(2.0*rv.α) : 1.0
 end
 
-function ℱχ(rv::Riveros1993, χm::AbstractFloat)
+function ℱχ(rv::Riveros1993, χm::AbstractFloat)::Float64
     ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
     return gg < 22.3 ? (sqrt(π)*(exp(ff^2)*rv.γ*rv.α*(1.0 - erf(ff)) -
            exp(gg^2)*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf(gg))))/(2.0*rv.α^2) :
            0.0
 end
 
-function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat)
+function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat)::Float64
     @assert isnothing(rv.subshell) || (inner(xray) == rv.subshell)
     χm = χ(material(rv), xray, θtoa)
     @assert rv.α > 0.0 && χm > 0.0

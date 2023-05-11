@@ -14,9 +14,9 @@ DOn't construct MultiZAF objects directly; instead use `zafcorrection(...)`.
 """
 struct MultiZAF
     xrays::Vector{CharXRay}
-    zafs::Dict{AtomicSubShell, ZAFCorrection}
+    zafs::Dict{AtomicSubShell,ZAFCorrection}
     function MultiZAF(xrays, zafs)
-        elm = element(xrays[1])
+        elm = element(first(xrays))
         mat = material(first(values(zafs)))
         e0 = beamEnergy(first(values(zafs)))
         @assert all(f -> isequal(element(f), elm), xrays)
@@ -55,9 +55,9 @@ function zafcorrection(
     e0::Real,
     coating::Union{Film,AbstractVector{Film},Missing}=missing,
 )
-    mat = asnormalized(mat)
+    mat = asnormalized(convert(Material{Float64, Float64}, mat))
     shells = union(filter(sh -> energy(sh) < e0, inner.(cxrs)))
-    zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in shells)
+    zafs = Dict(sh => zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating) for sh in shells)
     return MultiZAF(cxrs, zafs)
 end
 
@@ -124,8 +124,7 @@ NeXLCore.name(mz::MultiZAF) = repr(brightest(mz.xrays)) * "+" * string(length(mz
 
 function commonXrays(unk::MultiZAF, std::MultiZAF)
     cunk = characteristic(unk)
-    filter(cxr->cxr in cunk, characteristic(std))
-    # union(characteristic(unk), characteristic(std)) 
+    filter(cxr -> cxr in cunk, characteristic(std))
 end
 """
     Z(unk::MultiZAF, std::MultiZAF)
@@ -166,7 +165,7 @@ end
 The F (fluoresence) correction for `unk` relative to `std`.
 """
 function F(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
-    n, f  = 0.0, 0.0
+    n, f = 0.0, 0.0
     for (sh, cxrs2) in splitbyshell(commonXrays(unk, std))
         zafU, zafS = unk.zafs[sh], std.zafs[sh]
         for cxr in cxrs2
@@ -374,7 +373,7 @@ function NeXLUncertainties.asa(
     fc::Type{<:FluorescenceCorrection}=ReedFluorescence,
     coating::Type{<:CoatingCorrection}=Coating
 )
-    flines = filter(cxr->energy(inner(cxr)) < e0, xrays)
+    flines = filter(cxr -> energy(inner(cxr)) < e0, xrays)
     zafs = zafcorrection(mc, fc, coating, unk, std, flines, e0)
     asa(DataFrame, zafs..., toa, toa)
 end
@@ -417,7 +416,7 @@ function NeXLCore.KRatio(
         std_props,
         std_mat,
         k(
-            zafcorrection(mc, fc, cc, unk_mat, cxrs, unk_props[:BeamEnergy], get(unk_props, :Coating, missing)),    
+            zafcorrection(mc, fc, cc, unk_mat, cxrs, unk_props[:BeamEnergy], get(unk_props, :Coating, missing)),
             zafcorrection(mc, fc, cc, std_mat, cxrs, std_props[:BeamEnergy], get(std_props, :Coating, missing)),
             unk_props[:TakeOffAngle], std_props[:TakeOffAngle]
         )
