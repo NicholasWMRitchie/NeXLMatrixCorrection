@@ -184,8 +184,8 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
                 push!(ks, value(kr.kratio))
                 push!(xrays, repr(kr.xrays))
                 if withZAF
-                    zafs = _ZAF(ir.iterate, kr.standard, kr.stdProps, kr.xrays)
-                    zafu = _ZAF(ir.iterate, ir.comp, kr.unkProps, kr.xrays)
+                    zafs = _ZAF(ir.iterate, convert(Material{Float64,Float64}, kr.standard), kr.stdProps, kr.xrays)
+                    zafu = _ZAF(ir.iterate, convert(Material{Float64,Float64}, ir.comp), kr.unkProps, kr.xrays)
                     push!(cks, σ(kr.kratio))
                     push!(stds, name(kr.standard))
                     push!(c, coating(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
@@ -193,7 +193,7 @@ function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::
                     push!(a, A(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
                     push!(f, F(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
                     push!(g, generation(zafu, zafs))
-                    push!(gzafc, g[end] * z[end] * a[end] * f[end])
+                    push!(gzafc, g[end] * z[end] * a[end] * f[end] * c[end])
                 else
                     push!(cks, ir.computed[elm])
                 end
@@ -447,7 +447,7 @@ function NeXLMatrixCorrection.quantify(
     # Pick the best sub-selection of `measured` to quantify
     optmeasured = brightest.(optimizeks(kro, measured))
     # Compute the standard matrix correction factors
-    stdZafs = Dict(kr => _ZAF(iteration, kr.standard, kr.stdProps, kr.xrays) for kr in optmeasured)
+    stdZafs = Dict(kr => _ZAF(iteration, convert(Material{Float64,Float64}, kr.standard), kr.stdProps, kr.xrays) for kr in optmeasured)
     stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in optmeasured)
     mats = Materials(name, [element(kr) for kr in optmeasured], ty, size(measured[1]))
     nerrors, n_not_converged = Threads.Atomic{Int}(0), Threads.Atomic{Int}(0)
