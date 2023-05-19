@@ -1,7 +1,7 @@
 # Implements Armstrong's CitZAF algorithm as presented in the Green Book (Heinrich, 1991)
 
 struct CitZAF <: MatrixCorrection
-    material::Material
+    material::Material{Float64,Float64}
     E0::Float64  # Beam energy
     subshell::Union{Nothing,AtomicSubShell}
     Ea::Float64 # Sub-shell energy
@@ -10,7 +10,10 @@ struct CitZAF <: MatrixCorrection
     α::Float64
     β::Float64
 
-    function CitZAF(mat::Material, ashell::Union{AtomicSubShell,Nothing}, ea::AbstractFloat, e0::AbstractFloat)
+    CitZAF(matp::Material, ea::AbstractFloat, e0::AbstractFloat) = CitZAF(matp, nothing, ea, e0)
+    CitZAF(matp::Material, ashell::AtomicSubShell, e0::AbstractFloat) = CitZAF(matp, ashell, energy(ashell), e0)
+
+    function CitZAF(matp::Material, ashell::Union{AtomicSubShell,Nothing}, ea::AbstractFloat, e0::AbstractFloat)
         function ϕ0L(u0, ηbar)
             a = 3.43378 + (-10.7872 + (10.97628 - 3.62286 / u0) / u0) / u0
             b = -0.59299 + (21.55329 + (-30.55248 + 9.59218 / u0) / u0) / u0
@@ -21,6 +24,7 @@ struct CitZAF <: MatrixCorrection
             h2 = 1.0e-4 * (-1112.8 + z * (30.289 - z * 0.15498))
             return h1 * (1.0 + h2 * log(e0k / 20.0))
         end
+        mat = convert(Material{Float64,Float64}, matp)
         e0k, eck, u0 = 0.001 * e0, 0.001 * ea, e0 / ea
         @assert u0 >= 1.0
         zbar =
@@ -37,20 +41,20 @@ struct CitZAF <: MatrixCorrection
     end
 end
 
-ϕ(cz::CitZAF, ρz) = cz.γ0 * exp(-(cz.α * ρz)^2) * (1.0 - cz.q * exp(-cz.β * ρz))
+ϕ(cz::CitZAF, ρz)::Float64 = cz.γ0 * exp(-(cz.α * ρz)^2) * (1.0 - cz.q * exp(-cz.β * ρz))
 
-ℱ(cz::CitZAF) = ((cz.α - cz.q * cz.α + cz.β) * cz.γ0) / (cz.α * (cz.α + cz.β))
+ℱ(cz::CitZAF)::Float64 = ((cz.α - cz.q * cz.α + cz.β) * cz.γ0) / (cz.α * (cz.α + cz.β))
 
-ℱχ(cz::CitZAF, χm::AbstractFloat) = cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
-ℱχp(cz::CitZAF, χm::AbstractFloat, τ::AbstractFloat) = #
+ℱχ(cz::CitZAF, χm::AbstractFloat)::Float64 = cz.γ0 * (1.0 / (cz.α + χm) - cz.q / (cz.α + cz.β + χm))
+ℱχp(cz::CitZAF, χm::AbstractFloat, τ::AbstractFloat)::Float64 = #
     ((1.0 - exp(-τ * (cz.α + χm))) * cz.γ0) / (cz.α + χm) +
     ((-1.0 + exp(-τ * (cz.α + cz.β + χm))) * cz.q * cz.γ0) / (cz.α + cz.β + χm)
 
 NeXLCore.edgeenergy(cz::CitZAF) = cz.Ea
 
-matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = CitZAF(mat, ashell, energy(ashell), e0)
+matrixcorrection(::Type{CitZAF}, mat::Material, ashell::AtomicSubShell, e0::AbstractFloat) = CitZAF(mat, ashell, e0)
 
-continuumcorrection(::Type{CitZAF}, mat::Material, ea::AbstractFloat, e0::AbstractFloat) = CitZAF(mat, nothing, ea, e0)
+continuumcorrection(::Type{CitZAF}, mat::Material, ea::AbstractFloat, e0::AbstractFloat) = CitZAF(mat, ea, e0)
 
 Base.range(::Type{CitZAF}, mat::Material, e0::AbstractFloat, inclDensity=true) = range(XPP, mat, e0, inclDensity)
 

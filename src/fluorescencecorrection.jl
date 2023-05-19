@@ -27,13 +27,14 @@ secondary fluorescence in the specified material and beam energy.
 """
 function fluorescencecorrection(
     fltype::Type{<:FluorescenceCorrection},
-    comp::Material,
+    mat::Material,
     secondary::AtomicSubShell,
     e0::AbstractFloat;
     eThresh = 2.5e3,
     wThresh = 0.01,
 )
     es = energy(secondary)
+    comp = convert(Material{Float64, Float64}, mat)
     primaries = mapreduce(append!, keys(comp)) do elm 
         characteristic(elm, alltransitions) do cxr
             (energy(cxr) > es) && (energy(cxr) < es + eThresh) && #

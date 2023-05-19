@@ -6,7 +6,7 @@ using DataFrames
 struct XPP <: MatrixCorrection
     # Configuration data
     subshell::AtomicSubShell
-    material::Material
+    material::Material{Float64, Float64}
     E0::Float64 # Beam energy (eV)
     # Computed items
     ϕ0::Float64 # ϕ(ρz) at the surface
@@ -22,8 +22,9 @@ struct XPP <: MatrixCorrection
     Construct an XPP object for the specified material, atomicsubshell,
     beam energy (in eV).
     """
-    function XPP(mat::Material, ashell::AtomicSubShell, E0::AbstractFloat)
+    function XPP(matp::Material, ashell::AtomicSubShell, E0::AbstractFloat)
         # XPP calculations expect E0, eLv, J in keV
+        mat = convert(Material{Float64, Float64}, matp)
         e0, Mv, Jv, = 0.001 * E0, M(XPP, mat), 0.001 * J(XPP, mat)
         Zbarbv, eLv = Zbarb(XPP, mat), 0.001 * energy(ashell)
         U0v, V0v, ηbarv = e0 / eLv, e0 / Jv, ηbar(XPP, Zbarbv)
@@ -306,7 +307,7 @@ end
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
-ℱχ(xpp::XPP, χ::AbstractFloat) = ℱχ(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
+ℱχ(xpp::XPP, χ::AbstractFloat)::Float64 = ℱχ(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0)
 ℱχp(xpp::XPP, χ::AbstractFloat, τ::AbstractFloat) =
     ℱχp(XPP, χ, xpp.A, xpp.a, xpp.B, xpp.b, xpp.ϕ0, τ)
 
