@@ -1,6 +1,6 @@
 using DataFrames
 using Statistics
-using Folds
+using ThreadsX
 using Statistics
 using LinearAlgebra
 
@@ -356,12 +356,13 @@ function quantify(
         final = Dict{Element,UncertainValue}(elm => convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
         for kr in meas
             elm = element(kr)
-            unc = if value(final[elm]) > 0.0 && value(kr.kratio) > 0.0 && σ(kr.kratio) > 0.0
+            final[elm] = if value(final[elm]) > 0.0 && value(kr.kratio) > 0.0 && σ(kr.kratio) > 0.0
                 value(final[elm]) * fractional(kr.kratio)
             else
                 uv(0.0, σ(kr.kratio))
             end
-        end)
+            
+        end
         return material(NeXLCore.name(comp), final)
     end
     @assert isnothing(coating) || (get(last(coating), :Density, -1.0) > 0.0) "You must provide a positive density for the coating material."
@@ -452,7 +453,7 @@ function NeXLMatrixCorrection.quantify(
     stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in optmeasured)
     mats = Materials(name, [element(kr) for kr in optmeasured], ty, size(measured[1]))
     nerrors, n_not_converged = Threads.Atomic{Int}(0), Threads.Atomic{Int}(0)
-    Folds.map!(mats, CartesianIndices(mats)) do ci
+    ThreadsX.map!(mats, CartesianIndices(mats)) do ci
         bestComp, convergedp = NeXLCore.NULL_MATERIAL, false
         if nerrors[] < maxErrors
             try
