@@ -311,7 +311,7 @@ end
         measured::Vector{KRatio}, 
         iteration::Iteration = Iteration(mc=XPP, fc=ReedFluorescence, cc=Coating);
         maxIter::Int = 100, 
-        initalEstComp::Union{Nothing,Material}=nothing, 
+        estComp::Union{Nothing,Material}=nothing, 
         coating::Union{Nothing, Pair{CharXRay, <:Material}}=nothing
     )::IterationResult
 
@@ -320,13 +320,13 @@ end
         iteration::Iteration = Iteration(mc=XPP, fc=NullFluorescence, cc=NullCoating);
         kro::KRatioOptimizer = SimpleKRatioOptimizer(1.5),
         maxIter::Int = 100, 
-        initalEstComp::Union{Nothing,Material}=nothing, 
+        estComp::Union{Nothing,Material}=nothing, 
         coating::Union{Nothing, Pair{CharXRay, Material}}=nothing
     )
 
 Perform the iteration procedurer as described in `iter` using the `measured` k-ratios to produce the best
 estimate `Material` in an `IterationResult` object.  The third form makes it easier to quantify the
-k-ratios from filter fit spectra.  `initalEstComp` is an optional first estimate of the composition.  This can
+k-ratios from filter fit spectra.  `estComp` is an optional first estimate of the composition.  This can
 be a useful optimization when quantifying many similar k-ratios (like, for example, points on a 
 hyper-spectrum.)
 
@@ -343,21 +343,21 @@ function quantify(
 )::IterationResult
     aslbl(lbl::Label) = lbl
     aslbl(lbl) = label(lbl)
-    initalEstComp = convert(Material{Float64,Float64}, initalEstComp)
     coating = convert(Material{Float64,Float64}, coating)
     lbl = aslbl(name)
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio}) =
         Dict(kr.element => value(nonnegk(kr)) * value(kr.standard[kr.element]) for kr in meas)
     # Compute the estimated k-ratios
-    computeKs(estComp::Material, zafs, stdComps) =
-        Dict(elm => estComp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
-    function computefinal(estcomp::Material, meas::Vector{KRatio})
-        final = Dict{Element,UncertainValue}(elm => convert(UncertainValue, estcomp[elm]) for elm in keys(estcomp))
+    computeKs(comp, zafs, stdComps) =
+        Dict(elm => comp[elm] * zafs[elm] / stdComps[elm] for (elm, zaf) in zafs)
+    # Compute uncertainties due to the k-ratio
+    function computefinal(comp::Material, meas::Vector{KRatio})
+        final = Dict{Element,UncertainValue}(elm => convert(UncertainValue, comp[elm]) for elm in keys(comp))
         for kr in meas
             elm = element(kr)
             final[elm] = if value(final[elm]) > 0.0 && value(kr.kratio) > 0.0 && σ(kr.kratio) > 0.0
-                value(final[elm]) * fractional(kr.kratio)
+                uv(value(final[elm]), value(final[elm]) * fractional(kr.kratio))
             else
                 uv(0.0, σ(kr.kratio))
             end
@@ -380,7 +380,7 @@ function quantify(
     stdZafs = Dict(kr => _ZAF(iteration, kr.standard, kr.stdProps, kr.xrays) for kr in kunk)
     stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in kunk)
     # First estimate c_unk = k*c_std
-    currComp = something(initalEstComp, material(repr(lbl), compute(iteration.unmeasured, firstEstimate(kunk))))
+    currComp = something(convert(Material{Float64,Float64}, estComp), material(repr(lbl), compute(iteration.unmeasured, firstEstimate(kunk))))
     # Compute the associated matrix corrections
     zafs = computeZAFs(iteration, currComp, stdZafs)
     bestComp, bestKrs = currComp, computeKs(currComp, zafs, stdComps)
