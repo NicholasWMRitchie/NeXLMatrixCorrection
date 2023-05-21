@@ -32,7 +32,7 @@ Reexport = "1"
 Requires = "1"
 Roots = "1.4, 2"
 SpecialFunctions = "2"
-ThreadsX =
+ThreadsX = "0.1"
 Weave = "0.10"
 julia = "1.6"
 
