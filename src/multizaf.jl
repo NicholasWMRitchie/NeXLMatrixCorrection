@@ -46,7 +46,7 @@ function zafcorrection(
     e0::Real,
     coating::Union{Film,AbstractVector{Film},Missing} = missing,
 )
-    mat = asnormalized(mat)
+    mat = asnormalized(convert(Material{Float64,Float64}, mat))
     shells = union(filter(sh->energy(sh)<e0, inner.(cxrs)))
     zafs = Dict((sh, zafcorrection(mctype, fctype, cctype, mat, sh, e0, coating)) for sh in shells)
     return MultiZAF(cxrs, zafs)
