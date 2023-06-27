@@ -382,31 +382,31 @@ function quantify(
     # First estimate c_unk = k*c_std
     estcomp = convert(Material{Float64,Float64}, something(estComp, material(repr(lbl), compute(iteration.unmeasured, firstEstimate(kunk)))))
     # Compute the associated matrix corrections
-    zafs = computeZAFs(iteration, currComp, stdZafs)
-    bestComp, bestKrs = currComp, computeKs(currComp, zafs, stdComps)
+    zafs = computeZAFs(iteration, estcomp, stdZafs)
+    bestComp, bestKrs = estcomp, computeKs(estcomp, zafs, stdComps)
     bestEval, bestIter, iter_state = 1.0e300, 0, nothing
     for iters in Base.OneTo(maxIter)
         if length(kcoat) >= 1
-            coatings = estimatecoating(currComp, last(coating), first(kcoat), iteration.mctype)
+            coatings = estimatecoating(estcomp, last(coating), first(kcoat), iteration.mctype)
             # Previous coatings are replaced on all the unknown's k-ratios
             foreach(k -> k.unkProps[:Coating] = coatings, kunk)
         end
         # How close are the calculated k-ratios to the measured version of the k-ratios?
-        estkrs = computeKs(currComp, zafs, stdComps)
+        estkrs = computeKs(estcomp, zafs, stdComps)
         if eval(estkrs) < bestEval
             # If no convergence report it but return closest result...
-            bestComp, bestKrs, bestEval, bestIter = currComp, estkrs, eval(estkrs), iters
+            bestComp, bestKrs, bestEval, bestIter = estcomp, estkrs, eval(estkrs), iters
             if converged(iteration.converged, kunk, bestKrs)
-                fc = computefinal(currComp, kunk)
+                fc = computefinal(estcomp, kunk)
                 return IterationResult(lbl, fc, measured, bestKrs, true, bestIter, iteration)
             end
         end
         # Compute the next estimated mass fractions
-        upd, iter_state = update(iteration.updater, currComp, kunk, zafs, iter_state)
+        upd, iter_state = update(iteration.updater, estcomp, kunk, zafs, iter_state)
         # Apply unmeasured element rules
-        currComp = material(repr(lbl), compute(iteration.unmeasured, upd))
-        # calculated matrix correction for currComp
-        zafs = computeZAFs(iteration, currComp, stdZafs)
+        estcomp = material(repr(lbl), compute(iteration.unmeasured, upd))
+        # calculated matrix correction for estcomp
+        zafs = computeZAFs(iteration, estcomp, stdZafs)
     end
     @warn "$lbl did not converge in $(maxIter)."
     @warn "   Using best non-converged result from step $(bestIter)."

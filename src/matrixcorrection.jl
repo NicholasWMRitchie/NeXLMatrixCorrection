@@ -175,7 +175,7 @@ function kcoating(
     return ℱχp(submc, cxr, toa, τ) / ℱχ(coatmc, cxr, toa)
 end
 
-""""
+"""
     massthickness(ty::Type{<:MatrixCorrection}, subtrate::Material, coating::Material, cxr::CharXRay, e0::AbstractFloat, toa::AbstractFloat, k::AbstractFloat)
 
 Estimate the mass-thickness of a ultra-thin layer of a `coating` material on a `substrate` from a measured k-ratio `k`
