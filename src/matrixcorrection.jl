@@ -101,8 +101,8 @@ Angle adjusted mass absorption coefficient.
 
 Computes the absorbed ϕ(ρz) curve according to the XPP algorithm.
 """
-ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, xray::CharXRay, θtoa::AbstractFloat)::Float64 = ϕabs(mc, χ(material(mc), xray, θtoa), ρz)
-ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, χ::AbstractFloat)::Float64 = ϕ(mc, ρz) * exp(-χ * ρz)
+ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, xray::CharXRay, θtoa::AbstractFloat) = ϕabs(mc, ρz, χ(material(mc), xray, θtoa))
+ϕabs(mc::MatrixCorrection, ρz::AbstractFloat, χ::AbstractFloat) = ϕ(mc, ρz) * exp(-χ * ρz)
 
 """
     ZA(

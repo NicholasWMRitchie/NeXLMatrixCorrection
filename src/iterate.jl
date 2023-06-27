@@ -380,7 +380,7 @@ function quantify(
     stdZafs = Dict(kr => _ZAF(iteration, kr.standard, kr.stdProps, kr.xrays) for kr in kunk)
     stdComps = Dict(kr.element => value(kr.standard[kr.element]) for kr in kunk)
     # First estimate c_unk = k*c_std
-    currComp = something(convert(Material{Float64,Float64}, estComp), material(repr(lbl), compute(iteration.unmeasured, firstEstimate(kunk))))
+    estcomp = convert(Material{Float64,Float64}, something(estComp, material(repr(lbl), compute(iteration.unmeasured, firstEstimate(kunk)))))
     # Compute the associated matrix corrections
     zafs = computeZAFs(iteration, currComp, stdZafs)
     bestComp, bestKrs = currComp, computeKs(currComp, zafs, stdComps)
@@ -465,33 +465,33 @@ function NeXLMatrixCorrection.quantify(
                 # k-ratios associated with the coating
                 kcoat = filter(kr -> iscoating(kr, coating), measured)
                 # First estimate c_unk = k*c_std
-                estComp = material("first", compute(iteration.unmeasured, firstEstimate(kunk)))
+                estimate = material("first", compute(iteration.unmeasured, firstEstimate(kunk)))
                 # Compute the associated matrix corrections
-                zafs = computeZAFs(iteration, estComp, stdZafs)
-                bestComp, bestKrs = estComp, computeKs(estComp, zafs, stdComps)
+                zafs = computeZAFs(iteration, estimate, stdZafs)
+                bestComp, bestKrs = estimate, computeKs(estimate, zafs, stdComps)
                 bestEval, bestIter, iter_state = 1.0e300, 0, nothing
                 for iters in Base.OneTo(maxIter)
                     if length(kcoat) >= 1
-                        coatings = estimatecoating(estComp, last(coating), first(kcoat), iteration.mctype)
+                        coatings = estimatecoating(estimate, last(coating), first(kcoat), iteration.mctype)
                         # Previous coatings are replaced on all the unknown's k-ratios
                         foreach(k -> k.unkProps[:Coating] = coatings, kunk)
                     end
                     # How close are the calculated k-ratios to the measured version of the k-ratios?
-                    estKrs = computeKs(estComp, zafs, stdComps)
+                    estKrs = computeKs(estimate, zafs, stdComps)
                     if (ev = eval(estKrs, kunk)) < bestEval
                         # If no convergence report it but return closest result...
-                        bestComp, bestKrs, bestEval, bestIter = estComp, estKrs, ev, iters
+                        bestComp, bestKrs, bestEval, bestIter = estimate, estKrs, ev, iters
                         if converged(iteration.converged, kunk, bestKrs)
                             convergedp = true
                             break
                         end
                     end
                     # Compute the next estimated mass fractions
-                    upd, iter_state = update(iteration.updater, estComp, kunk, zafs, iter_state)
+                    upd, iter_state = update(iteration.updater, estimate, kunk, zafs, iter_state)
                     # Apply unmeasured element rules
-                    estComp = material("bogus", compute(iteration.unmeasured, upd))
-                    # calculated matrix correction for estComp
-                    zafs = computeZAFs(iteration, estComp, stdZafs)
+                    estimate = material("bogus", compute(iteration.unmeasured, upd))
+                    # calculated matrix correction for estimate
+                    zafs = computeZAFs(iteration, estimate, stdZafs)
                 end
             catch ex
                 Threads.atomic_add!(nerrors, 1)
