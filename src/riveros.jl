@@ -31,30 +31,29 @@ struct Riveros1993 <: MatrixCorrection
         @assert u0 >= 1.0
         αz(elm) = (2.14e5*z(elm)^1.16/(a(elm)*e0k^1.25))*sqrt(log(1.166*e0/J(Berger1982,elm))/(e0k-eck))
         βz(elm) = (1.1e5*z(elm)^1.5)/((e0k-eck)*a(elm))
-        weightavg(f, mat) = sum(elm->f(elm)*value(mat[elm]), keys(mat))
-        ηm = η(mat, e0) # Use Donovan's averaging (not weight averaging...)
-        ϕ0 = 1.0 + (ηm*u0*log(u0))/(u0-1.0)
-        γ = (1.0 + ηm)*(u0*log(u0))/(u0-1.0)
-        α = weightavg(αz, mat)
-        β = weightavg(βz, mat)
+        ηm = zfractionaverage(el->η(el, e0), mat) # Use Donovan's averaging (not weight averaging...)
+        ϕ0 = 1.0 + (ηm*u0*log(u0))/(u0-1.0) # ok
+        γ = (1.0 + ηm)*(u0*log(u0))/(u0-1.0) # ok
+        α = zfractionaverage(αz, mat)
+        β = zfractionaverage(βz, mat)
         @assert α > 0.0
         @assert β > 0.0
         return new(mat, e0, ashell, ea, γ, ϕ0, α, β)
     end
 end
 
-ϕ(rv::Riveros1993, ρz) = exp(-(rv.α*ρz)^2)*(rv.γ - (rv.γ-rv.ϕ0)*exp(-rv.β*ρz))
+ϕ(rv::Riveros1993, ρz) = exp(-(rv.α*ρz)^2)*(rv.γ - (rv.γ-rv.ϕ0)*exp(-rv.β*ρz)) # ok
 
 function ℱ(rv::Riveros1993)::Float64
     gg = rv.β/(2.0*rv.α)
-    return gg < 22.3 ? (sqrt(π)*(rv.γ - exp(gg^2)*(rv.γ - rv.ϕ0)*erfc(gg)))/(2.0*rv.α) : 1.0
+    return gg < 22.3 ? (√π*(rv.γ - exp(gg^2)*(rv.γ - rv.ϕ0)*erfc(gg)))/(2.0*rv.α) : 1.0
 end
 
 function ℱχ(rv::Riveros1993, χm::AbstractFloat)::Float64
     ff, gg = χm/(2.0*rv.α), (rv.β + χm)/(2.0*rv.α)
-    return gg < 22.3 ? (sqrt(π)*(exp(ff^2)*rv.γ*rv.α*(1.0 - erf(ff)) -
-           exp(gg^2)*(rv.γ - rv.ϕ0)*rv.α*(1.0 - erf(gg))))/(2.0*rv.α^2) :
-           0.0
+    return gg < 22.3 ? (sqrt(π)*(
+            exp(ff^2)*rv.γ*erfc(ff) - exp(gg^2)*(rv.γ - rv.ϕ0)*erfc(gg)))/ #
+            (2.0*rv.α) : 0.0
 end
 
 function ℱχp(rv::Riveros1993, xray::CharXRay, θtoa::AbstractFloat, τ::AbstractFloat)::Float64
