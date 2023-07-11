@@ -55,7 +55,7 @@ The partial integral of the absorption corrected ϕ(ρz) curve from ρz = 0 to �
 ℱχp(mc::MatrixCorrection, ::AbstractFloat, ::AbstractFloat) = #
     error("$mc does not implement ℱχp(mc::$mc, χ::AbstractFloat, τ::AbstractFloat)")
 function ℱχp(mc::MatrixCorrection, cxr::CharXRay, θtoa::AbstractFloat, t::AbstractFloat)  
-    @assert isequal(inner(xray), atomicsubshell(mc)) "$(inner(xray)) != $(atomicsubshell(mc)) in ℱχp(::MatrixCorection, ::CharXRay)"
+    @assert isequal(inner(cxr), atomicsubshell(mc)) "$(inner(cxr)) != $(atomicsubshell(mc)) in ℱχp(::MatrixCorection, ::CharXRay)"
     ℱχp(mc, χ(material(mc), cxr, θtoa), t)
 end
 function ℱχp(mc::MatrixCorrection, xray::CharXRay, θtoa::AbstractFloat, t0::AbstractFloat, t1::AbstractFloat)
