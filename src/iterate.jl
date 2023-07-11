@@ -343,7 +343,7 @@ function quantify(
 )::IterationResult
     aslbl(lbl::Label) = lbl
     aslbl(lbl) = label(lbl)
-    coating = convert(Material{Float64,Float64}, coating)
+    coating = coating[1] => convert(Material{Float64,Float64}, coating[2])
     lbl = aslbl(name)
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio}) =
