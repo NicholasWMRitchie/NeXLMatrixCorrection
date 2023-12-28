@@ -1,7 +1,12 @@
-using .Gadfly
+module NeXLMatrixCorrectionGadflyExt
+
+using NeXLMatrixCorrection
+using Gadfly
 
 using NeXLCore
 using Colors
+
+export plot2
 
 function Gadfly.plot(tmc::Type{<:MatrixCorrection}, mat::Material, shells::Vector{AtomicSubShell}, beamEnergy::Float64)
     zz, sh, prz = Float64[], String[], Float64[]
@@ -185,3 +190,5 @@ Gadfly.plot(irs::AbstractArray{IterationResult}; known::Union{Material,Missing} 
 
 plot2(irs::AbstractVector{IterationResult}; known::Union{Material, Missing}=missing) =
     NeXLCore.plot2([ir.comp for ir in irs], known=known, label="Measurement")
+
+end # module

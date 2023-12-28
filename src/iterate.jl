@@ -343,7 +343,7 @@ function quantify(
 )::IterationResult
     aslbl(lbl::Label) = lbl
     aslbl(lbl) = label(lbl)
-    coating = coating[1] => convert(Material{Float64,Float64}, coating[2])
+    coating = isnothing(coating) ? nothing : (first(coating) => convert(Material{Float64,Float64}, last(coating)))
     lbl = aslbl(name)
     # Compute the C = k*C_std estimate
     firstEstimate(meas::Vector{KRatio}) =
@@ -356,12 +356,11 @@ function quantify(
         final = Dict{Element,UncertainValue}(elm => convert(UncertainValue, comp[elm]) for elm in keys(comp))
         for kr in meas
             elm = element(kr)
-            final[elm] = if value(final[elm]) > 0.0 && value(kr.kratio) > 0.0 && σ(kr.kratio) > 0.0
+            final[elm] = if value(final[elm]) > 0.0 && value(kr.kratio) > 0.0
                 uv(value(final[elm]), value(final[elm]) * fractional(kr.kratio))
             else
                 uv(0.0, σ(kr.kratio))
             end
-            
         end
         return material(NeXLCore.name(comp), final)
     end

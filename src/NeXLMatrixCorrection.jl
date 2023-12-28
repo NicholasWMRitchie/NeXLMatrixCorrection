@@ -1,7 +1,6 @@
 module NeXLMatrixCorrection
 
 using Reexport
-using Requires
 
 @reexport using NeXLCore  # Re-export so NeXLCore automatically is available with being explicitly loaded
 
@@ -142,9 +141,5 @@ export getstandards # Get a list of suggested standards for an element.
 
 include("emitted.jl")
 export emitted_intensities # Compute the X-ray intensity emitted from a sample
-
-function __init__()
-    @require Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004" include("gadflysupport.jl")
-end
 
 end
