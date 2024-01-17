@@ -130,16 +130,16 @@ export nlayers
 export χs
 export outer, inner
 
-#include("xfilm.jl")
-#export XFilm
-
-include("helpers.jl")
-export zaf # Generates a table of ZAF correction factors
-
 include("defaultstandards.jl")
 export getstandards # Get a list of suggested standards for an element.
 
 include("emitted.jl")
 export emitted_intensities # Compute the X-ray intensity emitted from a sample
+
+# NeXLMatrixCorrectionDataFramesExt
+export zaf
+function zaf() end
+export detail
+function detail() end
 
 end

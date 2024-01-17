@@ -1,4 +1,3 @@
-using DataFrames
 using Statistics
 using ThreadsX
 using Statistics
@@ -151,7 +150,7 @@ end
 """
 `IterationResult` contains the results of the iteration process including a Label identifying the source of
 the k-ratios, the resulting Material, the initial and final k-ratios, whether the iteration converged and the
-number of steps.  The results can be output using `asa(DataFrame, ir::IterationResult)`.
+number of steps.  The results can be output using `DataFrame(ir::IterationResult)` (must `import DataFrames`).
 """
 struct IterationResult
     label::Label
@@ -168,87 +167,6 @@ The source of the k-ratio data as a Label (often a CharXRayLabel).
 """
 source(ir::IterationResult)::Label = ir.label
 
-function NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; withZAF::Bool=true)
-    elms, mfs, ks, cks, labels = String[], Float64[], Union{Missing,Float64}[], Union{Missing,Float64}[], String[]
-    g, z, a, f = Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[], Union{Missing,Float64}[]
-    c, gzafc, stds, dmfs, xrays = Union{Missing,Float64}[], Union{Missing,Float64}[], String[], Float64[], String[]
-    for elm in keys(ir.comp)
-        push!(labels, repr(ir.label))
-        push!(elms, elm.symbol)
-        rc = round(ir.comp[elm])
-        push!(mfs, value(rc))
-        push!(dmfs, σ(rc))
-        added = false  # computed element
-        for kr in ir.kratios
-            if elm == kr.element
-                push!(ks, value(kr.kratio))
-                push!(xrays, repr(kr.xrays))
-                if withZAF
-                    zafs = _ZAF(ir.iterate, convert(Material{Float64,Float64}, kr.standard), kr.stdProps, kr.xrays)
-                    zafu = _ZAF(ir.iterate, convert(Material{Float64,Float64}, ir.comp), kr.unkProps, kr.xrays)
-                    push!(cks, σ(kr.kratio))
-                    push!(stds, name(kr.standard))
-                    push!(c, coating(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
-                    push!(z, Z(zafu, zafs))
-                    push!(a, A(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
-                    push!(f, F(zafu, zafs, kr.unkProps[:TakeOffAngle], kr.stdProps[:TakeOffAngle]))
-                    push!(g, generation(zafu, zafs))
-                    push!(gzafc, g[end] * z[end] * a[end] * f[end] * c[end])
-                else
-                    push!(cks, ir.computed[elm])
-                end
-                added = true
-                break
-            end
-        end
-        if !added
-            push!(ks, missing), push!(cks, missing), push!(stds, missing), push!(c, missing), push!(z, missing),
-            push!(a, missing), push!(f, missing), push!(g, missing), push!(gzafc, missing), push!(xrays, missing)
-        end
-    end
-    return withZAF ?
-           DataFrame(
-        :Label => labels,
-        :Element => elms,
-        :Standard => stds,
-        :Xrays => xrays,
-        #:Converged => [ir.converged for elm in keys(ir.comp)],
-        #:Iterations => [ir.iterations for elm in keys(ir.comp)],
-        Symbol("C") => mfs,
-        Symbol("ΔC") => dmfs,
-        Symbol("k") => ks,
-        Symbol("Δk") => cks,
-        :g => g,
-        :Z => z,
-        :A => a,
-        :F => f,
-        :c => c,
-        :gZAFc => gzafc,
-    ) :
-           DataFrame(
-        :Label => labels,
-        :Element => elms,
-        :Converged => [ir.converged for elm in keys(ir.comp)],
-        :Iterations => [ir.iterations for elm in keys(ir.comp)],
-        Symbol("C") => mfs,
-        Symbol("ΔC") => dmfs,
-        Symbol("k") => ks,
-        Symbol("Δk") => cks,
-    )
-    return res
-end
-
-function NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; mode=:MassFraction, nominal=nothing)::DataFrame
-    if isnothing(nominal)
-        asa(DataFrame, map(ir -> ir.comp, irs), mode)
-    else
-        asa(DataFrame, [(ir.comp for ir in irs)..., nominal], mode)
-    end
-end
-
-
-DataFrames.describe(irs::AbstractVector{IterationResult}) =
-    describe(asa(DataFrame, irs)[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
 
 Base.show(io::IO, itres::IterationResult) = print(
     io,
@@ -256,12 +174,7 @@ Base.show(io::IO, itres::IterationResult) = print(
     "Failed to converge in $(itres.iterations) iterations: Best estimate = $(itres.comp).",
 )
 
-NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(itres.comp, known)
 
-NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
-    mapreduce(itres -> compare(itres, known), append!, itress)
-
-NeXLCore.compare(iter1::IterationResult, iter2::IterationResult) = compare(iter1.comp, iter2.comp)
 """
     NeXLCore.material(itres::IterationResult)::Material
 """

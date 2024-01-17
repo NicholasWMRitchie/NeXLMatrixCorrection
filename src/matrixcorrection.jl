@@ -1,6 +1,5 @@
-# Generic methods for matrix correctio
+# Generic methods for matrix correction
 
-using DataFrames
 using PeriodicTable
 using Roots
 

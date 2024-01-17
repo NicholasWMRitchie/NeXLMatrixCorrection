@@ -1,5 +1,4 @@
 using PeriodicTable
-using DataFrames
 # Implements Pouchou and Pichoir's XPP model from the description in the book
 # Electron Probe Quantification edited by Kurt Heinrich and Dale E. Newbury
 
@@ -286,24 +285,6 @@ The integral of the ϕ(ρz) exp(-χ ρz) from 0 to τ.
     (A * (-1.0 + exp(-(τ * (b + χ))))) / (b + χ) +
     ((1 - exp(-(τ * (b + χ)))) * ϕ0) / (b + χ) +
     (B * (-1 + exp(τ * (b + χ)) - τ * (b + χ))) / (exp(τ * (b + χ)) * ((b + χ)^2))
-
-"""
-Represents the essential intermediary values for an XPP matrix correction of
-characteristic X-rays from a particular atomic sub-shell in a particular material.
-"""
-function NeXLUncertainties.asa(::Type{DataFrame}, xpps::XPP...)
-    return DataFrame(
-        SubShell = [xpp.subshell for xpp in xpps],
-        Material = [name(xpp.material) for xpp in xpps],
-        BeamEnergy = [xpp.E0 for xpp in xpps],
-        Phi0 = [xpp.ϕ0 for xpp in xpps],
-        A = [xpp.A for xpp in xpps],
-        a = [xpp.a for xpp in xpps],
-        B = [xpp.B for xpp in xpps],
-        b = [xpp.b for xpp in xpps],
-        F = [xpp.F for xpp in xpps],
-    )
-end
 
 Base.show(io::IO, xpp::XPP) = print(io, "XPP[$(xpp.subshell) in $(name(xpp.material)) at $(0.001*xpp.E0) keV]")
 
