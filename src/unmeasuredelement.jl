@@ -45,7 +45,7 @@ OByStoichiometry(valences = NeXLCore.defaultValences) = ElementByStoichiometry(n
 Computes an element using stoichiometric rules.
 """
 function NeXLUncertainties.compute(stoic::ElementByStoichiometry, inp::Dict{Element,<:AbstractFloat})
-    inp[stoic.element] = obystoichiometry(inp, valences = stoic.valences)
+    inp[stoic.element] = elmbystoichiometry(stoic.element, inp, valences = stoic.valences)
     inp
 end
 
