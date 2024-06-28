@@ -138,8 +138,25 @@ export emitted_intensities # Compute the X-ray intensity emitted from a sample
 
 # NeXLMatrixCorrectionDataFramesExt
 export zaf
+"""
+Requires `import DataFrame`
+
+    NeXLMatrixCorrection.zaf(mat::Material, e0::AbstractFloat, toa::AbstractFloat=deg2rad(40.0); 
+        mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence, coatings::Dict{String,Film}=Dict{String,Film}(), stds::Dict{Element,Material}=Dict{Element,Material}(), minweight=0.01)
+    
+    NeXLMatrixCorrection.zaf(ir::IterationResult; minweight=0.01)
+"""
 function zaf() end
 export detail
+"""
+Requires `import DataFrame`
+    
+    detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+    
+    detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Tabulate each term in the `MultiZAF` matrix correction in a `DataFrame`.
+"""
 function detail() end
 
 end

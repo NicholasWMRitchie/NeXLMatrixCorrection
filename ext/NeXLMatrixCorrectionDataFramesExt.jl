@@ -4,9 +4,19 @@ using NeXLCore
 using NeXLMatrixCorrection
 using DataFrames
 
-NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrame =
+
+"""
+Requires `import DataFrames`
+
+    NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)
+
+    NeXLCore.compare(itres::IterationResult, known::Material)::DataFrames.DataFrame
+
+    NeXLCore.compare(iter1::IterationResult, iter2::IterationResult)
+"""
+NeXLCore.compare(itress::AbstractVector{IterationResult}, known::Material)::DataFrames.DataFrame =
     mapreduce(itres -> compare(itres, known), append!, itress)
-NeXLCore.compare(itres::IterationResult, known::Material)::DataFrame = compare(itres.comp, known)
+NeXLCore.compare(itres::IterationResult, known::Material)::DataFrames.DataFrame = compare(itres.comp, known)
 NeXLCore.compare(iter1::IterationResult, iter2::IterationResult) = compare(iter1.comp, iter2.comp)
 
 
@@ -24,7 +34,7 @@ function NeXLMatrixCorrection.zaf(
     coatz(mat) = get(coatings,name(mat),missing)
     @assert toa>=0.0 && toa <= π/2 "The take-off angle is out-of-range [0, π/2]"
     @assert e0 > 1.0e3 "The beam energy less than 1 keV."
-    res = DataFrame(Material=String[], Standard=String[], Line=CharXRay[], weight=Float64[], E₀=Float64[], Z=Float64[], A=Float64[], #
+    res = DataFrames.DataFrame(Material=String[], Standard=String[], Line=CharXRay[], weight=Float64[], E₀=Float64[], Z=Float64[], A=Float64[], #
                     F=Float64[], c=Float64[], ZAFc=Float64[], k=Float64[])
     for elm in keys(mat)
         cxrs = characteristic(elm, alltransitions, 0.01, e0)
@@ -55,6 +65,34 @@ function NeXLMatrixCorrection.zaf(ir::IterationResult; minweight=0.01)
         mc=ir.iterate.mctype, fc=ir.iterate.fctype, stds=stds, minweight=minweight)
 end
 
+
+"""
+Special `DataFrames.DataFrame` methods for `NeXLMatrixCorrection`. Requires `import DataFrames`
+
+    DataFrames.DataFrame(krs::AbstractVector{KRatio}, withComputedKs::Bool, mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence)
+
+    DataFrames.DataFrame(ir::IterationResult; withZAF::Bool=true)
+
+    DataFrames.DataFrame(irs::AbstractVector{IterationResult}; mode=:MassFraction, nominal=nothing)::DataFrames.DataFrame
+
+    DataFrames.DataFrame(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
+
+    DataFrames.DataFrame(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)
+
+    DataFrames.DataFrame(unk::Material, std::Material, xrays::Vector{CharXRay}, e0::Float64, toa::Float64; 
+        mc::Type{<:MatrixCorrection}=XPP,fc::Type{<:FluorescenceCorrection}=ReedFluorescence, coating::Type{<:CoatingCorrection}=Coating)
+
+    DataFrames.DataFrame(xpps::XPP...)
+
+    DataFrames.DataFrame(unk::ZAFCorrection, std::ZAFCorrection, trans::NTuple{N,Transition}, θunk::AbstractFloat, θstd::AbstractFloat, )::DataFrames.DataFrame where {N}
+
+    DataFrames.DataFrame(unk::ZAFCorrection, std::ZAFCorrection, θunk::AbstractFloat, θstd::AbstractFloat)
+
+    DataFrames.DataFrame(unk::Material, stds::Dict{Element,Material}, e0::Real, θunk::AbstractFloat, θstd::AbstractFloat;
+        mctype::Type{<:MatrixCorrection} = XPP, fctype::Type{<:FluorescenceCorrection} = ReedFluorescence, cctype::Type{<:CoatingCorrection} = Coating)
+
+    DataFrames.DataFrame(zafcorrs::Dict{ZAFCorrection, ZAFCorrection}, θunk::AbstractFloat, θstd::AbstractFloat)
+"""
 function DataFrames.DataFrame(
     krs::AbstractVector{KRatio}, 
     withComputedKs::Bool, 
@@ -95,7 +133,7 @@ function DataFrames.DataFrame(
             end
         end
     end
-    res = DataFrame(
+    res = DataFrames.DataFrame(
         Xrays = xrays,
         E0meas = mease0,
         TOAmeas = meastoa,
@@ -152,7 +190,7 @@ function DataFrames.DataFrame(ir::IterationResult; withZAF::Bool=true)
         end
     end
     return withZAF ?
-           DataFrame(
+           DataFrames.DataFrame(
         :Label => labels,
         :Element => elms,
         :Standard => stds,
@@ -170,7 +208,7 @@ function DataFrames.DataFrame(ir::IterationResult; withZAF::Bool=true)
         :c => c,
         :gZAFc => gzafc,
     ) :
-           DataFrame(
+           DataFrames.DataFrame(
         :Label => labels,
         :Element => elms,
         :Converged => [ir.converged for elm in keys(ir.comp)],
@@ -183,32 +221,32 @@ function DataFrames.DataFrame(ir::IterationResult; withZAF::Bool=true)
     return res
 end
 
-function DataFrames.DataFrame(irs::AbstractVector{IterationResult}; mode=:MassFraction, nominal=nothing)::DataFrame
+function DataFrames.DataFrame(irs::AbstractVector{IterationResult}; mode=:MassFraction, nominal=nothing)::DataFrames.DataFrame
     if isnothing(nominal)
-        DataFrame(map(ir -> ir.comp, irs), mode)
+        DataFrames.DataFrame(map(ir -> ir.comp, irs), mode)
     else
-        DataFrame([(ir.comp for ir in irs)..., nominal], mode)
+        DataFrames.DataFrame([(ir.comp for ir in irs)..., nominal], mode)
     end
 end
 
 
-DataFrames.describe(irs::AbstractVector{IterationResult}) =
-    describe(DataFrame(irs)[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
-
-    """
-    DataFrame(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
-
-Tabulate a matrix correction relative to the specified unknown and standard in a DataFrame.
 """
+Requires `import DataFrames`
+
+    describe(irs::AbstractVector{IterationResult})
+"""
+DataFrames.describe(irs::AbstractVector{IterationResult}) =
+    describe(DataFrames.DataFrame(irs)[:, 2:end], :mean, :std, :min, :q25, :median, :q75, :max)
+
 function DataFrames.DataFrame(
     unk::MultiZAF,
     std::MultiZAF,
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-)::DataFrame
+)::DataFrames.DataFrame
     tot = gZAFc(unk, std, θunk, θstd)
     @assert isequal(element(unk), element(std)) "The unknown and standard's elements must match."
-    return DataFrame(
+    return DataFrames.DataFrame(
         Unknown=[name(material(unk))],
         E₀ᵤ=[beamEnergy(unk)],
         Standard=[name(material(std))],
@@ -224,12 +262,7 @@ function DataFrames.DataFrame(
     )
 end
 
-"""
-    detail(unk::MultiZAF, std::MultiZAF)::DataFrame
-
-Tabulate each term in the MultiZAF matrix correction in a DataFrame.
-"""
-function NeXLMatrixCorrection.detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
+function NeXLMatrixCorrection.detail(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrames.DataFrame
     stds, stdE0, unks = String[], Float64[], String[]
     unkE0, xray, g = Float64[], CharXRay[], Float64[]
     z, a, f = Float64[], Float64[], Float64[]
@@ -255,7 +288,7 @@ function NeXLMatrixCorrection.detail(unk::MultiZAF, std::MultiZAF, θunk::Abstra
             push!(k, tot * matU[elm] / matS[elm])
         end
     end
-    return DataFrame(
+    return DataFrames.DataFrame(
         Unknown=unks,
         E0unk=0.001 * unkE0,
         Standard=stds,
@@ -273,23 +306,18 @@ function NeXLMatrixCorrection.detail(unk::MultiZAF, std::MultiZAF, θunk::Abstra
 end
 
 """
-    detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrame
+    detail(mzs::AbstractArray{Tuple{MultiZAF, MultiZAF}})::DataFrames.DataFrame
 
-Tabulate the details of a matrix correction relative to the specified unknown and standard in a DataFrame.
+Tabulate the details of a matrix correction relative to the specified unknown and standard in a DataFrames.DataFrame.
 """
 NeXLMatrixCorrection.detail(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat) =
     mapreduce(tmm -> detail(tmm[1], tmm[2], θunk, θstd), append!, mzs)
 
-"""
-DataFrames.DataFrame(mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}}, θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
-
-Tabulate a matrix correction relative to a specified Dict of unknowns and standards in a DataFrame.
-"""
 DataFrames.DataFrame(
     mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}},
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-) = mapreduce(tmm -> DataFrame(tmm[1], tmm[2], θunk, θstd), append!, mzs)
+) = mapreduce(tmm -> DataFrames.DataFrame(tmm[1], tmm[2], θunk, θstd), append!, mzs)
 
 
 function DataFrames.DataFrame(
@@ -307,12 +335,8 @@ function DataFrames.DataFrame(
     DataFrames.DataFrame(zafs..., toa, toa)
 end
 
-"""
-Represents the essential intermediary values for an XPP matrix correction of
-characteristic X-rays from a particular atomic sub-shell in a particular material.
-"""
 function DataFrames.DataFrame(xpps::XPP...)
-    return DataFrame(
+    return DataFrames.DataFrame(
         SubShell = [xpp.subshell for xpp in xpps],
         Material = [name(xpp.material) for xpp in xpps],
         BeamEnergy = [xpp.E0 for xpp in xpps],
@@ -325,19 +349,13 @@ function DataFrames.DataFrame(xpps::XPP...)
     )
 end
 
-"""
-    DataFrame(unk::ZAFCorrection, std::ZAFCorrection, trans::AbstractVector{Transition},
-    θunk::AbstractFloat, θstd::AbstractFloat)::DataFrame
-
-Tabulate a matrix correction relative to the specified unknown and standard for the iterable of Transition, trans.
-"""
 function DataFrames.DataFrame(
     unk::ZAFCorrection,
     std::ZAFCorrection,
     trans::NTuple{N,Transition},
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-)::DataFrame where {N}
+)::DataFrames.DataFrame where {N}
     @assert isequal(atomicsubshell(unk.za), atomicsubshell(std.za))
     "The atomic sub-shell for the standard and unknown don't match."
     cxrs = characteristic(
@@ -369,7 +387,7 @@ function DataFrames.DataFrame(
             push!(k, tot * material(unk.za)[elm] / material(std.za)[elm])
         end
     end
-    return DataFrame(
+    return DataFrames.DataFrame(
         Unknown = unks,
         E0unk = unkE0,
         TOAunk = unkToa,
@@ -392,7 +410,7 @@ DataFrames.DataFrame(
     std::ZAFCorrection,
     θunk::AbstractFloat,
     θstd::AbstractFloat
-) = DataFrame(unk, std, alltransitions, θunk, θstd)
+) = DataFrames.DataFrame(unk, std, alltransitions, θunk, θstd)
 
 function DataFrames.DataFrame(
     unk::Material,
@@ -404,12 +422,12 @@ function DataFrames.DataFrame(
     fctype::Type{<:FluorescenceCorrection} = ReedFluorescence,
     cctype::Type{<:CoatingCorrection} = Coating,
 )
-    df = DataFrame()
+    df = DataFrames.DataFrame()
     for (elm, std) in stds
         for ashell in atomicsubshells(elm, e0)
             append!(
                 df,
-                DataFrame(
+                DataFrames.DataFrame(
                     zafcorrection(mctype, fctype, cctype, unk, std, ashell, e0)...,
                     alltransitions,
                     θunk,
@@ -425,25 +443,25 @@ function DataFrames.DataFrame(
     zafcorrs::Dict{ZAFCorrection, ZAFCorrection},
     θunk::AbstractFloat,
     θstd::AbstractFloat,
-)::DataFrame
-    df = DataFrame()
+)::DataFrames.DataFrame
+    df = DataFrames.DataFrame()
     for (unk, std) in zafcorrs
-        append!(df, DataFrame(unk, std, θunk, θstd))
+        append!(df, DataFrames.DataFrame(unk, std, θunk, θstd))
     end
     return df
 end
 
 # Depreciated
-NeXLUncertainties.asa(::Type{DataFrame}, krs::AbstractVector{KRatio}, withComputedKs::Bool, mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence) = DataFrame(krs, withComputedKs, mc, fc)
-NeXLUncertainties.asa(::Type{DataFrame}, ir::IterationResult; kwargs...) = DataFrame(ir; kwargs...)
-NeXLUncertainties.asa(::Type{DataFrame}, irs::AbstractVector{IterationResult}; kwargs...) = DataFrames.DataFrame(irs; kwargs...)
-NeXLUncertainties.asa(::Type{DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) = DataFrame(unk, std, θunk, θstd)
-NeXLUncertainties.asa(::Type{DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}},θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrame(mzs ,θunk, θstd)
-NeXLUncertainties.asa(::Type{DataFrame}, unk::Material, std::Material, xrays::Vector{CharXRay}, e0::Float64, toa::Float64; kwargs...) = DataFrames.DataFrame(unk, std, xrays, e0, toa; kwargs...)
-NeXLUncertainties.asa(::Type{DataFrame}, xpps::XPP...) = DataFrames.DataFrame(xpps::XPP...)
-NeXLUncertainties.asa(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans::NTuple{N,Transition}, θunk::AbstractFloat, θstd::AbstractFloat) where {N} = DataFrames.DataFrame(unk,std,trans,θunk,θstd)
-NeXLUncertainties.asa(::Type{DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrame( unk, std, θunk, θstd)
-NeXLUncertainties.asa(::Type{DataFrame}, zafs::Dict{ZAFCorrection,ZAFCorrection}, θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrame(zafs, θunk, θstd)
-NeXLUncertainties.asa(::Type{DataFrame}, unk::Material, stds::Dict{Element,Material}, e0::Real, θunk::AbstractFloat, θstd::AbstractFloat; kwargs...) = DataFrames.DataFrame(unk, stds, e0, θunk, θstd; kwargs...)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, krs::AbstractVector{KRatio}, withComputedKs::Bool, mc::Type{<:MatrixCorrection} = XPP, fc::Type{<:FluorescenceCorrection}=ReedFluorescence) = DataFrames.DataFrame(krs, withComputedKs, mc, fc)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, ir::IterationResult; kwargs...) = DataFrames.DataFrame(ir; kwargs...)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, irs::AbstractVector{IterationResult}; kwargs...) = DataFrames.DataFrames.DataFrame(irs; kwargs...)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrame(unk, std, θunk, θstd)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, mzs::AbstractArray{Tuple{MultiZAF,MultiZAF}},θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrames.DataFrame(mzs ,θunk, θstd)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, unk::Material, std::Material, xrays::Vector{CharXRay}, e0::Float64, toa::Float64; kwargs...) = DataFrames.DataFrames.DataFrame(unk, std, xrays, e0, toa; kwargs...)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, xpps::XPP...) = DataFrames.DataFrames.DataFrame(xpps::XPP...)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, trans::NTuple{N,Transition}, θunk::AbstractFloat, θstd::AbstractFloat) where {N} = DataFrames.DataFrames.DataFrame(unk,std,trans,θunk,θstd)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, unk::ZAFCorrection, std::ZAFCorrection, θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrames.DataFrame( unk, std, θunk, θstd)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, zafs::Dict{ZAFCorrection,ZAFCorrection}, θunk::AbstractFloat, θstd::AbstractFloat) = DataFrames.DataFrames.DataFrame(zafs, θunk, θstd)
+NeXLUncertainties.asa(::Type{DataFrames.DataFrame}, unk::Material, stds::Dict{Element,Material}, e0::Real, θunk::AbstractFloat, θstd::AbstractFloat; kwargs...) = DataFrames.DataFrames.DataFrame(unk, stds, e0, θunk, θstd; kwargs...)
 
 end

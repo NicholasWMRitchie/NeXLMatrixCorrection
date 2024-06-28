@@ -74,7 +74,7 @@ struct ElementalMap end
 
 Converts `Vector{KRatios}` into a Dict that maps each Element present to an image.
 
-    scale = [ Log3Band , Log3BancColorblind, Log3BandBright, LogScale, Gray ]
+    scale = [ Log3Band , Log3BandColorblind, Log3BandBright, LogScale, Gray ]
 
 """
 function NeXLUncertainties.asa(::Type{ElementalMap}, krs::AbstractVector{KRatios}, scale=Log3Band, kro=SimpleKRatioOptimizer(2.0))
