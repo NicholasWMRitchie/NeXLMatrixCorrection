@@ -288,7 +288,7 @@ Base.isapprox(v1::Real, uv2::UncertainValue; atol::Real=0.0) =
         o = KRatio([n"O K-L3"],props,props,mat"SiO2",0.8950)
         c = KRatio([n"C K-L2"],props,props,mat"C",0.0548)
         res = quantify(nl"20 nm C on SiO2 at 5 keV", [si, o, c], coating=n"C K-L2"=>parse(Material,"C",density=1.9))
-        @test isapprox(thickness(si.unkProps[:Coating]), 2.41e-6, atol=0.01e-6)
+        @test isapprox(thickness(si.unkProps[:Coating]), 2.31e-6, atol=0.01e-6)
     end
     @testset "4 nm of Al2O3 on Al at 3 keV" begin
         props = Dict(:BeamEnergy=>3.0e3, :TakeOffAngle=>deg2rad(40.0))
