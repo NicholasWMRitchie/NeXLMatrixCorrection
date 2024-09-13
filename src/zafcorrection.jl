@@ -72,6 +72,15 @@ ZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat
 
 
 """
+    gZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat)
+
+Computes the combined correction for generation, atomic number, absorption, and secondary fluorescence.
+"""
+gZAFc(unk::ZAFCorrection, std::ZAFCorrection, cxr::CharXRay, θunk::AbstractFloat, θstd::AbstractFloat) =
+    generation(unk, std, inner(cxr)) * ZA(unk, std, cxr, θunk, θstd) * F(unk, std, cxr, θunk, θstd) * coating(unk, std, cxr, θunk, θstd)
+
+
+"""
     k(unk::MultiZAF, std::MultiZAF, θunk::AbstractFloat, θstd::AbstractFloat)
 
 The computed k-ratio for the unknown relative to standard.
@@ -109,11 +118,15 @@ function zafcorrection(
     e0::Real,
     coating::Union{Film,AbstractVector{Film},Missing},
 )
+    deds(coating::Missing) = 0.0
+    deds(coating::Film) = dEds(JoyLuo, e0, coating.material)*coating.thickness
+    deds(coating::AbstractVector{Film}) = mapreduce(f->dEds(JoyLuo, e0, f.mat)*f.thicknes, +, coating)
     nn = analyticaltotal(Float64, mat) > 0
     norm = asnormalized(mat)  # Ensures convergence of the interation algorithms...
+    e0c = e0 + deds(coating)
     return ZAFCorrection(
-        matrixcorrection(nn ? mctype : NullCorrection, norm, ashell, e0),
-        fluorescencecorrection(nn ? fctype : NullFluorescence, norm, ashell, e0),
+        matrixcorrection(nn ? mctype : NullCorrection, norm, ashell, e0c),
+        fluorescencecorrection(nn ? fctype : NullFluorescence, norm, ashell, e0c),
         coatingcorrection(nn ? cctype : NullCoating, coating),
     )
 end

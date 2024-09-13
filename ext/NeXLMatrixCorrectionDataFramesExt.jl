@@ -34,8 +34,8 @@ function NeXLMatrixCorrection.zaf(
     coatz(mat) = get(coatings,name(mat),missing)
     @assert toa>=0.0 && toa <= π/2 "The take-off angle is out-of-range [0, π/2]"
     @assert e0 > 1.0e3 "The beam energy less than 1 keV."
-    res = DataFrames.DataFrame(Material=String[], Standard=String[], Line=CharXRay[], weight=Float64[], E₀=Float64[], Z=Float64[], A=Float64[], #
-                    F=Float64[], c=Float64[], ZAFc=Float64[], k=Float64[])
+    res = DataFrames.DataFrame(Material=String[], Standard=String[], Line=CharXRay[], weight=Float64[], E₀=Float64[], g=Float64[], 
+            Z=Float64[], A=Float64[], F=Float64[], c=Float64[], gZAFc=Float64[], k=Float64[])
     for elm in keys(mat)
         cxrs = characteristic(elm, alltransitions, 0.01, e0)
         std = stdfor(elm)
@@ -44,12 +44,13 @@ function NeXLMatrixCorrection.zaf(
             for cxr in filter(cxr->weight(NormalizeToUnity, cxr)>=minweight, cxrs)
                 row = [
                     mat.name, std.name, cxr, weight(NormalizeToUnity, cxr), e0, #
-                    Z(zaf...),
-                    A(zaf..., cxr, toa, toa),
-                    F(zaf..., cxr, toa, toa),
-                    NeXLMatrixCorrection.coating(zaf..., cxr, toa, toa),
-                    ZAFc(zaf..., cxr, toa, toa),
-                    k(zaf..., cxr, toa, toa)
+                    round(generation(zaf..., inner(cxr)),digits=4),
+                    round(Z(zaf...),digits=4),
+                    round(A(zaf..., cxr, toa, toa),digits=4),
+                    round(F(zaf..., cxr, toa, toa),digits=4),
+                    round(NeXLMatrixCorrection.coating(zaf..., cxr, toa, toa),digits=4),
+                    round(gZAFc(zaf..., cxr, toa, toa),digits=4),
+                    round(k(zaf..., cxr, toa, toa),digits=4),
                 ]
                 push!(res, row)
             end
